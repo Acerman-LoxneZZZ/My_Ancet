@@ -12,7 +12,7 @@ import { modelAssets, watchManifests } from "./modelAssets";
 import {
   addDirectional,
   cloneModel,
-  fitObjectCamera,
+  fitBoundsCamera,
   idleFrame,
   materialsOf,
   unit,
@@ -35,6 +35,11 @@ export class TimepieceWorld implements WorldInstance {
   private height = 800;
   private frame = idleFrame();
   private direction = new THREE.Vector3();
+  private poseProgress = Number.NaN;
+  private framingBounds: THREE.Box3[] = [];
+  private cameraRail!: THREE.CatmullRomCurve3;
+  private focusRail!: THREE.CatmullRomCurve3;
+  private cameraTarget = new THREE.Vector3();
   private disposed = false;
 
   static async create(options: WorldOptions): Promise<TimepieceWorld> {
@@ -133,8 +138,19 @@ export class TimepieceWorld implements WorldInstance {
       addDirectional(this.scene, "#fff1d7", 2.2, [-3, 6, 8]);
       addDirectional(this.scene, "#d8e9ff", 0.9, [4, 1, 3]);
       addDirectional(this.scene, "#f2cf92", 2.3, [1, 2, -5]);
+      // Measure five absolute assembly poses once. Camera motion follows a
+      // continuous rail, rather than chasing a different AABB on every frame.
+      this.model.rotation.set(0, 0, -0.025);
+      for (let i = 0; i <= 4; i++) {
+        this.applyPose(i / 4);
+        this.model.updateWorldMatrix(true, true);
+        this.framingBounds.push(new THREE.Box3().setFromObject(this.model));
+      }
+      this.focusRail = new THREE.CatmullRomCurve3(
+        this.framingBounds.map((bounds) => bounds.getCenter(new THREE.Vector3())),
+      );
       this.setQuality(quality);
-      this.update(this.frame);
+      this.fit(this.width, this.height);
     } catch (error) {
       this.materials.forEach((material) => material.dispose());
       this.scene.clear();
@@ -147,12 +163,7 @@ export class TimepieceWorld implements WorldInstance {
     this.frame = frame;
     const progress =
       frame.reducedMotion && !frame.manual ? 0.4 : unit(frame.progress);
-    for (const part of this.parts) {
-      const pose = sampleWatchPart(part.data, progress);
-      part.object.position.fromArray(pose.position);
-      part.object.quaternion.fromArray(pose.quaternion);
-      part.object.scale.fromArray(pose.scale);
-    }
+    this.applyPose(progress);
     if (this.selected !== frame.selected) {
       this.selected = frame.selected;
       for (const part of this.parts)
@@ -171,21 +182,42 @@ export class TimepieceWorld implements WorldInstance {
     const px = frame.reducedMotion ? 0 : frame.pointer[0];
     const py = frame.reducedMotion ? 0 : frame.pointer[1];
     this.model.rotation.set(py * 0.025, px * 0.055, -0.025);
-    this.direction.set(0.64 + progress * 0.16, 0.25, 1).normalize();
-    fitObjectCamera(
-      this.camera,
-      this.model,
-      this.direction,
-      this.width,
-      this.height,
-      0.92,
-    );
+    this.cameraRail.getPoint(progress, this.camera.position);
+    this.focusRail.getPoint(progress, this.cameraTarget);
+    this.camera.lookAt(this.cameraTarget);
+    this.camera.updateMatrixWorld();
   }
 
   fit(width: number, height: number): void {
     this.width = Math.max(1, width);
     this.height = Math.max(1, height);
+    const framingCamera = new THREE.PerspectiveCamera(this.camera.fov);
+    const positions: THREE.Vector3[] = [];
+    let near = Infinity, far = 0;
+    this.framingBounds.forEach((bounds, index) => {
+      this.direction.set(0.64 + index / 4 * 0.16, 0.25, 1).normalize();
+      fitBoundsCamera(framingCamera, bounds, this.direction, this.width, this.height, 0.88);
+      positions.push(framingCamera.position.clone());
+      near = Math.min(near, framingCamera.near);
+      far = Math.max(far, framingCamera.far);
+    });
+    this.cameraRail = new THREE.CatmullRomCurve3(positions);
+    this.camera.aspect = this.width / this.height;
+    this.camera.near = near;
+    this.camera.far = far;
+    this.camera.updateProjectionMatrix();
     this.update(this.frame);
+  }
+
+  private applyPose(progress: number): void {
+    if (progress === this.poseProgress) return;
+    this.poseProgress = progress;
+    for (const part of this.parts) {
+      const pose = sampleWatchPart(part.data, progress);
+      part.object.position.fromArray(pose.position);
+      part.object.quaternion.fromArray(pose.quaternion);
+      part.object.scale.fromArray(pose.scale);
+    }
   }
 
   setQuality(quality: Quality): void {

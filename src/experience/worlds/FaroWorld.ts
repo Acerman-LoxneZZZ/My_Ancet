@@ -14,7 +14,7 @@ import {
   contactShadow,
   disposeTree,
   easeRange,
-  fitObjectCamera,
+  fitBoundsCamera,
   idleFrame,
   materialsOf,
   unit,
@@ -32,6 +32,9 @@ export class FaroWorld implements WorldInstance {
   private height = 800;
   private frame = idleFrame();
   private direction = new THREE.Vector3();
+  private bounds = new THREE.Box3();
+  private center = new THREE.Vector3();
+  private orbitRadius = 1;
   private disposed = false;
 
   static async create(options: WorldOptions): Promise<FaroWorld> {
@@ -104,8 +107,11 @@ export class FaroWorld implements WorldInstance {
     addDirectional(this.scene, "#ffe3bd", 1.9, [-4, 7, 5]);
     addDirectional(this.scene, "#e4edff", 0.5, [4, 3, 4]);
     addDirectional(this.scene, "#ffcd8b", 1.2, [2, 5, -5]);
+    this.exhibit.updateWorldMatrix(true, true);
+    this.bounds.setFromObject(this.exhibit);
+    this.bounds.getCenter(this.center);
     this.setQuality(quality);
-    this.update(this.frame);
+    this.fit(this.width, this.height);
   }
 
   update(frame: FrameState): void {
@@ -126,20 +132,30 @@ export class FaroWorld implements WorldInstance {
       Math.sin(elevation),
       Math.cos(angle + px) * Math.cos(elevation),
     );
-    this.exhibit.rotation.set(0, 0, 0);
-    fitObjectCamera(
-      this.camera,
-      this.exhibit,
-      this.direction,
-      this.width,
-      this.height,
-      0.92,
-    );
+    this.camera.position.copy(this.center).addScaledVector(this.direction, this.orbitRadius);
+    this.camera.lookAt(this.center);
+    this.camera.updateMatrixWorld();
   }
 
   fit(width: number, height: number): void {
     this.width = Math.max(1, width);
     this.height = Math.max(1, height);
+    const framingCamera = new THREE.PerspectiveCamera(this.camera.fov);
+    this.orbitRadius = 0;
+    // One constant radius covers the short orbit. The stationary scan is never
+    // remeasured during pointer movement or scrolling.
+    for (let i = 0; i <= 8; i++) {
+      const orbit = i / 8;
+      const angle = THREE.MathUtils.degToRad(14 + orbit * 42);
+      const elevation = THREE.MathUtils.degToRad(34 + Math.sin(orbit * Math.PI) * 7);
+      this.direction.set(Math.sin(angle) * Math.cos(elevation), Math.sin(elevation), Math.cos(angle) * Math.cos(elevation));
+      fitBoundsCamera(framingCamera, this.bounds, this.direction, this.width, this.height, 0.89);
+      this.orbitRadius = Math.max(this.orbitRadius, framingCamera.position.distanceTo(this.center));
+    }
+    this.camera.aspect = this.width / this.height;
+    this.camera.near = Math.max(0.01, this.orbitRadius / 120);
+    this.camera.far = Math.max(60, this.orbitRadius * 10);
+    this.camera.updateProjectionMatrix();
     this.update(this.frame);
   }
 

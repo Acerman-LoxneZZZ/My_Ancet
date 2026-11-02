@@ -97,12 +97,19 @@ export default function SceneHost() {
       metrics = chapterMetrics(),
       lastSnapshot = currentSnapshot();
     let active: HTMLElement | undefined;
+    let activeRect: DOMRect | undefined;
+    let chapterElements: HTMLElement[] = [];
+    const chapterProgress = new WeakMap<HTMLElement, string>();
     let lastAnchor: HTMLElement | undefined;
     let lastSize = "";
     let lastY = -1;
     let pointer: [number, number] = [0, 0],
       target: [number, number] = [0, 0],
       pulseAt = -100;
+    let lastTickTime: number | undefined;
+    let progressAnchor: HTMLElement | undefined;
+    let smoothedProgress = 0;
+    let progressMoving = false;
     let frameCount = 0,
       slowFrames = 0,
       lastRenderStart: number | undefined;
@@ -140,6 +147,7 @@ export default function SceneHost() {
       anchors = [
         ...document.querySelectorAll<HTMLElement>(".scene-anchor[data-world]"),
       ];
+      chapterElements = [...document.querySelectorAll<HTMLElement>("[data-chapter]")];
       metrics = chapterMetrics();
       lastSnapshot = currentSnapshot();
       anchors.forEach((a) => {
@@ -159,6 +167,9 @@ export default function SceneHost() {
       dirty = true;
       lastAnchor = undefined;
       lastSize = "";
+      activeRect = undefined;
+      progressAnchor = undefined;
+      progressMoving = false;
     };
     const onScroll = () => {
       dirty = true;
@@ -190,9 +201,10 @@ export default function SceneHost() {
       resize();
     };
     const onPointer = (event: PointerEvent) => {
-      if (event.pointerType !== "mouse" || reducedMotion() || !active) return;
-      const r = active.getBoundingClientRect();
-      target = [
+      if (event.pointerType !== "mouse" || reducedMotion() || !activeRect) return;
+      const r = activeRect;
+      const inside = event.clientX >= r.left && event.clientX <= r.right && event.clientY >= r.top && event.clientY <= r.bottom;
+      const next: [number, number] = inside ? [
         THREE.MathUtils.clamp(
           ((event.clientX - r.left) / r.width) * 2 - 1,
           -1,
@@ -203,12 +215,14 @@ export default function SceneHost() {
           -1,
           1,
         ),
-      ];
+      ] : [0, 0];
+      if (next[0] === target[0] && next[1] === target[1]) return;
+      target = next;
       dirty = true;
     };
     const onPress = (event: PointerEvent) => {
-      if (!active || active.dataset.world !== "monolith") return;
-      const r = active.getBoundingClientRect();
+      if (!active || !activeRect || active.dataset.world !== "monolith") return;
+      const r = activeRect;
       if (
         event.clientX >= r.left &&
         event.clientX <= r.right &&
@@ -222,6 +236,7 @@ export default function SceneHost() {
     const visibility = () => {
       if (document.hidden) gsap.ticker.remove(tick);
       else {
+        lastTickTime = undefined;
         dirty = true;
         gsap.ticker.add(tick);
       }
@@ -230,29 +245,35 @@ export default function SceneHost() {
       if (
         disposed ||
         lost ||
-        document.hidden ||
-        document.querySelector("dialog[open]")
+        document.hidden
       )
         return;
       const begin = performance.now();
       const now = begin / 1000;
+      const dt = Math.min(0.1, Math.max(0.001, now - (lastTickTime ?? now - 1 / 60)));
+      lastTickTime = now;
+      if (reducedMotion()) { pointer = [0, 0]; target = [0, 0]; }
       const moving =
         Math.abs(pointer[0] - target[0]) + Math.abs(pointer[1] - target[1]) >
         0.001;
       if (moving) {
+        const blend = 1 - Math.exp(-dt / 0.11);
         pointer = [
-          pointer[0] + (target[0] - pointer[0]) * 0.12,
-          pointer[1] + (target[1] - pointer[1]) * 0.12,
+          pointer[0] + (target[0] - pointer[0]) * blend,
+          pointer[1] + (target[1] - pointer[1]) * blend,
         ];
         dirty = true;
       }
       const impulse = reducedMotion() ? 0 : Math.exp(-(now - pulseAt) * 3);
       if (impulse > 0.005) dirty = true;
+      if (progressMoving) dirty = true;
       if (!dirty && lastY === scrollY) return;
+      if (document.querySelector("dialog[open]")) return;
       dirty = false;
       lastY = scrollY;
       let best = -Infinity;
       active = undefined;
+      activeRect = undefined;
       for (const anchor of anchors) {
         const r = anchor.getBoundingClientRect();
         const shown = Math.min(innerHeight, r.bottom) - Math.max(0, r.top);
@@ -264,19 +285,25 @@ export default function SceneHost() {
         if (score > best) {
           best = score;
           active = anchor;
+          activeRect = r;
         }
       }
-      document
-        .querySelectorAll<HTMLElement>("[data-chapter]")
-        .forEach((chapter) => {
+      chapterElements.forEach((chapter) => {
           const m = metrics.chapters[chapter.dataset.chapter!];
           if (!m) return;
-          chapter.style.setProperty(
-            "--progress",
-            getChapterProgress(scrollY, m).toFixed(4),
-          );
+          const value = getChapterProgress(scrollY, m).toFixed(4);
+          if (chapterProgress.get(chapter) !== value) {
+            chapter.style.setProperty("--progress", value);
+            chapterProgress.set(chapter, value);
+          }
         });
-      lastSnapshot = currentSnapshot();
+      // Use the measurements captured at layout/route changes. Reading every
+      // chapter's bounds immediately after CSS writes forced layout every frame.
+      const snapshotChapter = Object.entries(metrics.chapters).find(([, range]) => scrollY >= range.start && scrollY <= range.end);
+      const focusId = document.activeElement?.id || undefined;
+      lastSnapshot = snapshotChapter
+        ? {y: scrollY, chapter: snapshotChapter[0], progress: getChapterProgress(scrollY, snapshotChapter[1]), focusId}
+        : {y: scrollY, focusId};
       // PMREM and offscreen reflections can change renderer state. The shared
       // canvas always starts with a transparent full-frame clear.
       renderer.setClearColor(0x080b10, 0);
@@ -288,7 +315,7 @@ export default function SceneHost() {
       });
       delete element.dataset.ready;
       delete element.dataset.world;
-      if (!active) return;
+      if (!active || !activeRect) { progressMoving = false; return; }
       const id = active.dataset.world as WorldId;
       const index = anchors.indexOf(active);
       const nextId = anchors
@@ -315,15 +342,25 @@ export default function SceneHost() {
         delete active.dataset.worldReady;
         return;
       }
-      const rect = active.getBoundingClientRect();
+      const rect = activeRect;
       const chapter = active.closest<HTMLElement>("[data-chapter]");
       const interval = chapter && metrics.chapters[chapter.dataset.chapter!];
       let progress = interval ? getChapterProgress(scrollY, interval) : 0.36;
       const manual = active.hasAttribute("data-progress");
       if (manual) progress = clamp01(Number(active.dataset.progress));
       else if (id === "timepiece") progress = 0.16 + progress * 0.45;
+      if (progressAnchor !== active || reducedMotion()) {
+        progressAnchor = active;
+        smoothedProgress = progress;
+        progressMoving = false;
+      } else {
+        const blend = 1 - Math.exp(-dt / (manual ? 0.055 : 0.16));
+        smoothedProgress += (progress - smoothedProgress) * blend;
+        progressMoving = Math.abs(progress - smoothedProgress) > 0.00015;
+        if (!progressMoving) smoothedProgress = progress;
+      }
       const frame: FrameState = {
-        progress,
+        progress: smoothedProgress,
         time: now,
         pointer: reducedMotion() ? [0, 0] : pointer,
         reducedMotion: reducedMotion(),

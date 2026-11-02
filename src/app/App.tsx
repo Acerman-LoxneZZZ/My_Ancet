@@ -14,6 +14,7 @@ import { Arrow } from "../components/Icon";
 const SceneHost = lazy(() => import("./SceneHost"));
 export function App() {
   const { display, busy } = usePortfolioNavigation();
+  const journey = display.pathname === "/";
   useEffect(() => {
     document.documentElement.dataset.motion = matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -23,7 +24,7 @@ export function App() {
   }, []);
   return (
     <>
-      <Header />
+      {!journey && <Header />}
       <div className="page-shell" aria-busy={busy}>
         <Routes location={display}>
           <Route path="/" element={<Home />} />
@@ -32,10 +33,10 @@ export function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
-      <Suspense fallback={null}>
+      {!journey && <Suspense fallback={null}>
         <SceneHost />
-      </Suspense>
-      <footer className="site-footer">
+      </Suspense>}
+      {!journey && <footer className="site-footer">
         <PortfolioLink to="/" className="footer-name">
           {author.name}
         </PortfolioLink>
@@ -47,7 +48,7 @@ export function App() {
         >
           Наверх <Arrow direction="up" />
         </PortfolioLink>
-      </footer>
+      </footer>}
     </>
   );
 }

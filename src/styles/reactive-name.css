@@ -1,0 +1,70 @@
+h1.reactive-name[aria-label] {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 0.12em 0.085em 0.04em 0;
+  overflow: visible;
+  color: var(--text, #f1f0ea);
+  font-family: inherit;
+  font-size: clamp(80px, 14vw, 220px);
+  font-weight: 500;
+  font-style: normal;
+  line-height: 0.86;
+  letter-spacing: -0.085em;
+  text-align: left;
+  text-transform: none;
+  white-space: nowrap;
+  isolation: isolate;
+}
+
+.reactive-name .reactive-name__word {
+  display: inline-flex;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+.reactive-name .reactive-name__letter {
+  display: block;
+  position: relative;
+  flex: none;
+  color: inherit;
+  letter-spacing: inherit;
+}
+
+.reactive-name__letter::before {
+  content: attr(data-letter);
+  visibility: hidden;
+  font-weight: 500;
+}
+
+.reactive-name .reactive-name__glyph {
+  --letter-proximity: 0;
+  display: block;
+  position: absolute;
+  inset: 0 auto auto 0;
+  color: inherit;
+  font-weight: 500;
+  font-variation-settings: "wght" calc(500 + 100 * var(--letter-proximity));
+  transform: scale(calc(1 - 0.025 * var(--letter-proximity)), calc(1 + 0.18 * var(--letter-proximity)));
+  transform-origin: 50% 88%;
+  backface-visibility: hidden;
+  pointer-events: none;
+}
+
+.reactive-name[data-animating] .reactive-name__glyph {
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reactive-name .reactive-name__glyph {
+    transform: none;
+    font-variation-settings: "wght" 500;
+    will-change: auto;
+  }
+}
+
+[data-motion="reduced"] .reactive-name .reactive-name__glyph {
+  transform: none;
+  font-variation-settings: "wght" 500;
+  will-change: auto;
+}

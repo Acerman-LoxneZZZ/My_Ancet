@@ -104,8 +104,20 @@ export function fitObjectCamera(
 ): void {
   object.updateWorldMatrix(true, true);
   box.setFromObject(object);
-  if (box.isEmpty()) return;
-  box.getCenter(center);
+  fitBoundsCamera(camera, box, direction, width, height, fill);
+}
+
+/** Frame already measured bounds without traversing a model's mesh hierarchy. */
+export function fitBoundsCamera(
+  camera: THREE.PerspectiveCamera,
+  bounds: THREE.Box3,
+  direction: THREE.Vector3,
+  width: number,
+  height: number,
+  fill = 0.9,
+): void {
+  if (bounds.isEmpty()) return;
+  bounds.getCenter(center);
   camera.aspect = Math.max(1, width) / Math.max(1, height);
   camera.position.copy(center).add(direction);
   camera.lookAt(center);
@@ -113,9 +125,9 @@ export function fitObjectCamera(
   const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const tanH = tanV * camera.aspect;
   let distance = 0.5;
-  for (const x of [box.min.x, box.max.x])
-    for (const y of [box.min.y, box.max.y])
-      for (const z of [box.min.z, box.max.z]) {
+  for (const x of [bounds.min.x, bounds.max.x])
+    for (const y of [bounds.min.y, bounds.max.y])
+      for (const z of [bounds.min.z, bounds.max.z]) {
         corner.set(x, y, z).sub(center).applyQuaternion(inverse);
         distance = Math.max(
           distance,
