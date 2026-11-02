@@ -1,0 +1,27 @@
+[
+  {
+    "canvasCount": 1,
+    "metrics": "{\"world\":\"monolith\",\"tier\":\"desktop\",\"dpr\":1,\"draws\":46,\"geometries\":136,\"textures\":6,\"renderedFrames\":167,\"sampleWindowSeconds\":30,\"cpuRenderMeanMs\":4.512574856866619,\"cpuRenderP95Ms\":4,\"activeFrameIntervalMeanMs\":21.94606060548262,\"activeFrameIntervalP95Ms\":34.40000009536743,\"activeEstimatedFps\":45.56626439599722,\"activeIntervalSamples\":165}",
+    "rootTop": 0
+  },
+  {
+    "canvasCount": 1,
+    "metrics": "{\"world\":\"monolith\",\"tier\":\"desktop\",\"dpr\":1,\"draws\":46,\"geometries\":136,\"textures\":6,\"renderedFrames\":335,\"sampleWindowSeconds\":30,\"cpuRenderMeanMs\":3.251044777969816,\"cpuRenderP95Ms\":3.799999952316284,\"activeFrameIntervalMeanMs\":21.59879517986114,\"activeFrameIntervalP95Ms\":33.700000047683716,\"activeEstimatedFps\":46.29887878803567,\"activeIntervalSamples\":332}",
+    "rootTop": 0
+  },
+  {
+    "canvasCount": 1,
+    "metrics": "{\"world\":\"monolith\",\"tier\":\"desktop\",\"dpr\":1,\"draws\":46,\"geometries\":136,\"textures\":6,\"renderedFrames\":497,\"sampleWindowSeconds\":30,\"cpuRenderMeanMs\":2.82776659787061,\"cpuRenderP95Ms\":3.3000001907348633,\"activeFrameIntervalMeanMs\":21.880730222253238,\"activeFrameIntervalP95Ms\":34.09999990463257,\"activeEstimatedFps\":45.70231385527415,\"activeIntervalSamples\":493}",
+    "rootTop": 0
+  },
+  {
+    "canvasCount": 1,
+    "metrics": "{\"world\":\"monolith\",\"tier\":\"desktop\",\"dpr\":1,\"draws\":46,\"geometries\":136,\"textures\":6,\"renderedFrames\":663,\"sampleWindowSeconds\":30,\"cpuRenderMeanMs\":2.602865759963184,\"cpuRenderP95Ms\":3.299999952316284,\"activeFrameIntervalMeanMs\":21.994224923359948,\"activeFrameIntervalP95Ms\":34.09999990463257,\"activeEstimatedFps\":45.46648056408232,\"activeIntervalSamples\":658}",
+    "rootTop": 0
+  },
+  {
+    "canvasCount": 1,
+    "metrics": "{\"world\":\"monolith\",\"tier\":\"desktop\",\"dpr\":1,\"draws\":46,\"geometries\":136,\"textures\":6,\"renderedFrames\":831,\"sampleWindowSeconds\":30,\"cpuRenderMeanMs\":2.462334535038715,\"cpuRenderP95Ms\":3.1000001430511475,\"activeFrameIntervalMeanMs\":22.027030302683514,\"activeFrameIntervalP95Ms\":34.200000047683716,\"activeEstimatedFps\":45.39876625484879,\"activeIntervalSamples\":825}",
+    "rootTop": 0
+  }
+]

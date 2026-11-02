@@ -1,0 +1,21 @@
+{
+  "viewport": "1440x900",
+  "method": "15 pointer impulses over approximately 30 seconds; IAB on desktop; intervals while rendering, excluding idle gaps >=250ms",
+  "elapsedMs": 35349,
+  "metrics": {
+    "world": "monolith",
+    "tier": "desktop",
+    "dpr": 1,
+    "draws": 42,
+    "geometries": 35,
+    "textures": 6,
+    "renderedFrames": 1645,
+    "sampleWindowSeconds": 30,
+    "cpuRenderMeanMs": 1.941565837724353,
+    "cpuRenderP95Ms": 2.5,
+    "activeFrameIntervalMeanMs": 16.725359195607833,
+    "activeFrameIntervalP95Ms": 19.09999990463257,
+    "activeEstimatedFps": 59.78944836429015,
+    "activeIntervalSamples": 1392
+  }
+}

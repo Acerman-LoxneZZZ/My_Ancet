@@ -19,6 +19,8 @@
 npm test -- --run tests/story.test.ts tests/scroll-memory.test.ts
 ```
 
-Первый прогон выполнен 2 ноября 2026 года на Vitest 5.0.5 указанной командой: exit 1, две failed suites из-за отсутствия `src/experience/story.ts` и `src/navigation/ScrollMemory.ts`. Assertions ещё не выполнялись: это ожидаемый import-stage RED до реализации, не обнаруженный дефект существующего продукта. Успешный прогон здесь ещё не заявлен.
+Первый прогон выполнен 2 ноября 2026 года на Vitest 5.0.5 указанной командой: exit 1, две failed suites из-за отсутствия `src/experience/story.ts` и `src/navigation/ScrollMemory.ts`. Assertions на этой стадии не выполнялись: это ожидаемый import-stage RED до реализации, не обнаруженный дефект существующего продукта.
+
+После разрешения реализации созданы только эти два модуля; повтор той же команды 2 ноября 2026 года дал **2 passed suites, 55 passed tests**, exit 0. `ScrollMemory` копирует снимки на запись и чтение; `mapViewportChange` восстанавливает положение по главе и progress. Это подтверждение чистых функций, не browser QA всей навигации.
 
 Стыки камеры, reduced motion, количество ScrollTrigger, быстрые переходы и реальные браузерные проверки остаются отдельными обязательными проверками следующих этапов.

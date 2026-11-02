@@ -1,0 +1,178 @@
+[
+  {
+    "stage": "before0",
+    "dom": {
+      "focus": "world-timepiece-title",
+      "rootTop": -3175,
+      "sections": [
+        {
+          "height": 2340,
+          "id": "intro",
+          "top": -3175
+        },
+        {
+          "height": 1260,
+          "id": "timepiece",
+          "top": -259
+        },
+        {
+          "height": 1260,
+          "id": "faro",
+          "top": 1001
+        },
+        {
+          "height": 1260,
+          "id": "egypt",
+          "top": 2261
+        },
+        {
+          "height": 1260,
+          "id": "wordflow",
+          "top": 3521
+        },
+        {
+          "height": 811.28125,
+          "id": "about",
+          "top": 4781
+        },
+        {
+          "height": 1350,
+          "id": "contact",
+          "top": 5592.28125
+        }
+      ]
+    }
+  },
+  {
+    "stage": "before1",
+    "dom": {
+      "focus": "world-timepiece-title",
+      "rootTop": -3043,
+      "sections": [
+        {
+          "height": 2340,
+          "id": "intro",
+          "top": -3043
+        },
+        {
+          "height": 1260,
+          "id": "timepiece",
+          "top": -127
+        },
+        {
+          "height": 1260,
+          "id": "faro",
+          "top": 1133
+        },
+        {
+          "height": 1260,
+          "id": "egypt",
+          "top": 2393
+        },
+        {
+          "height": 1260,
+          "id": "wordflow",
+          "top": 3653
+        },
+        {
+          "height": 811.28125,
+          "id": "about",
+          "top": 4913
+        },
+        {
+          "height": 1350,
+          "id": "contact",
+          "top": 5724.28125
+        }
+      ]
+    }
+  },
+  {
+    "stage": "before2",
+    "dom": {
+      "focus": "world-timepiece-title",
+      "rootTop": -2916,
+      "sections": [
+        {
+          "height": 2340,
+          "id": "intro",
+          "top": -2916
+        },
+        {
+          "height": 1260,
+          "id": "timepiece",
+          "top": 0
+        },
+        {
+          "height": 1260,
+          "id": "faro",
+          "top": 1260
+        },
+        {
+          "height": 1260,
+          "id": "egypt",
+          "top": 2520
+        },
+        {
+          "height": 1260,
+          "id": "wordflow",
+          "top": 3780
+        },
+        {
+          "height": 811.28125,
+          "id": "about",
+          "top": 5040
+        },
+        {
+          "height": 1350,
+          "id": "contact",
+          "top": 5851.28125
+        }
+      ]
+    }
+  },
+  {
+    "stage": "before3",
+    "dom": {
+      "focus": "",
+      "rootTop": -1440,
+      "sections": [
+        {
+          "height": 2340,
+          "id": "intro",
+          "top": -1440
+        },
+        {
+          "height": 1260,
+          "id": "timepiece",
+          "top": 1476
+        },
+        {
+          "height": 1260,
+          "id": "faro",
+          "top": 2736
+        },
+        {
+          "height": 1260,
+          "id": "egypt",
+          "top": 3996
+        },
+        {
+          "height": 1260,
+          "id": "wordflow",
+          "top": 5256
+        },
+        {
+          "height": 811.28125,
+          "id": "about",
+          "top": 6516
+        },
+        {
+          "height": 1350,
+          "id": "contact",
+          "top": 7327.28125
+        }
+      ]
+    }
+  }
+]

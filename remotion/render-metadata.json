@@ -1,0 +1,135 @@
+{
+  "recordedAtUtc": "2026-11-02T15:16:43.0461758Z",
+  "composition": "PortfolioShowreel",
+  "defaultProps": {},
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "durationInFrames": 660,
+  "durationInSeconds": 22,
+  "runtime": {
+    "remotion": "4.0.534",
+    "react": "19.3.1",
+    "three": "0.187.0",
+    "fiber": "9.8.2",
+    "gl": "angle",
+    "concurrency": 2,
+    "crf": 18,
+    "codec": "h264",
+    "requestedPixelFormat": "yuv420p",
+    "actualPixelFormat": "yuvj420p",
+    "actualColorRange": "pc",
+    "actualColorSpace": "bt470bg",
+    "audio": "muted",
+    "dpr": 1
+  },
+  "output": {
+    "path": "public/assets/video/portfolio-showreel.mp4",
+    "bytes": 4726370,
+    "sha256": "A9EB652EA090D1244A8C7AB3E09E0CEF888EE20C5FE3CFE3B12C857AABB6D879"
+  },
+  "poster": {
+    "path": "public/assets/images/showreel-poster.jpg",
+    "frame": 150,
+    "bytes": 211055,
+    "sha256": "41D1C3A0F948E295EC127058AB282115A258AFD6E3694F6C007601712DFA6A02"
+  },
+  "probe": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "codec_name": "h264",
+        "profile": "100",
+        "width": 1920,
+        "height": 1080,
+        "pix_fmt": "yuvj420p",
+        "r_frame_rate": "30/1",
+        "avg_frame_rate": "30/1",
+        "nb_frames": "660",
+        "nb_read_frames": "660",
+        "side_data_list": [
+          {}
+        ]
+      }
+    ],
+    "format": {
+      "duration": "22.000000",
+      "size": "4726370"
+    }
+  },
+  "visualCheckFrames": [
+    0,
+    45,
+    150,
+    270,
+    390,
+    510,
+    630,
+    659
+  ],
+  "repeatability": {
+    "fullCompositionFrame": 150,
+    "standaloneComposition": "Timepiece",
+    "standaloneFrame": 60,
+    "totalPixels": 2073600,
+    "changedPixels": 63,
+    "maximumChannelDelta": 1,
+    "absoluteChannelSum": 85,
+    "meanChannelDelta": 1.3663837448559671E-05
+  },
+  "sources": [
+    {
+      "path": "remotion/src/Root.tsx",
+      "sha256": "9264510AA7921769F46E9362AF5B1BE138F00CAEFC2861421513911AAE6830F8"
+    },
+    {
+      "path": "remotion/src/PortfolioShowreel.tsx",
+      "sha256": "120E42F38614318BC99061330A87713ADB657E246E2088768FF1299B7A173644"
+    },
+    {
+      "path": "remotion/src/adapters/WorldShot.tsx",
+      "sha256": "C6588CDFF4CE4A839F4DB64C7F3E0EED1ECCE16C37FC4EC2D7B439177B30BA9E"
+    },
+    {
+      "path": "remotion/src/theme.ts",
+      "sha256": "C9DCD53AA66EEA7549A0AE5F8C679BD6DDF6FD57876221A009B8DCE9AFBB445C"
+    },
+    {
+      "path": "remotion/src/scenes/OpeningScene.tsx",
+      "sha256": "95818335500BAEACBD14C97CD2F0EB16420488D93428933DAE28BB359B3107A8"
+    },
+    {
+      "path": "remotion/src/scenes/TimepieceScene.tsx",
+      "sha256": "45A206350A2C22906932E38BD65B33D5DD652B02E0C3AFC875F3E6A0749D8884"
+    },
+    {
+      "path": "remotion/src/scenes/FaroScene.tsx",
+      "sha256": "7D26E05DEBAA6C856967FF2F0E76DBC8907B10209FA9A17047087AA4A60EDEFF"
+    },
+    {
+      "path": "remotion/src/scenes/EgyptScene.tsx",
+      "sha256": "7EC2C67E4DAC62A8641FF9E29C8C55189E398EFFAF66FAF997C9473F14BAC6F8"
+    },
+    {
+      "path": "remotion/src/scenes/WordflowScene.tsx",
+      "sha256": "7CE86E45DDDE392A7417ADAFA7121A4E0F63EA95252413B6880FBF9CFC195E78"
+    },
+    {
+      "path": "remotion/src/scenes/FinaleScene.tsx",
+      "sha256": "F6180C04C71749A5E30ADA9856E901587A87EF361A30D405AF8AFFA5CE717E00"
+    },
+    {
+      "path": "src/experience/worlds/MonolithWorld.ts",
+      "sha256": "B16C949D23CE57882E33C2C84B69657B8E003822323972045100F83943AC5DB9"
+    },
+    {
+      "path": "src/experience/worlds/TimepieceWorld.ts",
+      "sha256": "1672620DD3981980E5D08DD716882B0DBAB990356C8DDAC27C82FB00CC2EA4BB"
+    },
+    {
+      "path": "src/experience/worlds/FaroWorld.ts",
+      "sha256": "067D61B218F45FACB4238F73B43965C72A2616B2618708E6221B2DC973881002"
+    }
+  ]
+}

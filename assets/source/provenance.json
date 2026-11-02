@@ -1,0 +1,174 @@
+{
+  "recordedAt": "2026-11-02",
+  "sourceCommits": {
+    "chasi": "9d214bcf2b5477550ba014c23881cecca32b802e",
+    "pizza": "ca7e99fe59ec5f61ad49c812da8a4659f6c47fda",
+    "egi": "1a4725dc9285a8d45ffead5f4342a3e3d94df92d",
+    "EnCard": "43a41053321f6c96d7880c14bf353dd384380ced"
+  },
+  "modifications": "Byte-for-byte copies. No image resizing, color correction, geometry or texture modification.",
+  "copies": [
+    {
+      "source": "docs/design/review-v2/assets/pocket-watch.glb",
+      "target": "public/assets/models/pocket-watch.glb",
+      "bytes": 3020672,
+      "sha256": "c99b483b1115316e186a6473a92d4e5ee476d9b5bc1f05611000e7b5fb48b918"
+    },
+    {
+      "source": "docs/design/review-v2/assets/pizza-web.glb",
+      "target": "public/assets/models/pizza-web.glb",
+      "bytes": 3552568,
+      "sha256": "7bf8dda789c5e1e2e5e6402890d3b07b09bcf8aad362acb2320d8592536bd8a5"
+    },
+    {
+      "source": "docs/design/review-v2/assets/watch-parts.json",
+      "target": "public/assets/data/watch-parts.json",
+      "bytes": 42343,
+      "sha256": "fd55d1d1955d6c66649b12abe36b3ffb6a1f4cf108fe5ace5f9ccabeec12b13e"
+    },
+    {
+      "source": "docs/design/review-v2/assets/timepiece-original.jpg",
+      "target": "public/assets/images/timepiece-original.jpg",
+      "bytes": 57822,
+      "sha256": "0ca225cb29566f6e0be2cc3ecf879cb70e1902b4fd0d313421fd1e2c141134cf"
+    },
+    {
+      "source": "docs/design/review-v2/assets/timepiece-exploded.jpg",
+      "target": "public/assets/images/timepiece-exploded.jpg",
+      "bytes": 68256,
+      "sha256": "2f1e8660d6d6c6e2998a12405b56c4fb0ebcf3a570113e07b6d830fde7bd23ea"
+    },
+    {
+      "source": "docs/design/review-v2/assets/faro-original.jpg",
+      "target": "public/assets/images/faro-original.jpg",
+      "bytes": 87507,
+      "sha256": "03e2eeb46611e504500d6b9a98cad15036ceaeae76292bd63402e11aaf9663b5"
+    },
+    {
+      "source": "docs/design/review-v2/assets/faro-menu.jpg",
+      "target": "public/assets/images/faro-menu.jpg",
+      "bytes": 72056,
+      "sha256": "93e732cb79236390aa9bcb8fedc1d27bb80485834f26617a95bfbca2131093c0"
+    },
+    {
+      "source": "docs/design/review-v2/assets/egypt-original.jpg",
+      "target": "public/assets/images/egypt-original.jpg",
+      "bytes": 162703,
+      "sha256": "3601a679365ce566a2552d8c4ad7fdc0a1db93d4a868f2eacee33261688c5bd1"
+    },
+    {
+      "source": "docs/design/review-v2/assets/egypt-chapter.jpg",
+      "target": "public/assets/images/egypt-chapter.jpg",
+      "bytes": 121381,
+      "sha256": "b3bfe0222dd7cc2b5d3d416e9dad855989a05fc163374a1eabb3cda5a7ecbe1e"
+    },
+    {
+      "source": "docs/design/review-v2/assets/wordflow-original.jpg",
+      "target": "public/assets/images/wordflow-original.jpg",
+      "bytes": 24263,
+      "sha256": "81716954624332ac51169d96bc42f07121ba23946c7d78c95d1cec0985d24827"
+    },
+    {
+      "source": "docs/design/review-v2/assets/wordflow-dictionary.jpg",
+      "target": "public/assets/images/wordflow-dictionary.jpg",
+      "bytes": 33353,
+      "sha256": "7fe1ef2d42a57a45a2032df3c56d0688564ebef201d7e21f2ee36a2c42aaa4cc"
+    },
+    {
+      "source": "docs/design/review-v2/assets/egypt-gateway.png",
+      "target": "public/assets/images/egypt-gateway.png",
+      "bytes": 2451563,
+      "sha256": "04c943d62987b4eced54e21775d45b1b21220c105dfe9fc1d38f54c7f0a306a2"
+    },
+    {
+      "source": "docs/design/review-v2/assets/egypt-landscape.png",
+      "target": "public/assets/images/egypt-landscape.png",
+      "bytes": 2622739,
+      "sha256": "1822e1756bdd956cac95680ddea4361c5cb87ef9573c44079d44537701209d50"
+    },
+    {
+      "source": "docs/design/review-v2/assets/fonts/cormorant-cyrillic-medium.woff2",
+      "target": "public/assets/fonts/cormorant-cyrillic-medium.woff2",
+      "bytes": 12920,
+      "sha256": "30aec8d9cdb4ea84534ffcd7c58b0f06069f63dc177b5aafd7438627dfe10fb8"
+    },
+    {
+      "source": "docs/design/review-v2/assets/fonts/cormorant-cyrillic.woff2",
+      "target": "public/assets/fonts/cormorant-cyrillic.woff2",
+      "bytes": 12776,
+      "sha256": "0d23162e67528fdc5fe1b12bedc525a69bbdc86d5d9f3c2ee9e9ee459934ecd4"
+    },
+    {
+      "source": "docs/design/review-v2/assets/fonts/cormorant-latin-medium.woff2",
+      "target": "public/assets/fonts/cormorant-latin-medium.woff2",
+      "bytes": 23312,
+      "sha256": "8197bf53615ddc8c423f444c7f0eec63b7fa0ba093fcfbec60dfdd28429b0fc8"
+    },
+    {
+      "source": "docs/design/review-v2/assets/fonts/cormorant-latin.woff2",
+      "target": "public/assets/fonts/cormorant-latin.woff2",
+      "bytes": 22876,
+      "sha256": "8048ac209bec741e1c29cd0cfac5aac1c0c2ba8c3ddbd4a58fa9bd92ef5c63c2"
+    },
+    {
+      "source": "docs/design/review-v2/assets/fonts/manrope-cyrillic.woff2",
+      "target": "public/assets/fonts/manrope-cyrillic.woff2",
+      "bytes": 7840,
+      "sha256": "5a987d1484070f1ea54de7c10ebfa4057a18e379361dbe5fd5c4fa4c2d95ef39"
+    },
+    {
+      "source": "docs/design/review-v2/assets/fonts/manrope-latin.woff2",
+      "target": "public/assets/fonts/manrope-latin.woff2",
+      "bytes": 14108,
+      "sha256": "849290ef12a2eeb9af5c11924120d11aa4ae8b435ed3347d7fc8bc240c293ca3"
+    },
+    {
+      "source": "docs/design/review-v2/assets/fonts/Cormorant-LICENSE.txt",
+      "target": "public/assets/fonts/Cormorant-LICENSE.txt",
+      "bytes": 4597,
+      "sha256": "d62dec50aacf341ca79b40f1b4142b3d21321c3b12217e7f63c21e0ee11422bf"
+    },
+    {
+      "source": "docs/design/review-v2/assets/fonts/Manrope-LICENSE.txt",
+      "target": "public/assets/fonts/Manrope-LICENSE.txt",
+      "bytes": 4476,
+      "sha256": "c5eb6ee975b663e5e3a993cade91be2f84f7404496d9eef91f67402774d422a7"
+    },
+    {
+      "source": "docs/design/review-v2/assets/licenses/DejaVu.txt",
+      "target": "public/assets/licenses/DejaVu.txt",
+      "bytes": 3937,
+      "sha256": "baa2e5e5cdb29e9052bbe4e171b2feb4b3314116ef9032fe11bd874c803cc815"
+    },
+    {
+      "source": "docs/design/review-v2/assets/licenses/FARO-ATTRIBUTION.md",
+      "target": "public/assets/licenses/FARO-ATTRIBUTION.md",
+      "bytes": 4154,
+      "sha256": "27eee0215ec724ff2f9925fdd62cba50353b0572ba6ded1aa95b4f2c738bf2c7"
+    },
+    {
+      "source": "docs/design/review-v2/assets/licenses/Meshoptimizer-MIT.txt",
+      "target": "public/assets/licenses/Meshoptimizer-MIT.txt",
+      "bytes": 1100,
+      "sha256": "2c420c79ff65dea863ce1990a173ebd1e6e5778116d498e54738ae5002799509"
+    },
+    {
+      "source": "docs/design/review-v2/assets/licenses/Three-MIT.txt",
+      "target": "public/assets/licenses/Three-MIT.txt",
+      "bytes": 1081,
+      "sha256": "8b378ebe60e2fe500158cb0ac71cb5e8b7d92953c2abcc63a0eb90499653b5bc"
+    },
+    {
+      "source": ".research/chasi/assets/blender/pocket-watch.blend",
+      "target": "assets/source/timepiece/pocket-watch.blend",
+      "bytes": 6347266,
+      "sha256": "6d7fb54f3bfa3cbbd3c94fbfd1243248030b22169150f56c6201eeefe401fc56"
+    },
+    {
+      "source": ".research/pizza/assets/pizza-video/scene-3d/pizza-source.blend",
+      "target": "assets/source/faro/pizza-source.blend",
+      "bytes": 14591847,
+      "sha256": "7ede20800445352f5b4a86814377535643fcd4a7cf66e56dffcfa902c36eb964"
+    }
+  ]
+}
