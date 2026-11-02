@@ -1,0 +1,113 @@
+
+> loxne-worlds@1.0.0 test
+> vitest run --reporter=verbose
+
+
+ RUN  v5.0.5 C:/Users/loxne/OneDrive/Документы/ChatGPT/my_ancet
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tests/quality.test.ts [ tests/quality.test.ts ]
+Error: Cannot find module '../src/experience/QualityManager' imported from C:/Users/loxne/OneDrive/Документы/ChatGPT/my_ancet/tests/quality.test.ts
+ ❯ tests/quality.test.ts:2:1
+      1| import {describe,it,expect} from 'vitest';
+      2| import {chooseQuality,lowerQuality} from '../src/experience/QualityMan…
+       | ^
+      3|
+      4| describe('GPU budget and graceful reduction',()=>{
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  tests/scene-lifecycle.test.ts [ tests/scene-lifecycle.test.ts ]
+Error: Cannot find module '../src/experience/AssetManager' imported from C:/Users/loxne/OneDrive/Документы/ChatGPT/my_ancet/tests/scene-lifecycle.test.ts
+ ❯ tests/scene-lifecycle.test.ts:15:1
+     13|  */
+     14| import { describe, expect, it, vi } from 'vitest';
+     15| import { AssetManager } from '../src/experience/AssetManager';
+       | ^
+     16|
+     17| type Asset = { name: string };
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  tests/scroll-memory.test.ts [ tests/scroll-memory.test.ts ]
+Error: Cannot find module '../src/navigation/ScrollMemory' imported from C:/Users/loxne/OneDrive/Документы/ChatGPT/my_ancet/tests/scroll-memory.test.ts
+ ❯ tests/scroll-memory.test.ts:2:1
+      1| import { describe, expect, it } from 'vitest';
+      2| import { ScrollMemory, resolveGalleryReturn } from '../src/navigation/…
+       | ^
+      3|
+      4| // Plan task 8 / Review Focus 1: history-entry identity and direct cas…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  tests/story.test.ts [ tests/story.test.ts ]
+Error: Cannot find module '../src/experience/story' imported from C:/Users/loxne/OneDrive/Документы/ChatGPT/my_ancet/tests/story.test.ts
+ ❯ tests/story.test.ts:2:1
+      1| import { describe, expect, it } from 'vitest';
+      2| import {
+       | ^
+      3|   clamp01,
+      4|   getChapterProgress,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  tests/transition.test.ts [ tests/transition.test.ts ]
+Error: Cannot find module '../src/navigation/TransitionController' imported from C:/Users/loxne/OneDrive/Документы/ChatGPT/my_ancet/tests/transition.test.ts
+ ❯ tests/transition.test.ts:2:1
+      1| import {describe,it,expect,vi} from 'vitest';
+      2| import {createTransitionController} from '../src/navigation/Transition…
+       | ^
+      3|
+      4| // request() never changes history itself: kind reaches swap unchanged.
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+ FAIL  tests/watch-pose.test.ts [ tests/watch-pose.test.ts ]
+Error: Cannot find module '../src/experience/watchPose' imported from C:/Users/loxne/OneDrive/Документы/ChatGPT/my_ancet/tests/watch-pose.test.ts
+ ❯ tests/watch-pose.test.ts:13:1
+     11| import { describe, expect, it } from 'vitest';
+     12| import sourceManifest from '../docs/design/review-v2/assets/watch-part…
+     13| import { sampleWatchPart, verifyWatchManifest } from '../src/experienc…
+       | ^
+     14|
+     15| type WatchPart = Parameters<typeof sampleWatchPart>[0];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/7]⎯
+
+ FAIL  tests/wordflow-isolation.test.ts [ tests/wordflow-isolation.test.ts ]
+Error: Cannot find module '../scripts/prepare-wordflow-demo.mjs' imported from C:/Users/loxne/OneDrive/Документы/ChatGPT/my_ancet/tests/wordflow-isolation.test.ts
+ ❯ tests/wordflow-isolation.test.ts:7:1
+      5| import {createHash} from 'node:crypto';
+      6| import {createContext, runInContext} from 'node:vm';
+      7| import {buildWordflowDemo} from '../scripts/prepare-wordflow-demo.mjs';
+       | ^
+      8| import {createDemoState, createDemoStorage} from '../scripts/templates…
+      9|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Serialized Error: { code: 'ERR_MODULE_NOT_FOUND' }
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/7]⎯
+
+
+ Test Files  7 failed (7)
+      Tests  no tests
+   Start at  17:37:47
+   Duration  773ms (worker 97%, environment 3%)
+
+    Isolate  7 workers spawned · ~216ms startup each (spawn + environment, per file)
+             at least ~287ms faster with isolate: false — reuses workers across files instead of one per file
+
