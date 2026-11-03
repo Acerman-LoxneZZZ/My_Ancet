@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import {modelAssets, watchManifests} from '../worlds/modelAssets';
 import {cloneModel, materialsOf} from '../worlds/shared';
 import {clampProgress, sampleWatchPart, type WatchPart} from '../watchPose';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {clearTransmission, createAtelierMaterials} from './materials';
 
 type Room = {
   group: THREE.Group;
@@ -40,7 +42,8 @@ const smooth = (start: number, end: number, progress: number): number => {
 /** The host owns its camera, renderer and environment. Every room faces +Z. */
 export async function createExhibits(options: {openingOnly?: boolean} = {}): Promise<{
   group: THREE.Group;
-  update(progress: number, time: number): void;
+  update(progress: number, time: number): boolean;
+  isAnimating(): boolean;
   setWatchProgress(progress: number | null, immediate?: boolean): void;
   fit(aspect: number): void;
   dispose(): void;
@@ -50,6 +53,7 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
   const textures = new Set<THREE.Texture>();
+  const atelier = createAtelierMaterials();
   const images = {} as Record<keyof typeof imagePaths, THREE.Texture>;
   const watchLease = modelAssets.acquire('/assets/models/pocket-watch.glb');
   const pizzaLease = options.openingOnly ? undefined : modelAssets.acquire('/assets/models/pizza-web.glb');
@@ -82,6 +86,7 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
     materials.clear();
     geometries.clear();
     textures.clear();
+    atelier.dispose();
     rooms.length = 0;
     watchLease.release();
     pizzaLease?.release();
@@ -188,6 +193,7 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
         toneMapped: false, side: THREE.DoubleSide,
       })));
       reflection.rotation.x = -Math.PI / 2;
+      reflection.visible = !options.openingOnly;
       display.add(body, post, foot, reflection);
       contact(display, width * 0.7, 2.5, accent);
       return {
@@ -249,17 +255,30 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
       return {object, data};
     });
     const glass = ownMaterial(new THREE.MeshPhysicalMaterial({
-      name: 'Watch / original glass browser material', color: '#dce9ef',
-      metalness: 0, roughness: 0.08, transmission: 0, transparent: true,
-      opacity: 0.12, depthWrite: false, side: THREE.DoubleSide, envMapIntensity: 0.55,
+      name: 'Watch / clear optical crystal', color: '#ffffff',
+      metalness: 0, roughness: 0, transmission: 1,
+      thickness: 0.045, ior: 1.46, attenuationColor: '#f1f6fa',
+      attenuationDistance: 30, clearcoat: 0, specularIntensity: 0.65,
+      side: THREE.FrontSide, envMapIntensity: 0.42,
     }));
+    clearTransmission(glass);
     watchRoot.getObjectByName('front_glass')?.traverse(object => {
       if (object instanceof THREE.Mesh) {object.material = glass; object.renderOrder = 2;}
     });
     watchClone.object.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
+      object.castShadow = object.material !== glass;
+      object.receiveShadow = true;
       for (const material of materialsOf(object)) {
+        if (material instanceof THREE.MeshStandardMaterial && /brass|steel|aged case/i.test(material.name)) {
+          material.roughnessMap = atelier.brushing;
+          material.bumpMap = atelier.machining;
+          material.bumpScale = 0.0005;
+          material.envMapIntensity = 0.9;
+          material.roughness = /polished/i.test(material.name) ? 0.2 : 0.33;
+        }
         if (material instanceof THREE.MeshStandardMaterial && material.name === 'Charcoal dial printing') {
+          material.color.set('#18212a');
           material.metalness = 0;
           material.roughness = 0.8;
           material.envMapIntensity = 0.2;
@@ -269,6 +288,8 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
     const watchBounds = new THREE.Box3().setFromObject(watchClone.object);
     const watchSize = watchBounds.getSize(new THREE.Vector3());
     const watchScale = Math.min(4 / Math.max(0.001, watchSize.y), 3.4 / Math.max(0.001, watchSize.x));
+    // thickness is in model space; compensate for the enlarged display model.
+    glass.thickness = 0.025 / watchScale;
     const watchCenter = watchBounds.getCenter(new THREE.Vector3());
     watchClone.object.position.sub(watchCenter);
     const watchNormalized = new THREE.Group();
@@ -278,7 +299,27 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
     watchObject.name = 'journey-original-watch';
     watchObject.rotation.y = 0.25;
     watchObject.add(watchNormalized);
-    const watchMount = mounted(watchRoom, watchObject, watchSize.y * watchScale, 3.8, '#c49b5c');
+    const plinth = new THREE.Group();
+    plinth.name = 'Timepiece / bevelled mineral display plinth';
+    const plinthGeometry = ownGeometry(new RoundedBoxGeometry(5.55, 1.05, 3.5, 3, 0.075));
+    const plinthBody = new THREE.Mesh(plinthGeometry, atelier.stone);
+    plinthBody.position.y = 0.54;
+    plinthBody.castShadow = plinthBody.receiveShadow = true;
+    const plinthTop = mesh(new RoundedBoxGeometry(5.62, 0.06, 3.56, 2, 0.024), atelier.silver);
+    plinthTop.position.y = 1.085;
+    const inset = mesh(new THREE.BoxGeometry(5.36, 0.027, 3.32), atelier.polished);
+    inset.position.y = 0.96;
+    plinth.add(plinthBody, plinthTop, inset);
+    watchRoom.add(plinth, watchObject);
+    contact(plinth, 7.5, 5.2, '#a1824d');
+    const watchMount = {
+      place(x: number, y: number, z: number, scale = 1) {
+        watchObject.position.set(x, y, z);
+        watchObject.scale.setScalar(scale);
+        plinth.position.set(x, 0, z);
+        plinth.scale.set(scale, 1, scale);
+      },
+    };
     const watchScreen = panel(watchRoom, 'timepiece-original-screen', images.watch, 6.4, 3.6, '#c49b5c');
 
     let fitRemaining: ((mix: (wide: number, narrow: number) => number, screenX: number, screenY: number, screenScale: number) => void) | undefined;
@@ -354,14 +395,15 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
 
     const updateVisibility = () => {
       for (const entry of rooms) {
-        entry.group.visible = portrait
+        entry.group.visible = options.openingOnly || (portrait
           ? lastProgress >= entry.start && lastProgress < entry.end
-          : Math.abs(lastProgress - entry.center) <= 0.14;
+          : Math.abs(lastProgress - entry.center) <= 0.14);
       }
     };
     let lastWatchPose = -1;
     let manualWatchProgress: number | null = null;
     let displayedWatchProgress = 0;
+    let targetWatchProgress = 0;
     let snapWatch = false;
     let lastUpdateTime: number | null = null;
     const setWatchProgress = (progress: number | null, immediate = false) => {
@@ -370,11 +412,12 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
       snapWatch = immediate;
     };
     const update = (progress: number, time: number) => {
-      if (disposed) return;
+      if (disposed) return false;
       lastProgress = clampProgress(progress);
       updateVisibility();
       const automatic = smooth(0.195, 0.233, lastProgress) * (1 - smooth(0.267, 0.305, lastProgress)) * 0.52;
       const target = manualWatchProgress ?? automatic;
+      targetWatchProgress = target;
       // Host time is in seconds. The same damping returns manual control to
       // the timeline; no timer or independent animation loop is introduced.
       let dt = 0;
@@ -386,7 +429,8 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
       snapWatch = false;
       if (Math.abs(target - displayedWatchProgress) < 0.00001) displayedWatchProgress = target;
       const opened = displayedWatchProgress;
-      if (opened !== lastWatchPose) {
+      const poseChanged = opened !== lastWatchPose;
+      if (poseChanged) {
         lastWatchPose = opened;
         for (const part of watchParts) {
           const pose = sampleWatchPart(part.data, opened);
@@ -395,8 +439,11 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
           part.object.scale.fromArray(pose.scale);
         }
       }
-      watchObject.rotation.y = 0.23 + smooth(0.18, 0.24, lastProgress) * 0.09;
+      const yaw = 0.23 + smooth(0.18, 0.24, lastProgress) * 0.09;
+      const rotationChanged = watchObject.rotation.y !== yaw;
+      watchObject.rotation.y = yaw;
       updateRemaining?.(lastProgress);
+      return poseChanged || rotationChanged;
     };
 
     const fit = (aspect: number) => {
@@ -407,18 +454,19 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
       const mix = (wide: number, narrow: number) => THREE.MathUtils.lerp(wide, narrow, compact);
       // Desktop keeps the aisle x=-0.5…+0.5 free. The host uses a side rail
       // during portrait transit, where the display becomes a vertical pair.
-      const screenX = mix(3.8, 0);
-      const screenY = mix(3.0, 2.3);
-      const screenScale = mix(1, 5.5 / 6.4);
-      watchScreen.place(screenX, screenY, 0, screenScale);
-      watchMount.place(mix(-3.7, 0), mix(2.85, 6.3), 0.35, mix(1, 0.83));
+      const screenX = mix(4.7, 0);
+      const screenY = mix(3.75, 2.3);
+      const screenScale = mix(0.88, 5.5 / 6.4);
+      watchScreen.place(screenX, screenY, -1.4, screenScale);
+      watchScreen.group.rotation.y = mix(-0.16, 0);
+      watchMount.place(mix(-2.5, 0), mix(3.48, 6.1), 0.35, mix(1.17, 0.83));
       fitRemaining?.(mix, screenX, screenY, screenScale);
       updateVisibility();
     };
 
     fit(16 / 9);
     update(0, 0);
-    return {group, update, setWatchProgress, fit, dispose};
+    return {group, update, isAnimating: () => targetWatchProgress !== displayedWatchProgress, setWatchProgress, fit, dispose};
   } catch (error) {
     dispose();
     throw error;

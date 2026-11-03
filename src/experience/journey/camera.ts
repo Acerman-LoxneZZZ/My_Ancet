@@ -27,10 +27,10 @@ const singleRooms = [[0], [1], [2], [3]] as const;
 const noRooms: readonly number[] = [];
 
 const keys: Key[] = [
-  {at: 0, position: [8.4, 4.2, 17], look: [0, 3, 0], fov: 36},
-  {at: 0.03, position: [8.4, 4.2, 17], look: [0, 3, 0], fov: 36},
-  {at: 0.07, position: [6.6, 3.85, 12], look: [0, 3, -5], fov: 40},
-  {at: 0.11, position: [0.35, 3.15, 2.5], look: [0, 3, -16], fov: 48},
+  {at: 0, position: [7.8, 2.7, 17], look: [-3.5, 3.4, -0.4], fov: 34},
+  {at: 0.03, position: [7.8, 2.7, 17], look: [-3.5, 3.4, -0.4], fov: 34},
+  {at: 0.07, position: [4.9, 3.0, 10.7], look: [-0.4, 3.3, -5], fov: 40},
+  {at: 0.11, position: [0.15, 3.1, 2.2], look: [0, 3.2, -16], fov: 46},
   {at: 0.14, position: [0, 3, -4], look: [0, 3, -24], fov: 50},
 ];
 for (let room = 0; room < stops.length; room++) {
@@ -40,9 +40,9 @@ for (let room = 0; room < stops.length; room++) {
   for (const offset of [-0.045, 0, 0.045]) {
     keys.push({
       at: at + offset,
-      position: [0, 3.1, z + 12 - offset * (3 / 0.09)],
-      look: [0, 2.8, z],
-      fov: 50,
+      position: [room === 0 ? 0.4 : 0, room === 0 ? 2.6 : 3.1, z + 12 - offset * (3 / 0.09)],
+      look: [room === 0 ? 0.6 : 0, room === 0 ? 3.2 : 2.8, z],
+      fov: room === 0 ? 44 : 50,
       zVelocity: -3 / 0.09,
     });
   }
@@ -124,6 +124,11 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
     }
     position.set(values[0], values[1], values[2]);
     look.set(values[3], values[4], values[5]);
+    const portraitOpening = clamp((1.3 - aspect) / 0.5, 0, 1)
+      * (1 - clamp((p - 0.035) / 0.055, 0, 1));
+    look.x = THREE.MathUtils.lerp(look.x, -0.3, portraitOpening);
+    look.y = THREE.MathUtils.lerp(look.y, 1.65, portraitOpening);
+    position.x = THREE.MathUtils.lerp(position.x, 5.8, portraitOpening);
 
     // Portrait exhibits are stacked by the scene owner. A bounded distance
     // adjustment leaves the opening monolith large and preserves the aisle.

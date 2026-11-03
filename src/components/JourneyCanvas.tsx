@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { createArchitecture } from "../experience/journey/architecture";
 import { createExhibits } from "../experience/journey/exhibits";
 import { createJourneyCamera } from "../experience/journey/camera";
 import { createJourneyReflection } from "../experience/journey/reflection";
 import { JOURNEY_LIMIT } from "../experience/journey/chapters";
+import { createAtelierLighting } from "../experience/journey/lighting";
 
 type Props = {
   onFrame: (progress: number) => void;
@@ -41,36 +41,20 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
-    renderer.setClearColor(0x060a0d, 1);
+    renderer.toneMappingExposure = 1.05;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.autoUpdate = false;
+    renderer.setClearColor(0x080e15, 1);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x060a0d);
-    scene.fog = new THREE.FogExp2(0x060a0d, 0.026);
+    scene.background = new THREE.Color(0x080e15);
+    scene.fog = new THREE.FogExp2(0x101c28, 0.006);
     const camera = new THREE.PerspectiveCamera(50, 1, 0.08, 90);
-    const room = new RoomEnvironment();
-    const pmrem = new THREE.PMREMGenerator(renderer);
-    const environment = pmrem.fromScene(room, 0.07, 0.1, 100);
-    scene.environment = environment.texture;
-    scene.environmentIntensity = 0.7;
-    room.dispose();
-    pmrem.dispose();
-    // Broad softbox lighting travels with the camera; exhibits have their own accents.
-    scene.add(new THREE.HemisphereLight(0xadc6d8, 0x18100b, 1.5));
-    const key = new THREE.DirectionalLight(0xe4f1ff, 3.5);
-    const warm = new THREE.DirectionalLight(0xe8b46f, 1.8);
-    const keyTarget = new THREE.Object3D();
-    const warmTarget = new THREE.Object3D();
-    key.target = keyTarget;
-    warm.target = warmTarget;
-    scene.add(key, warm, keyTarget, warmTarget);
+    const lighting = createAtelierLighting(scene, renderer);
     const architecture = createArchitecture();
     scene.add(architecture.group);
     const reflection = createJourneyReflection();
     scene.add(reflection.floor);
-    const exhibitKey = new THREE.PointLight(0xffefdc, 95, 22, 2);
-    const exhibitFill = new THREE.PointLight(0xdceaff, 40, 20, 2);
-    const exhibitRim = new THREE.PointLight(0xc49b5c, 48, 20, 2);
-    scene.add(exhibitKey, exhibitFill, exhibitRim);
     const rail = createJourneyCamera(camera);
     let exhibits: Awaited<ReturnType<typeof createExhibits>> | undefined;
     let alive = true;
@@ -87,10 +71,20 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     const pointer: [number, number] = [0, 0];
     const raycaster = new THREE.Raycaster();
     const hitPointer = new THREE.Vector2();
-    const centerContact = new THREE.Vector3(0, 3, 0.5);
+    const centerContact = new THREE.Vector3(0.5, 4.8, 0.78);
     let hoverChanged = false;
     let pendingContact: "pointer" | "center" | null = null;
     let interactionUntil = 0;
+    let shadowDirty = true;
+    let lastShadow = -Infinity;
+    let lastFrameProgress = NaN;
+    let viewportWidth = 0, viewportHeight = 0, viewportDpr = 0;
+    let quality = 0;
+    let frameAverage = 16.7;
+    let slowTime = 0, fastTime = 0;
+    let budgetChanged = performance.now();
+    let previousFullCadence = false;
+    let assetsReady = false;
 
     const readScroll = () => {
       target = unit(window.scrollY / maxY) * JOURNEY_LIMIT;
@@ -101,11 +95,18 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       maxY = Math.max(1, document.documentElement.scrollHeight - h);
       // Cap the actual pixel buffer, not the CSS viewport.
       const limit = w < 700 ? 1300 : 1900;
-      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5, limit / Math.max(w, h)));
-      renderer.setSize(w, h, false);
-      rail.fit(w / h);
-      reflection.fit(w / h);
-      exhibits?.fit(w / h);
+      const dpr = Math.min(devicePixelRatio, 1.5, limit / Math.max(w, h));
+      if (w !== viewportWidth || h !== viewportHeight || dpr !== viewportDpr) {
+        viewportWidth = w; viewportHeight = h; viewportDpr = dpr;
+        renderer.setPixelRatio(dpr);
+        renderer.setSize(w, h, false);
+        // Keep gears sharp through the main glass; scale only the floor buffer.
+        renderer.transmissionResolutionScale = 1;
+        rail.fit(w / h);
+        reflection.fit(w / h);
+        exhibits?.fit(w / h);
+        budgetChanged = performance.now();
+      }
       readScroll();
     };
     const onPointer = (e: PointerEvent) => {
@@ -174,13 +175,39 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       pointer[0] = motion.matches ? 0 : px;
       pointer[1] = motion.matches ? 0 : py;
       elapsed += motion.matches ? 0 : dt;
-      // Render at full cadence during travel and at 30 Hz for still exhibits.
-      if (!dirty && !moving && (motion.matches || now - lastRender < 32)) return;
+      const watchAnimating = !motion.matches && !!exhibits?.isAnimating();
+      const fullCadence = moving || watchAnimating;
+      const mechanismAnimating = !motion.matches && progress < 0.17;
+      // Slow mechanical movement keeps a quiet 30 Hz cadence. A settled watch
+      // requires no GPU work until the visitor moves, scrolls or touches it.
+      if (!dirty && !fullCadence && ((!mechanismAnimating && !shadowDirty) || now - lastRender < 32)) return;
+      const invalidated = dirty;
       dirty = false;
+      const renderInterval = now - lastRender;
+      if (assetsReady && fullCadence && previousFullCadence && renderInterval < 100 && now - budgetChanged > 2500) {
+        frameAverage += (renderInterval - frameAverage) * 0.08;
+        slowTime = frameAverage > 24 ? slowTime + renderInterval : 0;
+        fastTime = frameAverage < 18.5 ? fastTime + renderInterval : 0;
+        if ((slowTime > 1200 && quality < 2) || (fastTime > 7000 && quality > 0)) {
+          quality += slowTime > 1200 ? 1 : -1;
+          reflection.setQuality(quality);
+          slowTime = fastTime = 0;
+          budgetChanged = now;
+        }
+      } else {
+        slowTime = fastTime = 0;
+      }
+      previousFullCadence = fullCadence;
       lastRender = now;
       rail.update(progress, pointer, motion.matches);
-      architecture.update(progress, elapsed);
-      exhibits?.update(progress, elapsed);
+      const machineChanged = architecture.update(progress, elapsed);
+      const watchChanged = exhibits?.update(progress, elapsed) ?? false;
+      shadowDirty ||= machineChanged || watchChanged;
+      if (shadowDirty && now - lastShadow >= (fullCadence ? 65 : 160) + quality * 35) {
+        renderer.shadowMap.needsUpdate = true;
+        shadowDirty = false;
+        lastShadow = now;
+      }
       if (progress < 0.16 && (hoverChanged || pendingContact)) {
         hitPointer.set(pointerX, -pointerY);
         raycaster.setFromCamera(hitPointer, camera);
@@ -192,16 +219,13 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
         hoverChanged = false;
         pendingContact = null;
       }
-      key.position.set(camera.position.x - 6, 11, camera.position.z + 3);
-      keyTarget.position.set(0, 2, camera.position.z - 8);
-      warm.position.set(8, 5, camera.position.z - 10);
-      warmTarget.position.set(0, 2, camera.position.z - 14);
-      const lightZ = camera.position.z - 12;
-      exhibitKey.position.set(-3, 7, lightZ + 5);
-      exhibitFill.position.set(5, 5, lightZ + 4);
-      exhibitRim.position.set(-5, 4, lightZ - 3);
+      reflection.prepare(camera, now, machineChanged || watchChanged,
+        invalidated || (watchChanged && !exhibits?.isAnimating()));
       renderer.render(scene, camera);
-      frameCallback.current(progress);
+      if (lastFrameProgress !== progress) {
+        frameCallback.current(progress);
+        lastFrameProgress = progress;
+      }
     };
     const loseContext = (e: Event) => {
       e.preventDefault();
@@ -220,6 +244,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       exhibits.update(progress, elapsed);
       scene.add(exhibits.group);
       dirty = true;
+      shadowDirty = true;
       // Warm all exhibit materials before the visitor reaches the first room.
       // Restore visibility synchronously so no render sees all rooms enabled.
       const visibility = exhibits.group.children.map(child => child.visible);
@@ -227,7 +252,12 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       const compiled = renderer.compileAsync(scene, camera);
       exhibits.group.children.forEach((child, i) => { child.visible = visibility[i]; });
       await compiled;
-      if (alive) statusCallback.current("ready");
+      if (alive) {
+        assetsReady = true;
+        budgetChanged = performance.now();
+        dirty = true;
+        statusCallback.current("ready");
+      }
     }).catch(() => {
       if (alive) statusCallback.current("fallback");
     });
@@ -267,7 +297,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       exhibits?.dispose();
       architecture.dispose();
       reflection.dispose();
-      environment.dispose();
+      lighting.dispose();
       renderer.dispose();
     };
   }, []);

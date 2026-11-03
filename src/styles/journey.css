@@ -34,6 +34,8 @@ html.in-journey { background: #060a0d; scroll-behavior: auto; scroll-padding-top
 .journey-project-caption { display: flex; align-items: end; justify-content: space-between; gap: 32px; bottom: 125px; }
 .journey-project-caption .journey-caption-label { margin-bottom: 12px; }
 .journey-project-caption h2 { font-size: clamp(40px, 4.6vw, 76px); line-height: 1.05; letter-spacing: -.045em; }
+.journey-caption-timepiece h2 { font-size: clamp(36px, 3.5vw, 58px); }
+.journey-caption-timepiece { bottom: 112px; }
 .journey-project-description { font-size: 14px; color: #b3bfc4; margin-top: 12px; }
 .journey-open-project { display: inline-flex; align-items: center; justify-content: space-between; gap: 52px; padding: 16px 0; border-bottom: 1px solid #dce6ed66; font-size: 14px; flex-shrink: 0; transition: color .2s, border-color .2s; }
 .journey-open-project:hover { color: white; border-color: white; }
