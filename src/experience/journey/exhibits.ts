@@ -3,11 +3,12 @@ import {modelAssets, watchManifests} from '../worlds/modelAssets';
 import {cloneModel, materialsOf} from '../worlds/shared';
 import {clampProgress, sampleWatchPart, type WatchPart} from '../watchPose';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
-import {clearTransmission, createAtelierMaterials} from './materials';
+import {createAtelierMaterials} from './materials';
+import {galleryStops, placeGalleryRoom} from './galleryRoute';
+import {journeyChapters} from './chapters';
 
 type Room = {
   group: THREE.Group;
-  center: number;
   start: number;
   end: number;
 };
@@ -39,9 +40,10 @@ const smooth = (start: number, end: number, progress: number): number => {
   return t * t * (3 - 2 * t);
 };
 
-/** The host owns its camera, renderer and environment. Every room faces +Z. */
-export async function createExhibits(options: {openingOnly?: boolean} = {}): Promise<{
+/** Load the watch before bringing in the rest of the portfolio wing. */
+export async function createExhibits(): Promise<{
   group: THREE.Group;
+  loadRemaining(): Promise<void>;
   update(progress: number, time: number): boolean;
   isAnimating(): boolean;
   setWatchProgress(progress: number | null, immediate?: boolean): void;
@@ -56,11 +58,11 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
   const atelier = createAtelierMaterials();
   const images = {} as Record<keyof typeof imagePaths, THREE.Texture>;
   const watchLease = modelAssets.acquire('/assets/models/pocket-watch.glb');
-  const pizzaLease = options.openingOnly ? undefined : modelAssets.acquire('/assets/models/pizza-web.glb');
+  let pizzaLease: ReturnType<typeof modelAssets.acquire> | undefined;
   const manifestLease = watchManifests.acquire('/assets/data/watch-parts.json');
   const rooms: Room[] = [];
   let disposed = false;
-  let portrait = false;
+  let lastAspect = 16 / 9;
   let lastProgress = 0;
 
   const ownGeometry = <T extends THREE.BufferGeometry>(value: T): T => {
@@ -95,19 +97,25 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
 
   try {
     const loader = new THREE.TextureLoader();
-    // Wait for every load to settle before cleanup, including late textures.
-    const loads = await Promise.allSettled([
-      watchLease.promise,
-      ...(pizzaLease ? [pizzaLease.promise] : []),
-      manifestLease.promise,
-      ...Object.entries(imagePaths).filter(([key]) => !options.openingOnly || key === 'watch').map(async ([key, url]) => {
+    const loadImages = async (keys: (keyof typeof imagePaths)[]) => {
+      const loads = await Promise.allSettled(keys.map(async key => {
+        const url = imagePaths[key];
         const texture = await loader.loadAsync(url);
+        if (disposed) { texture.dispose(); return; }
         texture.colorSpace = THREE.SRGBColorSpace;
         texture.anisotropy = 4;
         texture.name = url;
         textures.add(texture);
-        images[key as keyof typeof imagePaths] = texture;
-      }),
+        images[key] = texture;
+      }));
+      const failed = loads.find(result => result.status === 'rejected');
+      if (failed?.status === 'rejected') throw failed.reason;
+    };
+    // Wait for every load to settle before cleanup, including late textures.
+    const loads = await Promise.allSettled([
+      watchLease.promise,
+      manifestLease.promise,
+      loadImages(['watch']),
     ]);
     const failed = loads.find(result => result.status === 'rejected');
     if (failed?.status === 'rejected') throw failed.reason;
@@ -141,37 +149,27 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
     contactMap.needsUpdate = true;
     textures.add(contactMap);
 
-    function contact(parent: THREE.Group, width: number, depth: number, color: string) {
+    function contact(parent: THREE.Group, width: number, depth: number) {
       const shadow = mesh(new THREE.PlaneGeometry(width, depth), ownMaterial(new THREE.MeshBasicMaterial({
         map: contactMap, color: '#000000', transparent: true, opacity: 0.56,
         depthWrite: false, toneMapped: false,
       })));
       shadow.rotation.x = -Math.PI / 2;
       shadow.position.y = 0.018;
-      const glow = mesh(new THREE.PlaneGeometry(width * 0.85, depth * 0.85), ownMaterial(new THREE.MeshBasicMaterial({
-        map: contactMap, color, transparent: true, opacity: 0.10,
-        blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
-      })));
-      glow.rotation.x = -Math.PI / 2;
-      glow.position.set(0, 0.022, 0.12);
-      parent.add(shadow, glow);
+      parent.add(shadow);
     }
 
-    function room(id: string, z: number, center: number, start: number, end: number, accent: string): THREE.Group {
+    function room(index: number): THREE.Group {
+      const chapter = journeyChapters[index + 1];
       const roomGroup = new THREE.Group();
-      roomGroup.name = `journey-room-${id}`;
-      roomGroup.position.z = z;
-      roomGroup.userData.journeyCenter = center;
-      roomGroup.userData.journeyRange = [start, end];
+      roomGroup.name = `journey-room-${chapter.id}`;
+      placeGalleryRoom(roomGroup, galleryStops[index]);
       group.add(roomGroup);
-      rooms.push({group: roomGroup, center, start, end});
-      // The host supplies a fixed light rig. Hiding a room must not change the
-      // shader's light count and trigger compilation in the middle of travel.
-      roomGroup.userData.accent = accent;
+      rooms.push({group: roomGroup, start: chapter.from, end: chapter.to});
       return roomGroup;
     }
 
-    function panel(parent: THREE.Group, name: string, texture: THREE.Texture, width: number, height: number, accent: string): Panel {
+    function panel(parent: THREE.Group, name: string, texture: THREE.Texture, width: number, height: number): Panel {
       const display = new THREE.Group();
       display.name = name;
       parent.add(display);
@@ -187,15 +185,8 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
       const post = mesh(new THREE.BoxGeometry(0.12, 1, 0.14), metal);
       const foot = mesh(new THREE.BoxGeometry(width * 0.42, 0.12, 0.75), darkMetal);
       foot.position.y = 0.06;
-      const reflection = mesh(new THREE.PlaneGeometry(width, height), ownMaterial(new THREE.MeshBasicMaterial({
-        name: `${name} / floor reflection`, map: texture, color: '#9caebe',
-        transparent: true, opacity: 0.075, depthWrite: false,
-        toneMapped: false, side: THREE.DoubleSide,
-      })));
-      reflection.rotation.x = -Math.PI / 2;
-      reflection.visible = !options.openingOnly;
-      display.add(body, post, foot, reflection);
-      contact(display, width * 0.7, 2.5, accent);
+      display.add(body, post, foot);
+      contact(display, width * 0.7, 2.5);
       return {
         group: display,
         place(x, y, z, scale = 1) {
@@ -206,20 +197,18 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
           post.position.set(0, 0.12 + stemHeight / 2, -0.06);
           post.scale.set(1, stemHeight, 1);
           foot.scale.set(scale, 1, scale);
-          reflection.position.set(0, 0.026, 0.30 + height * scale * 0.23);
-          reflection.scale.set(scale, -scale * 0.46, 1);
         },
       };
     }
 
-    function mounted(parent: THREE.Group, object: THREE.Group, height: number, width: number, accent: string): MountedObject {
+    function mounted(parent: THREE.Group, object: THREE.Group, height: number, width: number): MountedObject {
       const mount = new THREE.Group();
       const base = mesh(new THREE.CylinderGeometry(width * 0.46, width * 0.49, 0.22, 48), darkMetal);
       base.position.y = 0.11;
       const column = mesh(new THREE.CylinderGeometry(0.10, 0.14, 1, 20), metal);
       const tray = mesh(new THREE.CylinderGeometry(width * 0.42, width * 0.44, 0.09, 48), metal);
       mount.add(base, column, tray, object);
-      contact(mount, width * 1.5, 3.1, accent);
+      contact(mount, width * 1.5, 3.1);
       parent.add(mount);
       return {
         group: mount,
@@ -238,7 +227,7 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
       };
     }
 
-    const watchRoom = room('timepiece', -24, 0.24, 0.16, 0.34, '#c49b5c');
+    const watchRoom = room(0);
 
     const watchClone = cloneModel(watchSource.scene);
     watchClone.materials.forEach(material => materials.add(material));
@@ -255,41 +244,50 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
       return {object, data};
     });
     const glass = ownMaterial(new THREE.MeshPhysicalMaterial({
-      name: 'Watch / clear optical crystal', color: '#ffffff',
-      metalness: 0, roughness: 0, transmission: 1,
-      thickness: 0.045, ior: 1.46, attenuationColor: '#f1f6fa',
-      attenuationDistance: 30, clearcoat: 0, specularIntensity: 0.65,
-      side: THREE.FrontSide, envMapIntensity: 0.42,
+      name: 'Watch / thin optical crystal', color: '#d5e2e9',
+      roughness: 0.18, ior: 1.46, specularIntensity: 0.5,
+      transparent: true, opacity: 0.08, depthWrite: false,
     }));
-    clearTransmission(glass);
+    // The lens separates during disassembly. Draw it over the full-resolution
+    // scene so the dial and hands stay aligned and sharp behind it.
     watchRoot.getObjectByName('front_glass')?.traverse(object => {
       if (object instanceof THREE.Mesh) {object.material = glass; object.renderOrder = 2;}
     });
+    const dialInk = ownMaterial(new THREE.MeshBasicMaterial({
+      name: 'Watch / charcoal dial printing', color: '#282723',
+    }));
     watchClone.object.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
-      object.castShadow = object.material !== glass;
-      object.receiveShadow = true;
+      object.castShadow = object.receiveShadow = object.material !== glass;
       for (const material of materialsOf(object)) {
-        if (material instanceof THREE.MeshStandardMaterial && /brass|steel|aged case/i.test(material.name)) {
-          material.roughnessMap = atelier.brushing;
-          material.bumpMap = atelier.machining;
-          material.bumpScale = 0.0005;
-          material.envMapIntensity = 0.9;
-          material.roughness = /polished/i.test(material.name) ? 0.2 : 0.33;
+        if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+        if (material.name === 'Blued steel hands') {
+          material.color.set('#172b40');
+          material.metalness = 0.72;
+          material.roughness = 0.34;
+        } else if (/brass|steel|aged case/i.test(material.name)) {
+          material.roughness = /polished/i.test(material.name) ? 0.28 : 0.39;
+        } else if (/enamel$/i.test(material.name)) {
+          material.roughness = 0.63;
         }
-        if (material instanceof THREE.MeshStandardMaterial && material.name === 'Charcoal dial printing') {
-          material.color.set('#18212a');
-          material.metalness = 0;
-          material.roughness = 0.8;
-          material.envMapIntensity = 0.2;
-        }
+      }
+    });
+    watchRoot.getObjectByName('dial_face')?.traverse(object => {
+      if (!(object instanceof THREE.Mesh)) return;
+      object.receiveShadow = false;
+      if (object.material.name === 'Charcoal dial printing') {
+        // The outer scales were partly embedded in the enamel in the export.
+        object.position.z += 0.005;
+        object.material = dialInk;
+        object.castShadow = false;
+      } else if (object.material.name === 'Recessed seconds enamel') {
+        // Bring the inset ahead of the coplanar grooves on the main face.
+        object.position.z += 0.0032;
       }
     });
     const watchBounds = new THREE.Box3().setFromObject(watchClone.object);
     const watchSize = watchBounds.getSize(new THREE.Vector3());
     const watchScale = Math.min(4 / Math.max(0.001, watchSize.y), 3.4 / Math.max(0.001, watchSize.x));
-    // thickness is in model space; compensate for the enlarged display model.
-    glass.thickness = 0.025 / watchScale;
     const watchCenter = watchBounds.getCenter(new THREE.Vector3());
     watchClone.object.position.sub(watchCenter);
     const watchNormalized = new THREE.Group();
@@ -311,7 +309,7 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
     inset.position.y = 0.96;
     plinth.add(plinthBody, plinthTop, inset);
     watchRoom.add(plinth, watchObject);
-    contact(plinth, 7.5, 5.2, '#a1824d');
+    contact(plinth, 7.5, 5.2);
     const watchMount = {
       place(x: number, y: number, z: number, scale = 1) {
         watchObject.position.set(x, y, z);
@@ -320,84 +318,92 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
         plinth.scale.set(scale, 1, scale);
       },
     };
-    const watchScreen = panel(watchRoom, 'timepiece-original-screen', images.watch, 6.4, 3.6, '#c49b5c');
+    const watchScreen = panel(watchRoom, 'timepiece-original-screen', images.watch, 6.4, 3.6);
 
     let fitRemaining: ((mix: (wide: number, narrow: number) => number, screenX: number, screenY: number, screenScale: number) => void) | undefined;
     let updateRemaining: ((progress: number) => void) | undefined;
-    if (pizzaLease) {
-    const pizzaSource = await pizzaLease.promise;
-    const faroRoom = room('faro', -52, 0.42, 0.34, 0.52, '#e66744');
-    const egyptRoom = room('egypt', -80, 0.60, 0.52, 0.70, '#dcb878');
-    const wordflowRoom = room('wordflow', -108, 0.78, 0.70, 0.88, '#c4b6f5');
-    const pizzaClone = cloneModel(pizzaSource.scene);
-    pizzaClone.materials.forEach(material => materials.add(material));
-    pizzaClone.object.traverse(object => {
-      if (!(object instanceof THREE.Mesh)) return;
-      for (const material of materialsOf(object)) if (material instanceof THREE.MeshStandardMaterial) {
-        material.side = THREE.FrontSide;
-        material.metalness = 0;
-        material.roughness = 0.62;
-        material.envMapIntensity = 0.45;
-      }
-    });
-    const pizzaBounds = new THREE.Box3().setFromObject(pizzaClone.object);
-    const pizzaSize = pizzaBounds.getSize(new THREE.Vector3());
-    const pizzaScale = 3.45 / Math.max(0.001, pizzaSize.x, pizzaSize.z);
-    pizzaClone.object.position.sub(pizzaBounds.getCenter(new THREE.Vector3()));
-    const pizzaNormalized = new THREE.Group();
-    pizzaNormalized.scale.setScalar(pizzaScale);
-    pizzaNormalized.add(pizzaClone.object);
-    const pizzaObject = new THREE.Group();
-    pizzaObject.name = 'journey-original-pizza';
-    pizzaObject.rotation.set(1.04, 0.04, -0.06);
-    const plate = mesh(new THREE.CylinderGeometry(1.92, 1.86, 0.10, 64), ownMaterial(new THREE.MeshPhysicalMaterial({
-      name: 'FARO / presentation ceramic', color: '#343831', metalness: 0,
-      roughness: 0.34, clearcoat: 0.48, clearcoatRoughness: 0.18,
-    })));
-    plate.position.y = -pizzaSize.y * pizzaScale / 2 - 0.07;
-    pizzaObject.add(pizzaNormalized, plate);
-    const pizzaMount = mounted(faroRoom, pizzaObject, 3.5, 4.0, '#e66744');
-    const faroScreen = panel(faroRoom, 'faro-original-screen', images.faro, 6.4, 3.6, '#e66744');
-    const menuScreen = panel(faroRoom, 'faro-original-menu', images.menu, 2.8, 1.575, '#e66744');
+    const loadRemaining = async () => {
+      if (disposed) return;
+      pizzaLease = modelAssets.acquire('/assets/models/pizza-web.glb');
+      const keys = (Object.keys(imagePaths) as (keyof typeof imagePaths)[]).filter(key => key !== 'watch');
+      const [pizzaResult, imageResult] = await Promise.allSettled([pizzaLease.promise, loadImages(keys)]);
+      if (disposed) return;
+      if (pizzaResult.status === 'rejected') throw pizzaResult.reason;
+      if (imageResult.status === 'rejected') throw imageResult.reason;
+      const pizzaSource = pizzaResult.value;
+      const faroRoom = room(1);
+      const egyptRoom = room(2);
+      const wordflowRoom = room(3);
+      const pizzaClone = cloneModel(pizzaSource.scene);
+      pizzaClone.materials.forEach(material => materials.add(material));
+      pizzaClone.object.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        for (const material of materialsOf(object)) if (material instanceof THREE.MeshStandardMaterial) {
+          material.side = THREE.FrontSide;
+          material.metalness = 0;
+          material.roughness = 0.62;
+          material.envMapIntensity = 0.45;
+        }
+      });
+      const pizzaBounds = new THREE.Box3().setFromObject(pizzaClone.object);
+      const pizzaSize = pizzaBounds.getSize(new THREE.Vector3());
+      const pizzaScale = 3.45 / Math.max(0.001, pizzaSize.x, pizzaSize.z);
+      pizzaClone.object.position.sub(pizzaBounds.getCenter(new THREE.Vector3()));
+      const pizzaNormalized = new THREE.Group();
+      pizzaNormalized.scale.setScalar(pizzaScale);
+      pizzaNormalized.add(pizzaClone.object);
+      const pizzaObject = new THREE.Group();
+      pizzaObject.name = 'journey-original-pizza';
+      pizzaObject.rotation.set(1.04, 0.04, -0.06);
+      const plate = mesh(new THREE.CylinderGeometry(1.92, 1.86, 0.10, 64), ownMaterial(new THREE.MeshPhysicalMaterial({
+        name: 'FARO / presentation ceramic', color: '#343831', metalness: 0,
+        roughness: 0.34, clearcoat: 0.48, clearcoatRoughness: 0.18,
+      })));
+      plate.position.y = -pizzaSize.y * pizzaScale / 2 - 0.07;
+      pizzaObject.add(pizzaNormalized, plate);
+      const pizzaMount = mounted(faroRoom, pizzaObject, 3.5, 4.0);
+      const faroScreen = panel(faroRoom, 'faro-original-screen', images.faro, 6.4, 3.6);
+      const menuScreen = panel(faroRoom, 'faro-original-menu', images.menu, 2.8, 1.575);
 
-    const portal = new THREE.Group();
-    portal.name = 'journey-original-egypt-portal';
-    const portalWidth = 7.2;
-    const portalHeight = portalWidth * 880 / 1788;
-    const panorama = mesh(new THREE.PlaneGeometry(6.75, 6.75 * 809 / 1942), ownMaterial(new THREE.MeshBasicMaterial({
-      name: 'Egypt / original panorama', map: images.landscape, toneMapped: false, fog: false,
-    })));
-    panorama.position.set(0, -0.12, -0.16);
-    const gateway = mesh(new THREE.PlaneGeometry(portalWidth, portalHeight), ownMaterial(new THREE.MeshBasicMaterial({
-      name: 'Egypt / original gateway', map: images.gateway, transparent: true,
-      alphaTest: 0.025, depthWrite: false, toneMapped: false, fog: false,
-    })));
-    gateway.position.z = 0.025;
-    portal.add(panorama, gateway);
-    const portalMount = mounted(egyptRoom, portal, portalHeight, 7.25, '#dcb878');
-    const egyptScreen = panel(egyptRoom, 'egypt-original-screen', images.egypt, 6.4, 3.6, '#dcb878');
+      const portal = new THREE.Group();
+      portal.name = 'journey-original-egypt-portal';
+      const portalWidth = 7.2;
+      const portalHeight = portalWidth * 880 / 1788;
+      const panorama = mesh(new THREE.PlaneGeometry(6.75, 6.75 * 809 / 1942), ownMaterial(new THREE.MeshBasicMaterial({
+        name: 'Egypt / original panorama', map: images.landscape, toneMapped: false, fog: false,
+      })));
+      panorama.position.set(0, -0.12, -0.16);
+      const gateway = mesh(new THREE.PlaneGeometry(portalWidth, portalHeight), ownMaterial(new THREE.MeshBasicMaterial({
+        name: 'Egypt / original gateway', map: images.gateway, transparent: true,
+        alphaTest: 0.025, depthWrite: false, toneMapped: false, fog: false,
+      })));
+      gateway.position.z = 0.025;
+      portal.add(panorama, gateway);
+      const portalMount = mounted(egyptRoom, portal, portalHeight, 7.25);
+      const egyptScreen = panel(egyptRoom, 'egypt-original-screen', images.egypt, 6.4, 3.6);
 
-    const wordScreen = panel(wordflowRoom, 'wordflow-original-card', images.wordflow, 2.6, 2.6 * 844 / 390, '#c4b6f5');
-    const dictionaryScreen = panel(wordflowRoom, 'wordflow-original-dictionary', images.dictionary, 2.6, 2.6 * 844 / 390, '#91d9ba');
-    fitRemaining = (mix, screenX, screenY, screenScale) => {
-      faroScreen.place(screenX, screenY, 0, screenScale);
-      pizzaMount.place(mix(-3.7, -1.5), mix(2.5, 6.1), 0.45, mix(1, 0.78));
-      menuScreen.place(mix(4.5, 2.1), mix(6.0, 5.7), -0.04, mix(1, 0.75));
-      egyptScreen.place(screenX, screenY, 0, screenScale);
-      portalMount.place(mix(-4.3, 0), mix(2.45, 6.35), -0.10, mix(1, 0.84));
-      wordScreen.place(mix(-2.8, -1.45), mix(3.35, 3.1), 0, mix(1, 0.91));
-      dictionaryScreen.place(mix(2.8, 1.45), mix(3.35, 3.1), 0, mix(1, 0.91));
+      const wordScreen = panel(wordflowRoom, 'wordflow-original-card', images.wordflow, 2.6, 2.6 * 844 / 390);
+      const dictionaryScreen = panel(wordflowRoom, 'wordflow-original-dictionary', images.dictionary, 2.6, 2.6 * 844 / 390);
+      fitRemaining = (mix, screenX, screenY, screenScale) => {
+        faroScreen.place(screenX, screenY, mix(0, 1.25), screenScale);
+        pizzaMount.place(mix(-3.7, -1.5), mix(2.5, 6.1), 0.45, mix(1, 0.78));
+        menuScreen.place(mix(-4.4, 2.1), mix(6.2, 5.7), mix(-0.85, -0.04), mix(1.2, 0.75));
+        egyptScreen.place(screenX, screenY, mix(0, 1.25), screenScale);
+        portalMount.place(mix(-4.3, 0), mix(2.45, 6.35), -0.10, mix(1, 0.84));
+        wordScreen.place(mix(-2.8, -1.45), mix(3.35, 3.1), 0, mix(1, 0.91));
+        dictionaryScreen.place(mix(2.8, 1.45), mix(3.35, 3.1), 0, mix(1, 0.91));
+      };
+      updateRemaining = progress => {
+        pizzaObject.rotation.y = -0.08 + smooth(0.36, 0.42, progress) * 0.16;
+      };
+      fit(lastAspect);
+      updateRemaining(lastProgress);
     };
-    updateRemaining = progress => {
-      pizzaObject.rotation.y = -0.08 + smooth(0.36, 0.42, progress) * 0.16;
-    };
-    }
 
     const updateVisibility = () => {
       for (const entry of rooms) {
-        entry.group.visible = options.openingOnly || (portrait
-          ? lastProgress >= entry.start && lastProgress < entry.end
-          : Math.abs(lastProgress - entry.center) <= 0.14);
+        entry.group.visible = lastProgress <= entry.end + 0.045
+          && (entry.group === watchRoom || lastProgress >= entry.start - 0.12);
       }
     };
     let lastWatchPose = -1;
@@ -449,7 +455,7 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
     const fit = (aspect: number) => {
       if (disposed) return;
       const safeAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1.6;
-      portrait = safeAspect < 1;
+      lastAspect = safeAspect;
       const compact = 1 - smooth(0.82, 1.25, safeAspect);
       const mix = (wide: number, narrow: number) => THREE.MathUtils.lerp(wide, narrow, compact);
       // Desktop keeps the aisle x=-0.5…+0.5 free. The host uses a side rail
@@ -466,7 +472,7 @@ export async function createExhibits(options: {openingOnly?: boolean} = {}): Pro
 
     fit(16 / 9);
     update(0, 0);
-    return {group, update, isAnimating: () => targetWatchProgress !== displayedWatchProgress, setWatchProgress, fit, dispose};
+    return {group, loadRemaining, update, isAnimating: () => targetWatchProgress !== displayedWatchProgress, setWatchProgress, fit, dispose};
   } catch (error) {
     dispose();
     throw error;

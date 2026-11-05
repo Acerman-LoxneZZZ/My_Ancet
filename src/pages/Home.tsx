@@ -3,8 +3,7 @@ import { author, projects } from "../content/portfolio";
 import { PortfolioLink } from "../navigation/NavigationProvider";
 import { Arrow, Mark } from "../components/Icon";
 import { ReactiveName } from "../components/ReactiveName";
-import { JOURNEY_LIMIT, JOURNEY_SCROLL_SVH, journeyChapters, chapterIndex, seekJourney } from "../experience/journey/chapters";
-const openingChapters = journeyChapters.slice(0, 2);
+import { FINALE_FROM, JOURNEY_LIMIT, JOURNEY_SCROLL_SVH, journeyChapters, chapterIndex, seekJourney } from "../experience/journey/chapters";
 
 const JourneyCanvas = lazy(() => import("../components/JourneyCanvas"));
 const smooth = (a: number, b: number, n: number) => {
@@ -32,11 +31,13 @@ export function Home() {
     page.style.setProperty("--journey-progress", String(p / JOURNEY_LIMIT));
     const next = chapterIndex(p);
     if (activeRef.current !== next) { activeRef.current = next; setActive(next); }
+    const openingOpacity = 1 - smooth(0.035, 0.095, p);
     page.querySelectorAll<HTMLElement>("[data-journey-panel]").forEach((panel, i) => {
       const center = journeyChapters[i].at;
-      const opacity = i === 0 ? 1 - smooth(0.035, 0.095, p)
-        : i === 5 ? smooth(0.9, 0.955, p)
-        : smooth(center - 0.075, center - 0.035, p) * (1 - smooth(center + 0.04, center + 0.08, p));
+      const opacity = i === 0 ? openingOpacity
+        : smooth(center - 0.075, center - 0.035, p)
+          * (i === projects.length ? 1 - smooth(FINALE_FROM, FINALE_FROM + 0.035, p)
+            : 1 - smooth(center + 0.04, center + 0.08, p));
       panel.style.opacity = String(opacity);
       panel.style.transform = `translate3d(0,${(1 - opacity) * 16}px,0)`;
       panel.inert = opacity < 0.12;
@@ -58,12 +59,16 @@ export function Home() {
     read();
     return () => { window.removeEventListener("scroll", read); window.removeEventListener("journey:seek", seek); };
   }, [status, frame]);
+  const next = journeyChapters[active + 1];
+  const nextLabel = active === 1 ? "К FARO" : next?.id === "finale" ? "К букве И" : next ? "Дальше" : "Сначала";
   return (
-    <main id="main" ref={root} className={`journey-page is-${status}`}>
+    <main id="main" ref={root} className={`journey-page is-${status}`} style={{ height: `${JOURNEY_SCROLL_SVH + 100}svh` }}>
       <div className="journey-stage">
         <Suspense fallback={null}><JourneyCanvas onFrame={frame} onStatus={setStatus} paused={indexOpen || status === "fallback"} /></Suspense>
         <div className="journey-vignette" aria-hidden="true" />
-        {status === "fallback" && <div className="journey-fallback" aria-hidden="true"><img src={projects[Math.max(0, Math.min(3, active - 1))].screen} alt="" /></div>}
+        {status === "fallback" && <div className="journey-fallback" aria-hidden="true">
+          {next ? <img src={projects[active - 1]?.screen ?? "/assets/images/monolith-fallback.svg"} alt="" /> : <span className="journey-fallback-letter">И</span>}
+        </div>}
       </div>
       <header className="journey-header">
         <button className="journey-wordmark" onClick={() => seekJourney(0)} aria-label="LOXNE — к началу путешествия"><Mark /><span>LOXNE</span></button>
@@ -83,16 +88,16 @@ export function Home() {
             <button className="journey-touch" onClick={() => window.dispatchEvent(new Event("journey:touch"))}>Коснуться поверхности</button>
           </div>
         </section>
-        {projects.slice(0, 1).map((p, i) => <section key={p.id} data-journey-panel={p.id} className={`journey-panel journey-project-caption journey-caption-${p.id}`} style={{ opacity: 0, pointerEvents: "none" }} aria-hidden="true" inert>
+        {projects.map((p, i) => <section key={p.id} data-journey-panel={p.id} className={`journey-panel journey-project-caption journey-caption-${p.id}`} style={{ opacity: 0, pointerEvents: "none" }} aria-hidden="true" inert>
           <div className="journey-project-heading">
             <p className="journey-caption-label">{p.number} / 04 <span>{p.kicker}</span></p>
             <h2 id={`world-${p.id}-title`} tabIndex={-1}>{p.title}</h2>
             <p className="journey-project-description">{descriptions[i]}</p>
-            <div className="journey-watch-control">
+            {p.id === "timepiece" && <div className="journey-watch-control">
               <label htmlFor="journey-disassembly">Раздвиньте детали</label>
               <input id="journey-disassembly" type="range" min="0" max="100" value={watchSetting} aria-label="Разборка часов" onChange={e => { const value = Number(e.target.value); setWatchSetting(value); window.dispatchEvent(new CustomEvent("journey:watch", { detail: value / 100 })); }} />
               <button onClick={() => { setWatchSetting(52); window.dispatchEvent(new CustomEvent("journey:watch", { detail: null })); }}>Авто</button>
-            </div>
+            </div>}
           </div>
           <PortfolioLink className="journey-open-project" to={`/work/${p.id}`}><span>Внутри проекта</span><Arrow /></PortfolioLink>
         </section>)}
@@ -100,15 +105,15 @@ export function Home() {
       <p className="journey-passage" aria-hidden="true">По ту сторону формы</p>
       <div className="journey-position" aria-hidden="true"><span>{String(active).padStart(2, "0")}</span><span>{journeyChapters[active].title}</span></div>
       <footer className="journey-controls">
-        <span className="journey-scroll-cue">{status === "loading" ? "Открываем пространство…" : active === 0 ? "Прокрутите, чтобы войти" : "Механизм в ваших руках"}</span>
+        <span className="journey-scroll-cue">{status === "loading" ? "Открываем пространство…" : active === 0 ? "Прокрутите, чтобы войти" : active === 1 ? "Механизм в ваших руках" : next ? "Листайте, чтобы пройти дальше" : "Финальный зал"}</span>
         <nav className="journey-rail" aria-label="Остановки путешествия">
           <span className="journey-rail-line" aria-hidden="true"><i /></span>
-          {openingChapters.map((chapter, i) => <button key={chapter.id} className={i === active ? "is-active" : ""} onClick={() => seekJourney(chapter.at)} aria-current={i === active ? "step" : undefined} aria-label={chapter.title} title={chapter.title}><span className="journey-rail-dot" /><span className="journey-rail-number">{String(i).padStart(2, "0")}</span></button>)}
+          {journeyChapters.map((chapter, i) => <button key={chapter.id} className={i === active ? "is-active" : ""} onClick={() => seekJourney(chapter.at)} aria-current={i === active ? "step" : undefined} aria-label={chapter.title} title={chapter.title}><span className="journey-rail-dot" /><span className="journey-rail-number">{String(i).padStart(2, "0")}</span></button>)}
         </nav>
-        <button className="journey-next" onClick={() => seekJourney(active === 1 ? 0 : 0.24)}>{active === 1 ? "Сначала" : "Дальше"} <Arrow direction={active === 1 ? "up" : "right"} /></button>
+        <button className="journey-next" onClick={() => seekJourney(next?.at ?? 0)}>{nextLabel} <Arrow direction={next ? "right" : "up"} /></button>
       </footer>
       <div className="journey-markers" aria-hidden="true">
-        {openingChapters.map((c, i) => <div key={c.id} className="journey-marker" id={i === 0 ? "intro" : `work-${c.id}`} data-chapter={c.id} style={{ top: `${Math.max(0, c.at - 0.04) / JOURNEY_LIMIT * JOURNEY_SCROLL_SVH}svh`, height: `${(i === 0 ? 0.04 : 0.08) / JOURNEY_LIMIT * JOURNEY_SCROLL_SVH + 100}svh` }} />)}
+        {journeyChapters.filter(c => c.id !== "finale").map((c, i) => <div key={c.id} className="journey-marker" id={i === 0 ? "intro" : `work-${c.id}`} data-chapter={c.id} style={{ top: `${Math.max(0, c.at - 0.04) / JOURNEY_LIMIT * JOURNEY_SCROLL_SVH}svh`, height: `${(i === 0 ? 0.04 : 0.08) / JOURNEY_LIMIT * JOURNEY_SCROLL_SVH + 100}svh` }} />)}
         <span id="works" style={{ top: `${0.24 / JOURNEY_LIMIT * JOURNEY_SCROLL_SVH}svh` }} />
       </div>
       <dialog ref={indexDialog} className="journey-index" aria-labelledby="journey-index-title" onCancel={() => setIndexOpen(false)} onClose={() => setIndexOpen(false)}>

@@ -48,15 +48,15 @@ export function createAtelierLighting(scene: THREE.Scene, renderer: THREE.WebGLR
   const left = new THREE.RectAreaLight("#d8e9ff", 1.6, 4, 8);
   left.position.set(-7, 5.5, 5);
   left.lookAt(0, 3.1, 0);
-  const gold = new THREE.RectAreaLight("#e8be80", 3.8, 3.8, 5.5);
+  const gold = new THREE.RectAreaLight("#f5dbb5", 2.4, 4.8, 5.5);
   gold.position.set(-4.2, 5.8, -20);
   gold.lookAt(-2.0, 3, -24);
   const watchRim = new THREE.SpotLight("#b4d7fa", 100, 24, 0.65, 0.85, 2);
   watchRim.position.set(2.5, 9.7, -29);
   watchRim.target.position.set(-2.3, 3.3, -24);
-  const warmFill = new THREE.PointLight("#f9d89d", 50, 18, 2);
-  warmFill.position.set(-4.5, 4.5, -20.5);
-  owned.push(ambient, key, key.target, rim, left, gold, watchRim, watchRim.target, warmFill);
+  const watchFill = new THREE.PointLight("#e7edf3", 20, 18, 2);
+  watchFill.position.set(0.2, 3.9, -19.5);
+  owned.push(ambient, key, key.target, rim, left, gold, watchRim, watchRim.target, watchFill);
   scene.add(...owned);
   return {
     environment,

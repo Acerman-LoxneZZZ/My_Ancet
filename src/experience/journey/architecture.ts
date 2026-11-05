@@ -1,20 +1,25 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { clearTransmission, createAtelierMaterials } from "./materials";
+import { createAtelierMaterials, createClearGlass } from "./materials";
 import { createMachine } from "./machine";
 import { batchRigidMeshes } from "./batching";
+import { bendGalleryPoint, finaleRoom, galleryFloor, galleryStops, placeGalleryRoom, wingX, wingZ } from "./galleryRoute";
 
-/** The opening gallery only. The existing case pages keep their own worlds. */
+/** The entrance and adjoining portfolio wing share the same material library. */
 export function createArchitecture() {
   const group = new THREE.Group();
   group.name = "Atelier / mechanical crystal hall";
   const materials = createAtelierMaterials();
   const machine = createMachine(materials);
+  const finale = createMachine(materials, true);
   group.add(machine.group);
+  finale.group.position.set(finaleRoom.x, 3, finaleRoom.z);
+  finale.group.rotation.y = Math.PI - 0.08;
+  finale.group.visible = false;
+  group.add(finale.group);
   const geometries = new Set<THREE.BufferGeometry>();
   const own = <T extends THREE.BufferGeometry>(value: T) => { geometries.add(value); return value; };
   const block = own(new RoundedBoxGeometry(1, 1, 1, 2, 0.035));
-  const plane = own(new THREE.PlaneGeometry(1, 1));
   function box(material: THREE.Material, size: [number, number, number], position: [number, number, number], parent: THREE.Object3D = group) {
     const object = new THREE.Mesh(block, material);
     object.scale.set(...size);
@@ -23,9 +28,9 @@ export function createArchitecture() {
     parent.add(object);
     return object;
   }
-  const floor = new THREE.Mesh(own(new THREE.PlaneGeometry(40, 82)), materials.stone);
+  const floor = new THREE.Mesh(own(new THREE.PlaneGeometry(galleryFloor.width, galleryFloor.depth)), materials.stone);
   floor.rotation.x = -Math.PI / 2;
-  floor.position.set(0, -0.045, -22);
+  floor.position.set(galleryFloor.x, -0.045, galleryFloor.z);
   floor.receiveShadow = true;
   group.add(floor);
 
@@ -37,29 +42,31 @@ export function createArchitecture() {
   }));
   const groundShadows = new THREE.Mesh(floor.geometry, receiver);
   groundShadows.rotation.x = -Math.PI / 2;
-  groundShadows.position.set(0, -0.028, -22);
+  groundShadows.position.set(galleryFloor.x, -0.028, galleryFloor.z);
   groundShadows.receiveShadow = true;
   group.add(groundShadows);
 
-  // Grounded foundations and expansion joints establish a human-sized hall.
-  box(materials.black, [8.05, 0.16, 2.35], [0, 0.01, 0]);
-  box(materials.silver, [8.1, 0.027, 2.4], [0, 0.095, 0]);
+  const pedestalGeometry = own(new RoundedBoxGeometry(8.1, 0.155, 2.4, 2, 0.025));
+  const pedestal = new THREE.Mesh(pedestalGeometry, materials.trim);
+  pedestal.position.y = 0.0425;
+  pedestal.castShadow = pedestal.receiveShadow = true;
+  group.add(pedestal);
   // Sparse joints remain below the reflection skin, so they cannot alias into dots.
   for (let z = 9; z > -49; z -= 9.6) {
     box(materials.black, [34, 0.006, 0.018], [0, -0.041, z]);
   }
   // Deep side walls, pilasters, inset panels and visible metal junctions.
   for (const side of [-1, 1]) {
-    box(materials.black, [0.8, 12.7, 67], [side * 10.9, 6.2, -19]);
-    box(materials.steel, [0.28, 0.38, 65], [side * 10.24, 0.22, -19]);
+    const length = side === 1 ? 42.8 : 67;
+    const middle = 14.5 - length / 2;
+    box(materials.black, [0.8, 12.7, length], [side * 10.9, 6.2, middle]);
+    box(materials.steel, [0.28, 0.38, length], [side * 10.24, 0.22, middle]);
     for (const z of [8, -1.5, -11.5, -22.5, -34, -46]) {
+      if (side === 1 && z < -28) continue;
       box(materials.stone, [0.78, 11.2, 0.94], [side * 9.9, 5.6, z]);
       box(materials.steel, [1.1, 0.24, 1.23], [side * 9.9, 0.14, z]);
-      box(materials.silver, [0.045, 10.9, 0.12], [side * 9.46, 5.65, z + 0.27]);
+      box(materials.trim, [0.065, 10.9, 0.12], [side * 9.46, 5.65, z + 0.27]);
       box(materials.steel, [0.43, 0.22, 0.73], [side * 9.45, 8.3, z]);
-      const source = box(z < -15 ? materials.glow : materials.coolGlow,
-        [0.025, 6.9, 0.05], [side * 10.43, 4.45, z - 3.2]);
-      source.castShadow = false;
       // A broad recessed slab gives highlights a physical neighbour and depth.
       box(materials.steel, [0.16, 7.1, 3.6], [side * 10.39, 4.45, z - 2.1]);
       box(materials.black, [0.17, 0.16, 3.8], [side * 10.23, 8.1, z - 2.1]);
@@ -69,17 +76,9 @@ export function createArchitecture() {
   for (let z = 5; z > -47; z -= 5.8) {
     box(materials.steel, [20, 0.28, 0.4], [0, 11.7, z]);
     box(materials.black, [18.7, 0.19, 1.6], [0, 11.95, z - 1.2]);
-    box(materials.coolGlow, [5.2, 0.025, 0.055], [0, 11.53, z - 0.3]).castShadow = false;
   }
   // Faceted optical partitions frame the crossing on several depth planes.
-  const partitionMaterial = materials.own(new THREE.MeshPhysicalMaterial({
-    name: "Gallery / clear optical partition",
-    color: "#ffffff", transmission: 1, thickness: 0.24, ior: 1.40,
-    roughness: 0, metalness: 0, clearcoat: 0,
-    attenuationColor: "#f1f6fa", attenuationDistance: 30,
-    specularIntensity: 0.65, envMapIntensity: 0.42,
-  }));
-  clearTransmission(partitionMaterial);
+  const partitionMaterial = materials.own(createClearGlass("Gallery / clear optical partition"));
   const partitionShape = new THREE.Shape();
   partitionShape.moveTo(-1.6, 0);
   partitionShape.lineTo(1.6, 0);
@@ -106,20 +105,20 @@ export function createArchitecture() {
     const crystal = new THREE.Mesh(partitionGeometry, partitionMaterial);
     partition.add(crystal);
     box(materials.steel, [3.5, 0.12, 0.55], [0, 0.03, 0.12], partition);
-    box(materials.silver, [0.035, 9.2, 0.10], [-1.57, 4.65, 0.17], partition);
-    box(materials.silver, [0.035, 8.1, 0.10], [1.57, 4.1, 0.17], partition);
+    box(materials.trim, [0.06, 9.2, 0.10], [-1.57, 4.65, 0.17], partition);
+    box(materials.trim, [0.06, 8.1, 0.10], [1.57, 4.1, 0.17], partition);
     group.add(partition);
   }
 
-  // The inner chamber ends with a real relief wall, arch and warm reveal.
+  // The watch alcove keeps its relief wall. The aisle opens on its right.
   const chamber = new THREE.Group();
   chamber.position.set(-2.2, 0, -28);
   group.add(chamber);
-  box(materials.black, [20.8, 11.8, 0.9], [2.2, 5.9, -6], chamber);
-  for (let i = 0; i < 9; i++) {
+  box(materials.black, [9.8, 11.8, 0.9], [-3.3, 5.9, -6], chamber);
+  for (let i = 0; i < 5; i++) {
     const x = -7.2 + i * 1.85;
     box(materials.steel, [0.13, 9.6, 0.3], [x, 5.0, -5.4], chamber);
-    box(materials.brass, [0.028, 8.5, 0.045], [x + 0.18, 4.8, -5.2], chamber);
+    box(materials.trim, [0.055, 8.5, 0.045], [x + 0.18, 4.8, -5.2], chamber);
   }
   const archShape = new THREE.Shape();
   archShape.moveTo(-4.9, 0);
@@ -139,23 +138,94 @@ export function createArchitecture() {
   arch.castShadow = true;
   chamber.add(arch);
   for (const side of [-1, 1]) {
-    box(materials.polished, [0.04, 5.15, 0.06], [side * 4.48, 2.7, -1.42], chamber);
-    box(materials.glow, [0.03, 4.9, 0.045], [side * 4.63, 2.7, -1.55], chamber).castShadow = false;
+    box(materials.steel, [0.04, 5.15, 0.06], [side * 4.48, 2.7, -1.42], chamber);
   }
-  // A few floating dust motes are a scale cue, not a screen-space wash.
-  const dustPositions = new Float32Array(210 * 3);
-  for (let i = 0; i < 210; i++) {
-    dustPositions[i * 3] = Math.sin(i * 127.1) * 8.8;
-    dustPositions[i * 3 + 1] = 0.7 + ((i * 37.13) % 8.1);
-    dustPositions[i * 3 + 2] = 7 - ((i * 13.73) % 45);
+
+  // A continuous floor and a full-width opening reveal the second wing at the turn.
+  const wing = new THREE.Group();
+  wing.name = "Gallery / projects after the bend";
+  group.add(wing);
+  const endX = wingX(118);
+  const wingLength = endX - 10.5;
+  const wingMiddle = 10.5 + wingLength / 2;
+  box(materials.black, [22, 12.7, 0.8], [0, 6.2, wingZ - 9.7]);
+  const doorZ = wingZ + 9.7;
+  const halfFinale = finaleRoom.width / 2;
+  const doorLeft = finaleRoom.x - halfFinale;
+  const doorRight = finaleRoom.x + halfFinale;
+  function wingWall(from: number, to: number, side: number) {
+    const length = to - from;
+    const middle = (from + to) / 2;
+    box(materials.black, [length, 12.7, 0.8], [middle, 6.2, wingZ + side * 9.7], wing);
+    box(materials.steel, [length, 0.28, 0.20], [middle, 0.18, wingZ + side * 9.15], wing);
   }
-  const dustGeometry = own(new THREE.BufferGeometry());
-  dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
-  const dust = new THREE.Points(dustGeometry, materials.own(new THREE.PointsMaterial({
-    color: "#beced4", size: 0.022, transparent: true, opacity: 0.28,
-    depthWrite: false, sizeAttenuation: true,
-  })));
-  group.add(dust);
+  wingWall(10.5, endX, -1);
+  wingWall(10.5, doorLeft, 1);
+  wingWall(doorRight, endX, 1);
+  box(materials.black, [wingLength, 0.32, 19.6], [wingMiddle, 12.2, wingZ], wing);
+  box(materials.black, [0.85, 12.7, 19.6], [endX, 6.2, wingZ], wing);
+
+  const finalHall = new THREE.Group();
+  finalHall.name = "Gallery / final letter chamber";
+  group.add(finalHall);
+  const rearZ = finaleRoom.z + 4;
+  const hallLength = rearZ - doorZ;
+  const hallMiddle = (rearZ + doorZ) / 2;
+  for (const side of [-1, 1]) {
+    const x = finaleRoom.x + halfFinale * side;
+    box(materials.black, [0.82, 12.7, hallLength], [x, 6.2, hallMiddle], finalHall);
+    box(materials.steel, [0.40, 11.55, 0.85], [x - side * 0.5, 5.77, doorZ], finalHall);
+    box(materials.steel, [0.40, 10.9, 0.62], [x - side * 0.5, 5.45, finaleRoom.z - 2.9], finalHall);
+  }
+  box(materials.black, [finaleRoom.width + 0.8, 12.7, 0.85], [finaleRoom.x, 6.2, rearZ], finalHall);
+  box(materials.black, [finaleRoom.width + 0.8, 0.32, hallLength], [finaleRoom.x, 12.2, hallMiddle], finalHall);
+  box(materials.steel, [finaleRoom.width, 0.38, 0.76], [finaleRoom.x, 11.66, doorZ], finalHall);
+  const finalArch = new THREE.Mesh(arch.geometry, materials.steel);
+  finalArch.position.set(finaleRoom.x, 0, finaleRoom.z + 2.1);
+  finalArch.rotation.y = Math.PI;
+  finalHall.add(finalArch);
+  const finalPedestal = new THREE.Mesh(pedestalGeometry, materials.trim);
+  finalPedestal.position.set(finaleRoom.x, 0.0425, finaleRoom.z);
+  finalHall.add(finalPedestal);
+  const finaleLight = new THREE.PointLight("#efdbc0", 32, 19, 2);
+  finaleLight.position.set(finaleRoom.x + 1.1, 6.2, finaleRoom.z - 4.5);
+  finalHall.add(finaleLight);
+
+  const roomColors = ["#6c3328", "#66523b", "#353c55"];
+  galleryStops.slice(1).forEach((distance, index) => {
+    const room = new THREE.Group();
+    placeGalleryRoom(room, distance);
+    wing.add(room);
+    const accent = materials.own(materials.steel.clone());
+    accent.color.set(roomColors[index]);
+    accent.metalness = 0.35;
+    accent.roughness = 0.56;
+    for (const side of [-1, 1]) {
+      box(accent, [6.15, 10.4, 0.48], [side * 6.0, 5.2, -4.0], room);
+      box(materials.stone, [0.35, 10.9, 0.70], [side * 2.95, 5.45, -3.7], room);
+      box(materials.trim, [0.065, 9.8, 0.1], [side * 3.18, 4.9, -3.43], room);
+      box(materials.steel, [0.55, 9.6, 0.75], [side * 8.85, 4.8, 5.5], room);
+    }
+    box(materials.steel, [18.2, 0.32, 0.85], [0, 10.55, -3.72], room);
+    box(materials.steel, [18.2, 0.27, 0.66], [0, 11.65, 5.5], room);
+    const light = new THREE.PointLight(["#ffd3a6", "#f9dfb9", "#ccdcff"][index], 32, 17, 2);
+    light.position.set(-2.8, 5.3, 4.4);
+    room.add(light);
+  });
+
+  // Slim metal inlays turn with the camera rail and carry the eye into the wing.
+  for (const side of [-1, 1]) {
+    for (let distance = 26; distance < 110; distance += 3) {
+      const start = new THREE.Vector3(side * 2.25, 0, -distance);
+      const end = new THREE.Vector3(side * 2.25, 0, -distance - 2.55);
+      bendGalleryPoint(start);
+      bendGalleryPoint(end);
+      const strip = box(materials.polished, [0.028, 0.012, start.distanceTo(end)],
+        [(start.x + end.x) / 2, -0.009, (start.z + end.z) / 2], wing);
+      strip.rotation.y = Math.atan2(start.x - end.x, start.z - end.z);
+      strip.castShadow = false;
+    }
+  }
   const fill = new THREE.PointLight("#f0b46c", 24, 16, 2);
   fill.position.set(-2.2, 4.7, -26);
   const interior = new THREE.PointLight("#e5ae63", 2.0, 12, 2);
@@ -164,14 +234,15 @@ export function createArchitecture() {
   const disposeInstances = batchRigidMeshes(group);
   return {
     group,
-    surfaces: machine.surfaces,
-    hover: machine.hover,
+    finale: finale.group,
     interact: machine.interact,
     update(progress: number, time: number) {
-      return machine.update(progress, time);
+      const machineChanged = machine.update(progress, time);
+      return finale.update(progress, time) || machineChanged;
     },
     dispose() {
       machine.dispose();
+      finale.dispose();
       group.removeFromParent();
       group.clear();
       geometries.forEach(value => value.dispose());

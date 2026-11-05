@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { clearTransmission, type AtelierMaterials } from "./materials";
+import { createClearGlass, type AtelierMaterials } from "./materials";
 import { batchRigidMeshes } from "./batching";
+import { FINALE_FROM, JOURNEY_LIMIT } from "./chapters";
 
 type Point = readonly [number, number];
 type Rotor = { object: THREE.Group; phase: number; speed: number };
@@ -12,74 +13,16 @@ const smooth = (a: number, b: number, value: number) => {
 };
 
 /** Crystal shell, recessed load-bearing chassis, stepped shafts and bridges. */
-export function createMachine(m: AtelierMaterials) {
+export function createMachine(m: AtelierMaterials, finale = false) {
   const group = new THREE.Group();
-  group.name = "LOXNE / optical mechanical cabinet";
+  group.name = finale ? "LOXNE / mechanical Cyrillic И" : "LOXNE / optical mechanical cabinet";
   group.position.y = 3;
   const geometries = new Set<THREE.BufferGeometry>();
   const batches = new Set<THREE.InstancedMesh>();
   const own = <T extends THREE.BufferGeometry>(value: T) => { geometries.add(value); return value; };
-  const surfaces: THREE.Object3D[] = [];
   const leaves: Leaf[] = [];
   const rotors: Rotor[] = [];
-  const interaction = {
-    uContact: { value: new THREE.Vector3(0, 3, 0.78) },
-    uWaveAge: { value: 10 }, uStrength: { value: 0 },
-    uHover: { value: new THREE.Vector3(0, 3, 0.78) },
-    uHoverStrength: { value: 0 },
-  };
-  const glass = m.own(new THREE.MeshPhysicalMaterial({
-    name: "Clear optical crystal / physical transmission",
-    color: "#ffffff", metalness: 0, roughness: 0,
-    transmission: 1,
-    thickness: 1.15, ior: 1.42, attenuationColor: "#f1f6fa",
-    attenuationDistance: 30, clearcoat: 0,
-    specularIntensity: 0.65, envMapIntensity: 0.42, side: THREE.FrontSide,
-  }));
-  glass.onBeforeCompile = shader => {
-    Object.assign(shader.uniforms, interaction);
-    const declarations = `
-      uniform vec3 uContact; uniform float uWaveAge; uniform float uStrength;
-      varying vec3 vCabinetWorld;
-      vec2 cabinetWave(float r) {
-        float d = r - uWaveAge * 3.4;
-        float e = exp(-d * d / .28) * exp(-uWaveAge * 1.3) * uStrength;
-        return vec2(sin(d * 11.) * e, (11. * cos(d * 11.) - 2. * d / .28 * sin(d * 11.)) * e);
-      }
-    `;
-    shader.vertexShader = declarations + shader.vertexShader;
-    shader.vertexShader = shader.vertexShader.replace("#include <begin_vertex>", `
-      #include <begin_vertex>
-      vec3 restWorld = (modelMatrix * vec4(transformed, 1.)).xyz;
-      transformed += objectNormal * cabinetWave(length(restWorld - uContact)).x * .16;
-    `).replace("#include <worldpos_vertex>", `
-      #include <worldpos_vertex>
-      vCabinetWorld = (modelMatrix * vec4(transformed, 1.)).xyz;
-    `);
-    shader.fragmentShader = declarations + `
-      uniform vec3 uHover; uniform float uHoverStrength;
-    ` + shader.fragmentShader;
-    shader.fragmentShader = shader.fragmentShader.replace("#include <normal_fragment_maps>", `
-      #include <normal_fragment_maps>
-      vec3 deltaContact = vCabinetWorld - uContact;
-      vec3 radialView = (viewMatrix * vec4(normalize(deltaContact + .0001), 0.)).xyz;
-      vec3 tangentWave = radialView - normal * dot(normal, radialView);
-      float slopeWave = clamp(cabinetWave(length(deltaContact)).y, -.55, .55);
-      vec3 opticalOffset = tangentWave * slopeWave;
-      vec3 hoverDelta = vCabinetWorld - uHover;
-      vec3 hoverView = (viewMatrix * vec4(hoverDelta, 0.)).xyz;
-      opticalOffset += (hoverView - normal * dot(normal, hoverView))
-        * exp(-dot(hoverDelta, hoverDelta) * 3.) * uHoverStrength * .025;
-      normal = normalize(normal - opticalOffset);
-    `).replace("#include <clearcoat_normal_fragment_maps>", `
-      #include <clearcoat_normal_fragment_maps>
-      #ifdef USE_CLEARCOAT
-        clearcoatNormal = normalize(clearcoatNormal - opticalOffset);
-      #endif
-    `);
-  };
-  glass.customProgramCacheKey = () => "loxne-clear-crystal-contact-v4";
-  clearTransmission(glass);
+  const glass = m.own(createClearGlass("Cabinet / clear optical crystal"));
   const boxGeometry = own(new RoundedBoxGeometry(1, 1, 1, 2, 0.06));
   const unitCylinder = own(new THREE.CylinderGeometry(1, 1, 1, 32));
   const screwGeometry = own(new THREE.CylinderGeometry(0.038, 0.038, 0.045, 24));
@@ -146,6 +89,75 @@ export function createMachine(m: AtelierMaterials) {
     mesh.rotation.z = -Math.atan2(vector.x, vector.y);
     return mesh;
   }
+  let ballMeshes: [THREE.Mesh, THREE.Mesh] | undefined;
+  function createBallTrack(parent: THREE.Group, points: readonly Point[], vertical: boolean) {
+    const midpoint = (a: Point, b: Point) => new THREE.Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.05);
+    const low = midpoint(points[0], points[vertical ? 1 : 3]);
+    const high = midpoint(points[vertical ? 3 : 1], points[2]);
+    const direction = high.clone().sub(low).normalize();
+    const normal = vertical ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(-direction.y, direction.x, 0);
+    const axis = new THREE.Vector3().crossVectors(direction, normal);
+    const orientation = new THREE.Matrix4().makeBasis(normal.clone().negate(), direction, axis);
+    const radius = 0.33;
+    const railRadius = 0.039;
+    const railHalfSpacing = 0.18;
+    const railOffset = Math.sqrt((radius + railRadius) ** 2 - railHalfSpacing ** 2);
+    const rollingRadius = railOffset * radius / (radius + railRadius);
+    const upper = high.clone().addScaledVector(direction, -0.66);
+    const lower = low.clone().addScaledVector(direction, 0.66);
+    const [start, end] = vertical ? [lower, upper] : [upper, lower];
+    const distance = start.distanceTo(end);
+    for (const side of [-1, 1]) {
+      const rail = new THREE.Mesh(unitCylinder, m.polished);
+      rail.position.copy(low).lerp(high, 0.5)
+        .addScaledVector(normal, -railOffset).addScaledVector(axis, side * railHalfSpacing);
+      rail.scale.set(railRadius, low.distanceTo(high) - 0.44, railRadius);
+      rail.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+      parent.add(rail);
+    }
+    for (const t of [0.10, 0.36, 0.64, 0.90]) {
+      const p = low.clone().lerp(high, t).addScaledVector(normal, -railOffset - 0.036);
+      const brace = box(parent, m.steel, [0.084, 0.09, 0.56], [p.x, p.y, p.z]);
+      brace.quaternion.setFromRotationMatrix(orientation);
+    }
+    for (const [point, side] of [[upper, 1], [lower, -1]] as const) {
+      const p = point.clone().addScaledVector(direction, side * 0.39).addScaledVector(normal, -0.14);
+      const stop = box(parent, m.steel, [0.34, 0.12, 0.56], [p.x, p.y, p.z]);
+      stop.quaternion.setFromRotationMatrix(orientation);
+      const lip = box(parent, m.polished, [0.29, 0.035, 0.48], [p.x, p.y, p.z]);
+      lip.position.addScaledVector(direction, -side * 0.06);
+      lip.quaternion.copy(stop.quaternion);
+    }
+
+    // The group stays movable when the static meshes are batched.
+    const ball = new THREE.Group();
+    ball.name = vertical ? "Finale / upright brass ball" : "Finale / rolling brass ball";
+    if (!ballMeshes) {
+      const ballBrass = m.own(new THREE.MeshStandardMaterial({
+        name: "Finale / polished brass ball", color: "#c99b56",
+        metalness: 0.83, roughness: 0.23, envMapIntensity: 1.1,
+      }));
+      const inlay = own(new THREE.SphereGeometry(radius + 0.001, 32, 1, 0, Math.PI * 2, Math.PI * 11 / 24, Math.PI / 24));
+      ballMeshes = [
+        new THREE.Mesh(own(new THREE.SphereGeometry(radius, 32, 24)), ballBrass),
+        new THREE.Mesh(inlay, m.brass),
+      ];
+    }
+    ball.add(ballMeshes[0].clone(), ballMeshes[1].clone());
+    ball.position.copy(start);
+    parent.add(ball);
+    let lastTravel = 0;
+    const rollFrom = THREE.MathUtils.lerp(FINALE_FROM, JOURNEY_LIMIT, 0.53);
+    const rollAngle = (vertical ? -distance : distance) / rollingRadius;
+    return (progress: number) => {
+      const travel = smooth(rollFrom, JOURNEY_LIMIT, progress);
+      if (travel === lastTravel) return false;
+      lastTravel = travel;
+      ball.position.lerpVectors(start, end, travel);
+      ball.quaternion.setFromAxisAngle(axis, travel * rollAngle);
+      return true;
+    };
+  }
   const cogGeometries = new Map<number, THREE.ExtrudeGeometry>();
   function cog(teeth: number) {
     if (cogGeometries.has(teeth)) return cogGeometries.get(teeth)!;
@@ -171,12 +183,12 @@ export function createMachine(m: AtelierMaterials) {
   function gear(parent: THREE.Group, x: number, y: number, radius: number, z: number, teeth: number, speed: number) {
     cylinder(parent, radius * 0.18, 0.9, [x, y, -0.12], m.silver);
     cylinder(parent, radius * 0.31, 0.09, [x, y, -0.56], m.black);
-    cylinder(parent, radius * 0.23, 0.06, [x, y, 0.37], m.polished);
+    cylinder(parent, radius * 0.23, 0.06, [x, y, 0.37], m.brass);
     const rotor = new THREE.Group();
     rotor.position.set(x, y, z);
     rotor.scale.setScalar(radius);
     rotor.add(new THREE.Mesh(cog(teeth), m.brass));
-    const rim = new THREE.Mesh(own(new THREE.TorusGeometry(0.785, 0.018, 8, 80)), m.polished);
+    const rim = new THREE.Mesh(own(new THREE.TorusGeometry(0.785, 0.018, 8, 80)), m.brass);
     rim.position.z = 0.07;
     rotor.add(rim);
     for (let j = 0; j < 5; j++) {
@@ -184,7 +196,7 @@ export function createMachine(m: AtelierMaterials) {
       const spoke = box(rotor, m.brass, [0.69, 0.10, 0.10], [Math.cos(a) * 0.40, Math.sin(a) * 0.40, 0]);
       spoke.rotation.z = a;
     }
-    cylinder(rotor, 0.18, 0.18, [0, 0, 0.02], m.polished);
+    cylinder(rotor, 0.18, 0.18, [0, 0, 0.02], m.brass);
     parent.add(rotor);
     rotors.push({ object: rotor, phase: teeth * 0.12, speed });
     const bridge = box(parent, m.steel, [radius * 0.4, radius * 2.2, 0.085], [x, y, 0.43]);
@@ -194,7 +206,14 @@ export function createMachine(m: AtelierMaterials) {
       y + sign * Math.cos(0.24) * radius * 0.93, 0.49)));
     cylinder(parent, radius * 0.105, 0.12, [x, y, 0.49], m.silver);
   }
-  const definitions = [
+  const definitions = finale ? [
+    { points: [[-3.35, -3], [-1.95, -3], [-1.95, 3.5], [-3.35, 3.5]] as Point[],
+      pivot: [0, 0, 0], travel: [0, 0, 0], turn: [0, 0, 0] },
+    { points: [[-1.86, -2.92], [1.86, 1.63], [1.86, 3.34], [-1.86, -1.21]] as Point[],
+      pivot: [0, 0, 0], travel: [0, 0, 0], turn: [0, 0, 0] },
+    { points: [[1.95, -3], [3.35, -3], [3.35, 3.5], [1.95, 3.5]] as Point[],
+      pivot: [0, 0, 0], travel: [0, 0, 0], turn: [0, 0, 0] },
+  ] : [
     { points: [[-3.5, -3], [-2.15, -2.8], [-1.92, 3.35], [-3.32, 4]] as Point[],
       pivot: [-2.72, 0.4, 0], travel: [-1.6, 0.05, -0.35], turn: [0.015, -0.18, -0.025] },
     { points: [[-1.62, 0.18], [-1.32, 0.9], [2.94, 3.94], [3.5, 3.8], [3.2, 2.02], [-0.28, 0.66]] as Point[],
@@ -202,6 +221,7 @@ export function createMachine(m: AtelierMaterials) {
     { points: [[-1.75, -2.96], [3.5, -3], [3.08, -1.94], [-0.34, 0.5], [-1.68, -0.28]] as Point[],
       pivot: [0.69, -1.34, 0.08], travel: [2.45, 0.24, 0.52], turn: [0.045, -0.15, -0.045] },
   ];
+  const updateBalls: ((progress: number) => boolean)[] = [];
   definitions.forEach((definition, index) => {
     const leaf = new THREE.Group();
     const rest = new THREE.Vector3(...definition.pivot);
@@ -215,33 +235,32 @@ export function createMachine(m: AtelierMaterials) {
     }));
     shell.translate(0, 0, -0.725);
     const skin = new THREE.Mesh(shell, glass);
-    skin.name = "Closed thick crystal / refractive shell";
-    content.add(skin);
-    surfaces.push(skin);
+    skin.name = "Closed thick crystal / transparent shell";
     const front = new THREE.Mesh(ring(definition.points, 0.966, 0.055), m.silver);
     front.position.z = 0.70;
     front.castShadow = true;
     const back = new THREE.Mesh(ring(definition.points, 0.91, 0.11), m.steel);
     back.position.z = -0.71;
     back.castShadow = true;
-    content.add(front, back);
     // The mechanisms mount to a recessed, drilled chassis, not the crystal cap.
-    const chassisShape = outline(definition.points, 0.90);
-    const bores: Point[] = index === 0
-      ? [[-2.7, 2.64], [-2.7, 1.56], [-2.7, 0.48], [-2.7, -0.6], [-2.7, -1.68]]
-      : index === 1 ? [[0.44, 1.55], [1.62, 2.37], [2.68, 3.15]]
-        : [[-0.75, -0.72], [0.17, -1.37], [1.42, -2.13]];
-    for (const [x, y] of bores) {
-      const bore = new THREE.Path();
-      bore.absarc(x, y, 0.115, 0, Math.PI * 2, true);
-      chassisShape.holes.push(bore);
+    if (!finale) {
+      const chassisShape = outline(definition.points, 0.90);
+      const bores: Point[] = index === 0
+        ? [[-2.7, 2.64], [-2.7, 1.56], [-2.7, 0.48], [-2.7, -0.6], [-2.7, -1.68]]
+        : index === 1 ? [[0.44, 1.55], [1.62, 2.37], [2.68, 3.15]]
+          : [[-0.75, -0.72], [0.17, -1.37], [1.42, -2.13]];
+      for (const [x, y] of bores) {
+        const bore = new THREE.Path();
+        bore.absarc(x, y, 0.115, 0, Math.PI * 2, true);
+        chassisShape.holes.push(bore);
+      }
+      const chassis = new THREE.Mesh(own(new THREE.ExtrudeGeometry(chassisShape, {
+        depth: 0.10, bevelEnabled: true, bevelSize: 0.012,
+        bevelThickness: 0.012, bevelSegments: 2, steps: 1, curveSegments: 32,
+      })), m.black);
+      chassis.position.z = -0.63;
+      content.add(chassis);
     }
-    const chassis = new THREE.Mesh(own(new THREE.ExtrudeGeometry(chassisShape, {
-      depth: 0.10, bevelEnabled: true, bevelSize: 0.012,
-      bevelThickness: 0.012, bevelSegments: 2, steps: 1, curveSegments: 32,
-    })), m.black);
-    chassis.position.z = -0.63;
-    content.add(chassis);
     const center = definition.points.reduce((v, p) => v.add(new THREE.Vector2(...p)), new THREE.Vector2()).multiplyScalar(1 / definition.points.length);
     const bolts: THREE.Vector3[] = [];
     definition.points.forEach((point, i) => {
@@ -254,7 +273,7 @@ export function createMachine(m: AtelierMaterials) {
     });
     screws(content, bolts);
     // Small service decks and their railings explain the cabinet's multiple levels.
-    const deckCenters: Point[] = index === 0
+    const deckCenters: Point[] = finale ? [] : index === 0
       ? [[-2.7, 1.03], [-2.7, -1.12]]
       : index === 1 ? [[0.14, 1.28], [1.65, 2.35]]
         : [[0.12, -1.6], [1.45, -2.42]];
@@ -266,7 +285,21 @@ export function createMachine(m: AtelierMaterials) {
       }
       box(content, m.polished, [0.64, 0.022, 0.023], [x, y + 0.28, 0.17]);
     }
-    if (index === 0) {
+    if (finale) {
+      if (index < 2) updateBalls.push(createBallTrack(content, definition.points, index === 0));
+      if (index === 2) {
+        for (const x of [2.35, 2.95]) {
+          box(content, m.steel, [0.056, 5.05, 0.11], [x, 0.27, -0.23]);
+          box(content, m.polished, [0.027, 4.9, 0.045], [x, 0.27, -0.15]);
+          box(content, m.brass, [0.054, 0.63, 0.32], [x, -0.59, -0.06]);
+        }
+        for (const y of [-0.93, -0.25]) {
+          box(content, m.polished, [0.66, 0.07, 0.42], [2.65, y, -0.06]);
+        }
+        cylinder(content, 0.24, 0.15, [2.65, 2.72, -0.14], m.steel);
+        cylinder(content, 0.10, 0.18, [2.65, 2.72, -0.02], m.silver);
+      }
+    } else if (index === 0) {
       for (const x of [-3.05, -2.40]) {
         box(content, m.steel, [0.075, 6.0, 0.21], [x, 0.45, -0.43]);
         box(content, m.polished, [0.019, 5.75, 0.04], [x + 0.07, 0.42, -0.24]);
@@ -290,6 +323,13 @@ export function createMachine(m: AtelierMaterials) {
         beam(content, new THREE.Vector3(-0.78, -0.45 - j * 0.09, -0.26), new THREE.Vector3(2.13, -2.20 - j * 0.09, -0.26), 0.018, 0.035, m.polished);
       }
     }
+    // Keep the polished frame separate from the diffuse mechanism underneath.
+    content.traverse(object => {
+      if (object instanceof THREE.Mesh && !Array.isArray(object.material)) {
+        object.material = m.mechanismFinishes.get(object.material) ?? object.material;
+      }
+    });
+    content.add(skin, front, back);
     group.add(leaf);
     leaves.push({ object: leaf, rest, travel: new THREE.Vector3(...definition.travel), turn: new THREE.Vector3(...definition.turn) });
   });
@@ -300,26 +340,20 @@ export function createMachine(m: AtelierMaterials) {
     }
   });
   const disposeInstances = batchRigidMeshes(group);
-  let hitAt = -100, hoverStrength = 0, targetHover = 0, time = 0;
+  let time = 0, contactSpeed = 0, contactAngle = 0;
   let lastOpening = -1;
   return {
-    group, surfaces,
-    hover(value: THREE.Vector3 | null) {
-      targetHover = value ? 1 : 0;
-      if (value) interaction.uHover.value.copy(value);
-    },
-    interact(value: THREE.Vector3, strength = 1) {
-      hitAt = time;
-      interaction.uContact.value.copy(value);
-      interaction.uStrength.value = Math.min(1, Math.max(0, strength)) * 0.10;
+    group,
+    interact(reduced: boolean) {
+      if (reduced) contactAngle += 0.10;
+      else contactSpeed = 1.5;
     },
     update(progress: number, seconds: number) {
       const dt = Math.max(0, Math.min(0.1, seconds - time));
       time = seconds;
-      const opening = smooth(0.03, 0.145, progress);
+      const opening = finale ? 0 : smooth(0.03, 0.145, progress);
       const wasVisible = group.visible;
-      // Past the crossing the whole cabinet is behind both viewing cameras.
-      group.visible = progress < 0.17;
+      group.visible = finale ? progress >= FINALE_FROM : progress < 0.17;
       const openingChanged = opening !== lastOpening;
       if (openingChanged) {
         for (const leaf of leaves) {
@@ -328,17 +362,19 @@ export function createMachine(m: AtelierMaterials) {
         }
         lastOpening = opening;
       }
-      const age = Math.max(0, time - hitAt);
-      hoverStrength += (targetHover - hoverStrength) * (1 - Math.exp(-dt * 10));
-      interaction.uHoverStrength.value = hoverStrength;
-      interaction.uWaveAge.value = age;
-      const kick = 0.30 * (1 - Math.exp(-age * 5));
+      let ballChanged = false;
       if (group.visible) {
+        const decay = Math.exp(-dt * 5);
+        contactAngle += contactSpeed * (1 - decay) / 5;
+        contactSpeed *= decay;
         rotors.forEach(rotor => {
-          rotor.object.rotation.z = rotor.phase + time * rotor.speed + opening * rotor.speed * 6 + Math.sign(rotor.speed) * kick;
+          rotor.object.rotation.z = rotor.phase + (time + opening * 6) * rotor.speed + Math.sign(rotor.speed) * contactAngle;
         });
+        for (const updateBall of updateBalls) {
+          ballChanged = updateBall(progress) || ballChanged;
+        }
       }
-      return wasVisible !== group.visible || (group.visible && (openingChanged || dt > 0));
+      return wasVisible !== group.visible || ballChanged || (!finale && group.visible && (openingChanged || dt > 0));
     },
     dispose() {
       group.removeFromParent();

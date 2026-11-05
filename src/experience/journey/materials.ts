@@ -1,18 +1,20 @@
 import * as THREE from "three";
 
-/** These materials are polished, so sample the refracted scene without a rough-glass blur. */
-export function clearTransmission(material: THREE.MeshPhysicalMaterial) {
-  const previousCompile = material.onBeforeCompile;
-  const previousKey = material.customProgramCacheKey();
-  const transmission = THREE.ShaderChunk.transmission_pars_fragment.replace(
-    "return textureBicubic( transmissionSamplerMap, fragCoord.xy, lod );",
-    "return textureLod( transmissionSamplerMap, fragCoord.xy, 0.0 );",
-  );
-  material.onBeforeCompile = function (shader, renderer) {
-    previousCompile.call(this, shader, renderer);
-    shader.fragmentShader = shader.fragmentShader.replace("#include <transmission_pars_fragment>", transmission);
+/** Blend over the full-resolution scene, with a stronger tint at grazing angles. */
+export function createClearGlass(name: string) {
+  const material = new THREE.MeshPhysicalMaterial({
+    name, color: "#b7cfdd", roughness: 0.28, opacity: 0.035,
+    transparent: true, depthWrite: false,
+    specularIntensity: 0.42, envMapIntensity: 0.5,
+  });
+  material.onBeforeCompile = shader => {
+    shader.fragmentShader = shader.fragmentShader.replace("#include <opaque_fragment>", `
+      float facing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+      diffuseColor.a += 0.42 * pow(1.0 - facing, 3.0);
+      #include <opaque_fragment>
+    `);
   };
-  material.customProgramCacheKey = () => `${previousKey}/clear-transmission-v1`;
+  return material;
 }
 
 /** Small deterministic material maps, not raster scene backdrops. */
@@ -86,11 +88,9 @@ export function createAtelierMaterials() {
     color: "#121a20", metalness: 0.67, roughness: 0.48,
     roughnessMap: brushing, bumpMap: machining, bumpScale: 0.001,
   }));
-  const brass = own(new THREE.MeshPhysicalMaterial({
-    name: "Warm cut brass / satin",
-    color: "#a28a57", metalness: 1, roughness: 0.29,
-    roughnessMap: brushing, bumpMap: machining, bumpScale: 0.0004,
-    anisotropy: 0.28, envMapIntensity: 1.2,
+  const brass = own(new THREE.MeshStandardMaterial({
+    name: "Satin brass / gear teeth and spokes",
+    color: "#92794c", metalness: 0.66, roughness: 0.60,
   }));
   const polished = own(new THREE.MeshPhysicalMaterial({
     name: "Polished brass chamfer",
@@ -103,17 +103,21 @@ export function createAtelierMaterials() {
     roughnessMap: stoneRoughness, bumpMap: stone, bumpScale: 0.035,
     clearcoat: 0.55, clearcoatRoughness: 0.2,
   }));
-  const glow = own(new THREE.MeshBasicMaterial({
-    name: "Architectural warm source", color: new THREE.Color("#d5b991").multiplyScalar(0.65),
-    toneMapped: true,
+  const trim = own(new THREE.MeshStandardMaterial({
+    name: "Satin gunmetal trim", color: "#38444c",
+    metalness: 0.68, roughness: 0.48, envMapIntensity: 0.62,
   }));
-  const coolGlow = own(new THREE.MeshBasicMaterial({
-    name: "Architectural cold source", color: new THREE.Color("#bdd0df").multiplyScalar(0.65),
-    toneMapped: true,
-  }));
+  const mechanismFinishes = new Map<THREE.Material, THREE.Material>();
+  for (const source of [silver, steel, black, brass, polished]) {
+    mechanismFinishes.set(source, own(new THREE.MeshPhysicalMaterial({
+      name: `${source.name} / diffuse mechanism finish`,
+      color: source.color.clone().multiplyScalar(0.75),
+      specularIntensity: 0, envMapIntensity: 0.6,
+    })));
+  }
   return {
     silver, steel, black, brass, polished, stone: stoneMaterial,
-    glow, coolGlow, brushing, machining, stoneMap: stone,
+    trim, brushing, machining, stoneMap: stone, mechanismFinishes,
     own,
     dispose() {
       materials.forEach(value => value.dispose());

@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { bendGalleryPoint, finaleRoom, galleryStops } from "./galleryRoute";
+import { FINALE_FROM, JOURNEY_LIMIT } from "./chapters";
 
 type Point = readonly [number, number, number];
 type Key = {
@@ -21,7 +23,7 @@ export type JourneyCamera = {
 };
 
 const stops = [0.24, 0.42, 0.60, 0.78] as const;
-const centers = [-24, -52, -80, -108] as const;
+const centers = galleryStops.map(distance => -distance);
 const allRooms = [0, 1, 2, 3] as const;
 const singleRooms = [[0], [1], [2], [3]] as const;
 const noRooms: readonly number[] = [];
@@ -47,12 +49,6 @@ for (let room = 0; room < stops.length; room++) {
     });
   }
 }
-keys.push(
-  // Remain in the central aisle until the final exhibit has been passed.
-  {at: 0.91, position: [0, 3.1, -119], look: [0, 3, -138], fov: 46},
-  {at: 0.95, position: [4.3, 3.7, -122], look: [0, 3, -138], fov: 40},
-  {at: 1, position: [9, 4, -122], look: [0, 3, -138], fov: 38},
-);
 
 /** Monotone cubic tangents keep the dolly from overshooting or moving backward. */
 function tangents(values: readonly number[]): number[] {
@@ -97,6 +93,10 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
   const position = new THREE.Vector3();
   const look = new THREE.Vector3();
   const backward = new THREE.Vector3();
+  const finaleCurve = new THREE.CubicBezierCurve3();
+  const finaleLook = new THREE.Vector3(finaleRoom.x, 3.2, finaleRoom.z);
+  const galleryLook = new THREE.Vector3();
+  const previousPoint = new THREE.Vector3();
   const values = new Float64Array(7);
   const visibility: JourneyVisibility = {portrait: aspect < 1.25, activeRoom: null, visibleRooms: allRooms};
   camera.userData.journeyVisibility = visibility;
@@ -104,11 +104,8 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
   camera.far = 260;
   camera.updateProjectionMatrix();
 
-  const update: JourneyCamera["update"] = (progress, pointer, reduced) => {
-    const p = clamp(progress, 0, 1);
-    lastProgress = p;
-    lastPointer = [pointer[0], pointer[1]];
-    lastReduced = reduced;
+  const sample = (p: number, pointer: readonly [number, number], reduced: boolean,
+    position: THREE.Vector3, look: THREE.Vector3) => {
     let index = 0;
     while (index < keys.length - 2 && p > keys[index + 1].at) index++;
     const duration = keys[index + 1].at - keys[index].at;
@@ -143,11 +140,51 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
     position.y -= py * 0.08;
     look.x += px * 0.30;
     look.y -= py * 0.16;
+    // A narrow screen stacks the exhibits in the aisle. Skirt each display
+    // after its reading stop, then ease back onto the centerline.
+    const compact = 1 - THREE.MathUtils.smoothstep(aspect, 0.82, 1.25);
+    const screenCenter = THREE.MathUtils.lerp(4.7, 0, compact);
+    const aisleOffset = compact > 0.28 ? screenCenter + 3.45 : 0;
+    const distance = -position.z;
+    for (const stop of galleryStops) {
+      const entering = THREE.MathUtils.smootherstep(distance, stop - 8, stop - 3);
+      const leaving = THREE.MathUtils.smootherstep(distance, stop + 1, stop + 5);
+      position.x += aisleOffset * entering * (1 - leaving);
+    }
+    bendGalleryPoint(position);
+    bendGalleryPoint(look);
+    return values[6];
+  };
+
+  const update: JourneyCamera["update"] = (progress, pointer, reduced) => {
+    lastProgress = clamp(progress, 0, JOURNEY_LIMIT);
+    lastPointer = [pointer[0], pointer[1]];
+    lastReduced = reduced;
+    const p = Math.min(lastProgress, FINALE_FROM);
+    let fov = sample(p, pointer, reduced, position, look);
+    if (lastProgress > FINALE_FROM) {
+      const t = THREE.MathUtils.smoothstep(lastProgress, FINALE_FROM, JOURNEY_LIMIT);
+      const compact = 1 - THREE.MathUtils.smoothstep(aspect, 0.82, 1.25);
+      galleryLook.copy(look);
+      finaleCurve.v0.copy(position);
+      finaleCurve.v1.copy(position);
+      finaleCurve.v1.x += 8;
+      finaleCurve.v3.set(finaleRoom.x + THREE.MathUtils.lerp(1.4, 0.45, compact), 2.9,
+        finaleRoom.z - 13.2 - compact * 3.1);
+      finaleCurve.v2.set(finaleCurve.v3.x, 3.05, -32.8);
+      finaleCurve.getPoint(t, position);
+      finaleCurve.getPoint(Math.max(0, t - 0.015), previousPoint);
+      finaleCurve.getPoint(Math.min(1, t + 0.04), look);
+      look.sub(previousPoint).normalize().multiplyScalar(10).add(position);
+      look.lerp(galleryLook, 1 - THREE.MathUtils.smoothstep(t, 0, 0.28));
+      look.lerp(finaleLook, THREE.MathUtils.smoothstep(t, 0.36, 0.85));
+      fov = THREE.MathUtils.lerp(fov, 44 + compact * 7, THREE.MathUtils.smoothstep(t, 0.2, 0.85));
+    }
     camera.position.copy(position);
     camera.lookAt(look);
-    if (camera.aspect !== aspect || camera.fov !== values[6]) {
+    if (camera.aspect !== aspect || camera.fov !== fov) {
       camera.aspect = aspect;
-      camera.fov = values[6];
+      camera.fov = fov;
       camera.updateProjectionMatrix();
     }
     camera.updateMatrixWorld();

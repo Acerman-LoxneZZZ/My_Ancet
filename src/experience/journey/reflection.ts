@@ -1,9 +1,12 @@
 import * as THREE from "three";
 import { Reflector } from "three/addons/objects/Reflector.js";
+import { galleryFloor } from "./galleryRoute";
 
-/** A shared, softened planar reflection under the mineral shadow-catching skin. */
+const reflectionLimits = [1440, 1152, 896];
+
+/** A planar reflection under the mineral shadow-catching skin. */
 export function createJourneyReflection() {
-  const geometry = new THREE.PlaneGeometry(38, 182);
+  const geometry = new THREE.PlaneGeometry(galleryFloor.width, galleryFloor.depth);
   const shader = {
     uniforms: {
       color: { value: new THREE.Color(0x5a666f) },
@@ -26,34 +29,23 @@ export function createJourneyReflection() {
       varying vec3 vWorldPosition;
       void main() {
         vec2 uv = vUv.xy / vUv.w;
-        float grain = sin(vWorldPosition.x * 53. + sin(vWorldPosition.z * 39.));
-        uv += vec2(grain, sin(vWorldPosition.z * 67.)) * .00022;
-        vec2 spread = vec2(0.0013, 0.0022);
-        vec3 reflected = texture2D(tDiffuse, uv).rgb * 0.32;
-        reflected += texture2D(tDiffuse, uv + vec2(spread.x, 0.0)).rgb * 0.12;
-        reflected += texture2D(tDiffuse, uv - vec2(spread.x, 0.0)).rgb * 0.12;
-        reflected += texture2D(tDiffuse, uv + vec2(0.0, spread.y)).rgb * 0.12;
-        reflected += texture2D(tDiffuse, uv - vec2(0.0, spread.y)).rgb * 0.12;
-        reflected += texture2D(tDiffuse, uv + spread).rgb * 0.05;
-        reflected += texture2D(tDiffuse, uv - spread).rgb * 0.05;
-        reflected += texture2D(tDiffuse, uv + spread * vec2(1.,-1.)).rgb * 0.05;
-        reflected += texture2D(tDiffuse, uv + spread * vec2(-1.,1.)).rgb * 0.05;
         vec3 eye = normalize(cameraPosition - vWorldPosition);
+        vec3 reflected = texture2D(tDiffuse, uv).rgb;
         float grazing = pow(1.0 - abs(eye.y), 3.0);
-        float satin = 0.96 + 0.04 * sin(vWorldPosition.x * 21.0 + sin(vWorldPosition.z * 17.0));
-        gl_FragColor = vec4(vec3(0.005,0.008,0.011) + reflected * mix(0.25, 0.66, grazing) * satin, 1.0);
+        float peak = max(reflected.r, max(reflected.g, reflected.b));
+        reflected /= 1.0 + 0.42 * peak;
+        gl_FragColor = vec4(vec3(0.004, 0.006, 0.009) + reflected * mix(0.34, 0.65, grazing), 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }
     `,
   };
   const floor = new Reflector(geometry, {
-    textureWidth: 1024, textureHeight: 640, clipBias: 0.003,
-    color: 0x5a666f, multisample: 0, shader,
+    clipBias: 0.003, color: 0x5a666f, multisample: 2, shader,
   });
-  floor.name = "Journey / shared satin floor reflection";
+  floor.name = "Journey / polished floor reflection";
   floor.rotation.x = -Math.PI / 2;
-  floor.position.set(0, -0.035, -66);
+  floor.position.set(galleryFloor.x, -0.035, galleryFloor.z);
   const renderReflection = floor.onBeforeRender;
   const lastView = new THREE.Matrix4();
   const lastProjection = new THREE.Matrix4();
@@ -62,23 +54,14 @@ export function createJourneyReflection() {
   let frameTime = 0;
   let lastRefresh = -Infinity;
   let quality = 0;
-  // Three also draws opaque objects into the glass transmission buffer.
-  // Reuse the mirror there instead of rendering the reflected scene twice.
   floor.onBeforeRender = (...args) => {
-    const [renderer, , camera] = args;
+    const [, , camera] = args;
     if (!refresh || camera !== primaryCamera) return;
     refresh = false;
     lastRefresh = frameTime;
     lastView.copy(camera.matrixWorld);
     lastProjection.copy(camera.projectionMatrix);
-    const transmissionScale = renderer.transmissionResolutionScale;
-    // The softened floor needs less refraction detail than the main crystal.
-    renderer.transmissionResolutionScale = 0.5;
-    try {
-      renderReflection.apply(floor, args);
-    } finally {
-      renderer.transmissionResolutionScale = transmissionScale;
-    }
+    renderReflection.apply(floor, args);
   };
   return {
     floor,
@@ -90,15 +73,12 @@ export function createJourneyReflection() {
       const viewChanged = !lastView.equals(camera.matrixWorld) || !lastProjection.equals(camera.projectionMatrix);
       if (viewChanged || invalidated || (objectsChanged && now - lastRefresh >= 50 + quality * 25)) refresh = true;
     },
-    setQuality(level: number) {
-      const next = Math.max(0, Math.min(2, Math.round(level)));
-      if (next === quality) return;
-      quality = next;
-      const width = [1024, 768, 512][quality];
-      floor.getRenderTarget().setSize(width, width * 0.625);
+    fit(width: number, height: number, level: number) {
+      quality = level;
+      const scale = Math.min(1, reflectionLimits[quality] / Math.max(width, height));
+      floor.getRenderTarget().setSize(Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale)));
       refresh = true;
     },
-    fit(aspect: number) { floor.visible = aspect >= 1.1; refresh = true; },
     dispose() { floor.removeFromParent(); floor.dispose(); geometry.dispose(); },
   };
 }
