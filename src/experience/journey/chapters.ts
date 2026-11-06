@@ -13,6 +13,9 @@ export const journeyChapters = [
   { id: "finale", title: "Буква И", at: JOURNEY_LIMIT, from: FINALE_FROM, to: JOURNEY_LIMIT },
 ] as const;
 
+export const GALLERY_SHUTTER_DELAY = 0.016;
+export const FIRST_GALLERY_REVEAL = journeyChapters[2].from + GALLERY_SHUTTER_DELAY;
+
 export function seekJourney(at: number) {
   window.dispatchEvent(new CustomEvent("journey:seek", { detail: at }));
 }

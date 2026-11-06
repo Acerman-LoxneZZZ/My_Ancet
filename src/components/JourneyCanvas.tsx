@@ -4,7 +4,7 @@ import { createArchitecture } from "../experience/journey/architecture";
 import { createExhibits } from "../experience/journey/exhibits";
 import { createJourneyCamera } from "../experience/journey/camera";
 import { createJourneyReflection } from "../experience/journey/reflection";
-import { FINALE_FROM, JOURNEY_LIMIT } from "../experience/journey/chapters";
+import { FINALE_FROM, FIRST_GALLERY_REVEAL, JOURNEY_LIMIT } from "../experience/journey/chapters";
 import { createAtelierLighting } from "../experience/journey/lighting";
 
 type Props = {
@@ -85,6 +85,8 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     let budgetChanged = performance.now();
     let previousFullCadence = false;
     let assetsReady = false;
+    let wingReady = false;
+    const availableTarget = () => wingReady ? target : Math.min(target, FIRST_GALLERY_REVEAL);
 
     const schedule = () => {
       if (alive && !raf && !pause.current && !document.hidden) raf = requestAnimationFrame(tick);
@@ -139,7 +141,8 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       if (motion.matches || (from >= FINALE_FROM && to === 0) || Math.abs(to - from) < 0.000015) {
         pilot = null;
         window.scrollTo({ top: to / JOURNEY_LIMIT * maxY, behavior: "instant" });
-        progress = target = to;
+        target = to;
+        progress = availableTarget();
         invalidate();
       } else {
         pilot = {
@@ -159,15 +162,9 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       if ((event.target as HTMLElement).closest("button,a,input,dialog")) return;
       touchMachine();
     };
-    const manualWatch = (event: Event) => {
-      const value = (event as CustomEvent<number | null>).detail;
-      exhibits?.setWatchProgress(value, motion.matches);
-      interactionUntil = performance.now() + 800;
-      invalidate();
-    };
     const navigated = () => {
       readScroll();
-      progress = target;
+      progress = availableTarget();
       pilot = null;
       invalidate();
     };
@@ -184,18 +181,17 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
         if (t === 1) pilot = null;
       }
       const alpha = 1 - Math.exp(-dt / 0.19);
-      const scrollMoving = !motion.matches && Math.abs(progress - target) > 0.000015;
+      const nextProgress = availableTarget();
+      const scrollMoving = !motion.matches && Math.abs(progress - nextProgress) > 0.000015;
       const pointerMoving = !motion.matches && Math.abs(px - pointerX) + Math.abs(py - pointerY) > 0.001;
-      const moving = scrollMoving || !!pilot || pointerMoving || (!motion.matches && now < interactionUntil);
-      progress = scrollMoving ? progress + (target - progress) * alpha : target;
+      const fullCadence = scrollMoving || !!pilot || pointerMoving || (!motion.matches && now < interactionUntil);
+      progress = scrollMoving ? progress + (nextProgress - progress) * alpha : nextProgress;
       const pointerAlpha = 1 - Math.exp(-dt / 0.28);
       px = pointerMoving ? px + (pointerX - px) * pointerAlpha : pointerX;
       py = pointerMoving ? py + (pointerY - py) * pointerAlpha : pointerY;
       pointer[0] = motion.matches ? 0 : px;
       pointer[1] = motion.matches ? 0 : py;
       elapsed += motion.matches ? 0 : dt;
-      const watchAnimating = !motion.matches && !!exhibits?.isAnimating();
-      const fullCadence = moving || watchAnimating;
       const mechanismAnimating = !motion.matches && progress < 0.17;
       // Slow mechanical movement keeps a quiet 30 Hz cadence. A settled watch
       // requires no GPU work until the visitor moves, scrolls or touches it.
@@ -224,15 +220,14 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       lastRender = now;
       rail.update(progress, pointer, motion.matches);
       const machineChanged = architecture.update(progress, elapsed);
-      const watchChanged = exhibits?.update(progress, elapsed) ?? false;
-      shadowDirty ||= machineChanged || watchChanged;
+      const exhibitsChanged = exhibits?.update(progress) ?? false;
+      shadowDirty ||= machineChanged || exhibitsChanged;
       if (shadowDirty && now - lastShadow >= (fullCadence ? 65 : 160) + quality * 35) {
         renderer.shadowMap.needsUpdate = true;
         shadowDirty = false;
         lastShadow = now;
       }
-      reflection.prepare(camera, now, machineChanged || watchChanged,
-        invalidated || (watchChanged && !exhibits?.isAnimating()));
+      reflection.prepare(camera, now, machineChanged || exhibitsChanged, invalidated || exhibitsChanged);
       renderer.render(scene, camera);
       if (lastFrameProgress !== progress) {
         frameCallback.current(progress);
@@ -256,7 +251,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       statusCallback.current("fallback");
     };
     resize();
-    progress = target;
+    progress = availableTarget();
     rail.update(progress, pointer, motion.matches);
     architecture.update(progress, 0);
     schedule();
@@ -264,7 +259,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       if (!alive) { loaded.dispose(); return; }
       exhibits = loaded;
       exhibits.fit(innerWidth / innerHeight);
-      exhibits.update(progress, elapsed);
+      exhibits.update(progress);
       scene.add(exhibits.group);
       invalidate();
       shadowDirty = true;
@@ -283,8 +278,11 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       statusCallback.current("ready");
       await loaded.loadRemaining();
       if (!alive) return;
-      invalidate();
       await warmExhibits(true);
+      if (!alive) return;
+      wingReady = true;
+      shadowDirty = true;
+      invalidate();
     }).catch(() => {
       if (alive) statusCallback.current("fallback");
     });
@@ -296,7 +294,6 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     window.addEventListener("pointermove", onPointer, { passive: true });
     window.addEventListener("pointerdown", touch, { passive: true });
     window.addEventListener("journey:touch", touchMachine);
-    window.addEventListener("journey:watch", manualWatch);
     window.addEventListener("blur", clearPointer);
     window.addEventListener("wheel", cancelPilot, { passive: true });
     window.addEventListener("touchstart", cancelPilot, { passive: true });
@@ -316,7 +313,6 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       window.removeEventListener("pointermove", onPointer);
       window.removeEventListener("pointerdown", touch);
       window.removeEventListener("journey:touch", touchMachine);
-      window.removeEventListener("journey:watch", manualWatch);
       window.removeEventListener("blur", clearPointer);
       window.removeEventListener("wheel", cancelPilot);
       window.removeEventListener("touchstart", cancelPilot);

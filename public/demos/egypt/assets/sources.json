@@ -1,0 +1,13 @@
+[
+  {"id":"calendar","title":"The Met: Telling Time in Ancient Egypt","url":"https://www.metmuseum.org/essays/telling-time-in-ancient-egypt","chapter":"nile"},
+  {"id":"pyramid","title":"Smithsonian: The Egyptian Pyramid","url":"https://www.si.edu/spotlight/ancient-egypt/pyramid","chapter":"pyramids"},
+  {"id":"hatshepsut","title":"The Met: Seated Statue of Hatshepsut, 29.3.2","url":"https://www.metmuseum.org/art/collection/search/544450","chapter":"pharaohs"},
+  {"id":"hieroglyphs","title":"British Museum: Hieroglyphs","url":"https://www.britishmuseum.org/exhibitions/hieroglyphs-unlocking-ancient-egypt","chapter":"writing"},
+  {"id":"papyrus","title":"The Met: Papyrus in Ancient Egypt","url":"https://www.metmuseum.org/essays/papyrus-in-ancient-egypt","chapter":"writing"},
+  {"id":"nauny","title":"The Met: Book of the Dead for Nauny, 30.3.31","url":"https://www.metmuseum.org/art/collection/search/548344","chapter":"writing"},
+  {"id":"religion","title":"Harvard Digital Giza: Ancient Egyptian Religion","url":"https://giza.fas.harvard.edu/lessons/ancient-egyptian-religion/","chapter":"gods"},
+  {"id":"osiris","title":"The Met: Osiris, X.352.1","url":"https://www.metmuseum.org/art/collection/search/570644","chapter":"gods"},
+  {"id":"daily-life","title":"Harvard Digital Giza: Daily Life","url":"https://giza.fas.harvard.edu/lessons/daily-life-in-ancient-egypt/","chapter":"life"},
+  {"id":"bakery","title":"The Met: Model Bakery and Brewery, 20.3.12","url":"https://www.metmuseum.org/art/collection/search/544258","chapter":"life"},
+  {"id":"memphis","title":"UNESCO: Memphis and its Necropolis","url":"https://whc.unesco.org/en/list/86","chapter":"legacy"}
+]

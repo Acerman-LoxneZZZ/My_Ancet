@@ -7,6 +7,7 @@
 | Работа / checkout | Источник | Проверенный commit |
 | --- | --- | --- |
 | Ход времени / `.research/chasi` | [Acerman-LoxneZZZ/chasi](https://github.com/Acerman-LoxneZZZ/chasi) | `9d214bcf2b5477550ba014c23881cecca32b802e` |
+| KARpOV / `.research/chasi-current` | [Acerman-LoxneZZZ/chasi](https://github.com/Acerman-LoxneZZZ/chasi) | `ab278ec1e4be465d1026cef6e0c4dbcdf74a914b` |
 | FARO / `.research/pizza` | [Acerman-LoxneZZZ/pizza](https://github.com/Acerman-LoxneZZZ/pizza) | `ca7e99fe59ec5f61ad49c812da8a4659f6c47fda` |
 | Египет / `.research/egi` | [Acerman-LoxneZZZ/egi](https://github.com/Acerman-LoxneZZZ/egi) | `1a4725dc9285a8d45ffead5f4342a3e3d94df92d` |
 | Wordflow / `.research/EnCard` | [Acerman-LoxneZZZ/EnCard](https://github.com/Acerman-LoxneZZZ/EnCard) | `43a41053321f6c96d7880c14bf353dd384380ced` |
@@ -20,6 +21,7 @@
 | Ресурс | Файл в портфолио | Размер / происхождение |
 | --- | --- | --- |
 | Часы, GLB | `public/assets/models/pocket-watch.glb` | 3 020 672 байта; точная копия исходной процедурной модели, 47 логических деталей |
+| Часы для галереи | `public/assets/models/gallery-watch.glb` | 299 616 байт. Внешние детали из той же модели объединены по материалам в собранном положении |
 | Таблица деталей | `public/assets/data/watch-parts.json` | 42 343 байта; названия, описания, rest transforms и диапазоны разборки |
 | Часы, Blender | `assets/source/timepiece/pocket-watch.blend` | 6 347 266 байт; из `chasi/assets/blender/pocket-watch.blend` |
 | Pizza, browser GLB | `public/assets/models/pizza-web.glb` | 3 552 568 байт; исходный подготовленный Meshopt/WebP ресурс FARO |
@@ -69,6 +71,12 @@ BLEND остаются вне публичной папки. Настройки 
 Telegram SDK, profile-client, серверные endpoints, D1 и service worker не скопированы. Внешние запросы блокируются CSP. Оригинальный код автора и искусственные учебные данные здесь различены явно; авторизация и облачная синхронизация не считаются проверенными. Детали и тесты: [Wordflow QA](docs/qa/wordflow-demo.md).
 
 ## Воспроизводимость
+
+Для модели часов в галерее `node scripts/prepare-gallery-watch.mjs <временный.glb>` собирает внешние детали в промежуточный GLB. Финальный файл создаёт `npm exec --yes --package=@gltf-transform/cli@4.5.0 -- gltf-transform meshopt <временный.glb> public/assets/models/gallery-watch.glb --level medium`.
+
+`node scripts/prepare-gallery-demos.mjs` пересобирает витрины из checkout `.research/chasi-current` и `.research/egi` с установленными зависимостями. Аргумент `timepiece` обновляет только KARpOV. Сборки находятся в `public/demos/timepiece` и `public/demos/egypt`. Идентичные ресурсы переиспользуются. Модель KARpOV из нового коммита загружается при открытии витрины.
+
+`public/assets/images/timepiece-karpov-hero.jpg` — первый экран KARpOV из `docs/screenshots/finale-story/1440-0.png` на коммите `ab278ec`, сохранённый в JPEG для экрана в галерее.
 
 `node scripts/prepare-assets.mjs` копирует только перечисленные файлы и записывает provenance; `node scripts/check-assets.mjs` сравнивает точные SHA256, проверяет 47 уникальных деталей, состав демо и запрещённые публичные пути. Для повторного чтения исходников нужны checkout из первой таблицы на указанных commits. Проверка не устанавливает общую лицензию на авторские репозитории и не заменяет необходимые notices.
 

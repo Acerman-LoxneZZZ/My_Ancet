@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import {modelAssets, watchManifests} from '../worlds/modelAssets';
-import {cloneModel, materialsOf} from '../worlds/shared';
-import {clampProgress, sampleWatchPart, type WatchPart} from '../watchPose';
+import {modelAssets} from '../worlds/modelAssets';
+import {cloneModel, materialsOf, unit} from '../worlds/shared';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {createAtelierMaterials} from './materials';
 import {galleryStops, placeGalleryRoom} from './galleryRoute';
 import {journeyChapters} from './chapters';
+import {timepieceHero} from '../../content/portfolio';
 
 type Room = {
   group: THREE.Group;
@@ -25,7 +25,7 @@ type MountedObject = {
 };
 
 const imagePaths = {
-  watch: '/assets/images/timepiece-original.jpg',
+  watch: timepieceHero,
   faro: '/assets/images/faro-original.jpg',
   menu: '/assets/images/faro-menu.jpg',
   gateway: '/assets/images/egypt-gateway.png',
@@ -36,7 +36,7 @@ const imagePaths = {
 } as const;
 
 const smooth = (start: number, end: number, progress: number): number => {
-  const t = clampProgress((progress - start) / (end - start));
+  const t = unit((progress - start) / (end - start));
   return t * t * (3 - 2 * t);
 };
 
@@ -44,9 +44,7 @@ const smooth = (start: number, end: number, progress: number): number => {
 export async function createExhibits(): Promise<{
   group: THREE.Group;
   loadRemaining(): Promise<void>;
-  update(progress: number, time: number): boolean;
-  isAnimating(): boolean;
-  setWatchProgress(progress: number | null, immediate?: boolean): void;
+  update(progress: number): boolean;
   fit(aspect: number): void;
   dispose(): void;
 }> {
@@ -57,9 +55,8 @@ export async function createExhibits(): Promise<{
   const textures = new Set<THREE.Texture>();
   const atelier = createAtelierMaterials();
   const images = {} as Record<keyof typeof imagePaths, THREE.Texture>;
-  const watchLease = modelAssets.acquire('/assets/models/pocket-watch.glb');
+  const watchLease = modelAssets.acquire('/assets/models/gallery-watch.glb');
   let pizzaLease: ReturnType<typeof modelAssets.acquire> | undefined;
-  const manifestLease = watchManifests.acquire('/assets/data/watch-parts.json');
   const rooms: Room[] = [];
   let disposed = false;
   let lastAspect = 16 / 9;
@@ -92,7 +89,6 @@ export async function createExhibits(): Promise<{
     rooms.length = 0;
     watchLease.release();
     pizzaLease?.release();
-    manifestLease.release();
   };
 
   try {
@@ -111,17 +107,13 @@ export async function createExhibits(): Promise<{
       const failed = loads.find(result => result.status === 'rejected');
       if (failed?.status === 'rejected') throw failed.reason;
     };
-    // Wait for every load to settle before cleanup, including late textures.
-    const loads = await Promise.allSettled([
+    const [watchResult, posterResult] = await Promise.allSettled([
       watchLease.promise,
-      manifestLease.promise,
       loadImages(['watch']),
     ]);
-    const failed = loads.find(result => result.status === 'rejected');
-    if (failed?.status === 'rejected') throw failed.reason;
-    const [watchSource, manifest] = await Promise.all([
-      watchLease.promise, manifestLease.promise,
-    ]);
+    if (watchResult.status === 'rejected') throw watchResult.reason;
+    if (posterResult.status === 'rejected') throw posterResult.reason;
+    const watchSource = watchResult.value;
 
     const metal = ownMaterial(new THREE.MeshStandardMaterial({
       name: 'Exhibit / satin metal', color: '#89939d', metalness: 0.78,
@@ -231,58 +223,35 @@ export async function createExhibits(): Promise<{
 
     const watchClone = cloneModel(watchSource.scene);
     watchClone.materials.forEach(material => materials.add(material));
-    const watchRoot = watchClone.object.getObjectByName('watch_root');
-    if (!watchRoot || watchRoot.children.length !== 47) throw new Error('В исходной модели часов отсутствуют 47 деталей');
-    const watchParts: {object: THREE.Object3D; data: WatchPart}[] = manifest.map(data => {
-      const object = watchRoot.getObjectByName(data.nodeName);
-      if (!object || object.parent !== watchRoot) throw new Error(`Отсутствует деталь часов: ${data.nodeName}`);
-      const rest = [...object.position.toArray(), ...object.quaternion.toArray(), ...object.scale.toArray()];
-      const expected = [...data.restPosition, ...data.restQuaternion, ...data.restScale];
-      if (rest.some((value, index) => Math.abs(value - expected[index]) > 0.0001)) {
-        throw new Error(`Исходная поза не совпадает с манифестом: ${data.nodeName}`);
-      }
-      return {object, data};
-    });
     const glass = ownMaterial(new THREE.MeshPhysicalMaterial({
       name: 'Watch / thin optical crystal', color: '#d5e2e9',
       roughness: 0.18, ior: 1.46, specularIntensity: 0.5,
       transparent: true, opacity: 0.08, depthWrite: false,
     }));
-    // The lens separates during disassembly. Draw it over the full-resolution
-    // scene so the dial and hands stay aligned and sharp behind it.
-    watchRoot.getObjectByName('front_glass')?.traverse(object => {
-      if (object instanceof THREE.Mesh) {object.material = glass; object.renderOrder = 2;}
-    });
     const dialInk = ownMaterial(new THREE.MeshBasicMaterial({
       name: 'Watch / charcoal dial printing', color: '#282723',
     }));
     watchClone.object.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return;
-      object.castShadow = object.receiveShadow = object.material !== glass;
-      for (const material of materialsOf(object)) {
-        if (!(material instanceof THREE.MeshStandardMaterial)) continue;
-        if (material.name === 'Blued steel hands') {
-          material.color.set('#172b40');
-          material.metalness = 0.72;
-          material.roughness = 0.34;
-        } else if (/brass|steel|aged case/i.test(material.name)) {
-          material.roughness = /polished/i.test(material.name) ? 0.28 : 0.39;
-        } else if (/enamel$/i.test(material.name)) {
-          material.roughness = 0.63;
-        }
-      }
-    });
-    watchRoot.getObjectByName('dial_face')?.traverse(object => {
-      if (!(object instanceof THREE.Mesh)) return;
-      object.receiveShadow = false;
-      if (object.material.name === 'Charcoal dial printing') {
-        // The outer scales were partly embedded in the enamel in the export.
-        object.position.z += 0.005;
+      const material = object.material;
+      if (!(material instanceof THREE.MeshStandardMaterial)) return;
+      object.castShadow = true;
+      object.receiveShadow = !/enamel$/i.test(material.name);
+      if (material.name === 'Optical crystal') {
+        object.material = glass;
+        object.renderOrder = 2;
+        object.castShadow = object.receiveShadow = false;
+      } else if (material.name === 'Charcoal dial printing') {
         object.material = dialInk;
-        object.castShadow = false;
-      } else if (object.material.name === 'Recessed seconds enamel') {
-        // Bring the inset ahead of the coplanar grooves on the main face.
-        object.position.z += 0.0032;
+        object.castShadow = object.receiveShadow = false;
+      } else if (material.name === 'Blued steel hands') {
+        material.color.set('#172b40');
+        material.metalness = 0.72;
+        material.roughness = 0.34;
+      } else if (/brass|steel|aged case/i.test(material.name)) {
+        material.roughness = /polished/i.test(material.name) ? 0.28 : 0.39;
+      } else if (/enamel$/i.test(material.name)) {
+        material.roughness = 0.63;
       }
     });
     const watchBounds = new THREE.Box3().setFromObject(watchClone.object);
@@ -294,8 +263,7 @@ export async function createExhibits(): Promise<{
     watchNormalized.scale.setScalar(watchScale);
     watchNormalized.add(watchClone.object);
     const watchObject = new THREE.Group();
-    watchObject.name = 'journey-original-watch';
-    watchObject.rotation.y = 0.25;
+    watchObject.name = 'journey-assembled-watch';
     watchObject.add(watchNormalized);
     const plinth = new THREE.Group();
     plinth.name = 'Timepiece / bevelled mineral display plinth';
@@ -318,8 +286,7 @@ export async function createExhibits(): Promise<{
         plinth.scale.set(scale, 1, scale);
       },
     };
-    const watchScreen = panel(watchRoom, 'timepiece-original-screen', images.watch, 6.4, 3.6);
-
+    const watchScreen = panel(watchRoom, 'KARpOV / first screen', images.watch, 6.4, 6.4 * 1000 / 1440);
     let fitRemaining: ((mix: (wide: number, narrow: number) => number, screenX: number, screenY: number, screenScale: number) => void) | undefined;
     let updateRemaining: ((progress: number) => void) | undefined;
     const loadRemaining = async () => {
@@ -402,54 +369,19 @@ export async function createExhibits(): Promise<{
 
     const updateVisibility = () => {
       for (const entry of rooms) {
-        entry.group.visible = lastProgress <= entry.end + 0.045
+        entry.group.visible = lastProgress <= entry.end + 0.08
           && (entry.group === watchRoom || lastProgress >= entry.start - 0.12);
       }
     };
-    let lastWatchPose = -1;
-    let manualWatchProgress: number | null = null;
-    let displayedWatchProgress = 0;
-    let targetWatchProgress = 0;
-    let snapWatch = false;
-    let lastUpdateTime: number | null = null;
-    const setWatchProgress = (progress: number | null, immediate = false) => {
-      if (disposed) return;
-      manualWatchProgress = progress === null ? null : clampProgress(progress);
-      snapWatch = immediate;
-    };
-    const update = (progress: number, time: number) => {
+    const update = (progress: number) => {
       if (disposed) return false;
-      lastProgress = clampProgress(progress);
+      lastProgress = unit(progress);
       updateVisibility();
-      const automatic = smooth(0.195, 0.233, lastProgress) * (1 - smooth(0.267, 0.305, lastProgress)) * 0.52;
-      const target = manualWatchProgress ?? automatic;
-      targetWatchProgress = target;
-      // Host time is in seconds. The same damping returns manual control to
-      // the timeline; no timer or independent animation loop is introduced.
-      let dt = 0;
-      if (Number.isFinite(time)) {
-        if (lastUpdateTime !== null) dt = Math.min(0.1, Math.max(0, time - lastUpdateTime));
-        lastUpdateTime = time;
-      }
-      displayedWatchProgress = snapWatch ? target : displayedWatchProgress + (target - displayedWatchProgress) * (1 - Math.exp(-dt / 0.10));
-      snapWatch = false;
-      if (Math.abs(target - displayedWatchProgress) < 0.00001) displayedWatchProgress = target;
-      const opened = displayedWatchProgress;
-      const poseChanged = opened !== lastWatchPose;
-      if (poseChanged) {
-        lastWatchPose = opened;
-        for (const part of watchParts) {
-          const pose = sampleWatchPart(part.data, opened);
-          part.object.position.fromArray(pose.position);
-          part.object.quaternion.fromArray(pose.quaternion);
-          part.object.scale.fromArray(pose.scale);
-        }
-      }
       const yaw = 0.23 + smooth(0.18, 0.24, lastProgress) * 0.09;
       const rotationChanged = watchObject.rotation.y !== yaw;
       watchObject.rotation.y = yaw;
       updateRemaining?.(lastProgress);
-      return poseChanged || rotationChanged;
+      return rotationChanged;
     };
 
     const fit = (aspect: number) => {
@@ -465,14 +397,14 @@ export async function createExhibits(): Promise<{
       const screenScale = mix(0.88, 5.5 / 6.4);
       watchScreen.place(screenX, screenY, -1.4, screenScale);
       watchScreen.group.rotation.y = mix(-0.16, 0);
-      watchMount.place(mix(-2.5, 0), mix(3.48, 6.1), 0.35, mix(1.17, 0.83));
+      watchMount.place(mix(-2.25, 0), mix(3.48, 6.1), 0.35, mix(1.17, 0.83));
       fitRemaining?.(mix, screenX, screenY, screenScale);
       updateVisibility();
     };
 
     fit(16 / 9);
-    update(0, 0);
-    return {group, loadRemaining, update, isAnimating: () => targetWatchProgress !== displayedWatchProgress, setWatchProgress, fit, dispose};
+    update(0);
+    return {group, loadRemaining, update, fit, dispose};
   } catch (error) {
     dispose();
     throw error;

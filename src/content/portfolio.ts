@@ -19,6 +19,7 @@ export interface Project {
   detailLabel: string;
   repository: string;
   demo?: { url: string; label: string };
+  showcase: { src: string; instruction: string };
   facts: string[];
   decisions: { title: string; text: string }[];
   presentation: string;
@@ -29,6 +30,9 @@ export const author = {
   description: "Разрабатываю сайты с 3D, движением и вниманием к интерфейсу",
   github: "https://github.com/Acerman-LoxneZZZ",
 };
+
+const faroDemo = "https://acerman-loxnezzz.github.io/pizza/scene-3d/";
+export const timepieceHero = "/assets/images/timepiece-karpov-hero.jpg";
 
 export const projects: Project[] = [
   {
@@ -45,10 +49,14 @@ export const projects: Project[] = [
     role: "Интерфейс и 3D-сцена, подготовка модели и данных деталей, управление разборкой",
     status: "Демонстрационная экспозиция, без симуляции рабочего механизма",
     accent: "#c49b5c",
-    screen: "/assets/images/timepiece-original.jpg",
+    screen: timepieceHero,
     detail: "/assets/images/timepiece-exploded.jpg",
     detailLabel: "Разборка в исходном проекте",
     repository: "https://github.com/Acerman-LoxneZZZ/chasi",
+    showcase: {
+      src: "/demos/timepiece/index.html",
+      instruction: "Прокрутите внутри витрины, чтобы рассмотреть устройство часов KARpOV и попробовать гравировку.",
+    },
     facts: [
       "47 отдельных деталей",
       "Выбор узлов и подписи",
@@ -69,7 +77,7 @@ export const projects: Project[] = [
       },
     ],
     presentation:
-      "В портфолио сохранены исходная модель, циферблат и крупный экран проекта. Свет и ракурс дают рассмотреть латунь, сталь и стекло; движение от прокрутки относится к новой подаче. В оригинале разборкой управляет ползунок.",
+      "В галерее показаны собранные часы и первый экран KARpOV. В живой витрине прокрутка раскрывает механизм, а в ручном режиме разборкой управляет ползунок.",
   },
   {
     id: "faro",
@@ -90,8 +98,12 @@ export const projects: Project[] = [
     detailLabel: "Меню исходного сайта",
     repository: "https://github.com/Acerman-LoxneZZZ/pizza",
     demo: {
-      url: "https://acerman-loxnezzz.github.io/pizza/scene-3d/",
+      url: faroDemo,
       label: "Открыть FARO",
+    },
+    showcase: {
+      src: faroDemo,
+      instruction: "Прокрутите внутри витрины, чтобы увидеть облёт пиццы и перейти к меню.",
     },
     facts: [
       "Облёт примерно на 200°",
@@ -133,6 +145,10 @@ export const projects: Project[] = [
     detail: "/assets/images/egypt-chapter.jpg",
     detailLabel: "Глава исходной экспозиции",
     repository: "https://github.com/Acerman-LoxneZZZ/egi",
+    showcase: {
+      src: "/demos/egypt/index.html",
+      instruction: "Прокрутите внутри витрины, чтобы пройти через портал и открыть главы экспозиции.",
+    },
     facts: ["Семь глав", "HTML-содержание без WebGL", "Three.js, GSAP, Lenis"],
     decisions: [
       {
@@ -170,6 +186,10 @@ export const projects: Project[] = [
     detailLabel: "Словари на учебных данных",
     repository: "https://github.com/Acerman-LoxneZZZ/EnCard",
     demo: { url: "https://t.me/WordsENRUbot", label: "Открыть в Telegram" },
+    showcase: {
+      src: "/demos/wordflow/index.html",
+      instruction: "Нажмите на карточку, чтобы увидеть перевод, и выберите свой ответ.",
+    },
     facts: [
       "Личные словари",
       "Локальная работа после первичной загрузки",

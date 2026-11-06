@@ -1,16 +1,25 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { author, projects } from "../content/portfolio";
+import { author, projects, type Project } from "../content/portfolio";
 import { PortfolioLink } from "../navigation/NavigationProvider";
 import { Arrow, Mark } from "../components/Icon";
 import { ReactiveName } from "../components/ReactiveName";
-import { FINALE_FROM, JOURNEY_LIMIT, JOURNEY_SCROLL_SVH, journeyChapters, chapterIndex, seekJourney } from "../experience/journey/chapters";
+import { ProjectShowcase } from "../components/ProjectShowcase";
+import { FINALE_FROM, GALLERY_SHUTTER_DELAY, JOURNEY_LIMIT, JOURNEY_SCROLL_SVH, journeyChapters, chapterIndex, seekJourney } from "../experience/journey/chapters";
 
 const JourneyCanvas = lazy(() => import("../components/JourneyCanvas"));
 const smooth = (a: number, b: number, n: number) => {
   const t = Math.min(1, Math.max(0, (n - a) / (b - a)));
   return t * t * (3 - 2 * t);
 };
-const descriptions = ["Сорок семь деталей. Один механизм.", "Тесто, огонь и немного Италии.", "По ту сторону древнего портала.", "Большой мир начинается с одного слова."];
+const descriptions = ["Карманные часы с эмалевым циферблатом.", "Тесто, огонь и немного Италии.", "По ту сторону древнего портала.", "Большой мир начинается с одного слова."];
+
+function ShowcaseChevron() {
+  return (
+    <svg width="20" height="28" viewBox="0 0 20 28" aria-hidden="true">
+      <path d="M4 4h.01M10 9h.01M16 14h.01M10 19h.01M4 24h.01" fill="none" stroke="currentColor" strokeWidth="3.6" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export function Home() {
   const root = useRef<HTMLElement>(null);
@@ -20,7 +29,7 @@ export function Home() {
   const [active, setActive] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const [indexOpen, setIndexOpen] = useState(false);
-  const [watchSetting, setWatchSetting] = useState(52);
+  const [showcase, setShowcase] = useState<Project | null>(null);
   useEffect(() => {
     document.documentElement.classList.add("in-journey");
     return () => document.documentElement.classList.remove("in-journey");
@@ -33,9 +42,13 @@ export function Home() {
     if (activeRef.current !== next) { activeRef.current = next; setActive(next); }
     const openingOpacity = 1 - smooth(0.035, 0.095, p);
     page.querySelectorAll<HTMLElement>("[data-journey-panel]").forEach((panel, i) => {
-      const center = journeyChapters[i].at;
+      const chapter = journeyChapters[i];
+      const center = chapter.at;
+      const reveal = i > 1
+        ? smooth(chapter.from + GALLERY_SHUTTER_DELAY + 0.012, center - 0.01, p)
+        : smooth(center - 0.075, center - 0.035, p);
       const opacity = i === 0 ? openingOpacity
-        : smooth(center - 0.075, center - 0.035, p)
+        : reveal
           * (i === projects.length ? 1 - smooth(FINALE_FROM, FINALE_FROM + 0.035, p)
             : 1 - smooth(center + 0.04, center + 0.08, p));
       panel.style.opacity = String(opacity);
@@ -64,7 +77,7 @@ export function Home() {
   return (
     <main id="main" ref={root} className={`journey-page is-${status}`} style={{ height: `${JOURNEY_SCROLL_SVH + 100}svh` }}>
       <div className="journey-stage">
-        <Suspense fallback={null}><JourneyCanvas onFrame={frame} onStatus={setStatus} paused={indexOpen || status === "fallback"} /></Suspense>
+        <Suspense fallback={null}><JourneyCanvas onFrame={frame} onStatus={setStatus} paused={indexOpen || !!showcase || status === "fallback"} /></Suspense>
         <div className="journey-vignette" aria-hidden="true" />
         {status === "fallback" && <div className="journey-fallback" aria-hidden="true">
           {next ? <img src={projects[active - 1]?.screen ?? "/assets/images/monolith-fallback.svg"} alt="" /> : <span className="journey-fallback-letter">И</span>}
@@ -93,19 +106,32 @@ export function Home() {
             <p className="journey-caption-label">{p.number} / 04 <span>{p.kicker}</span></p>
             <h2 id={`world-${p.id}-title`} tabIndex={-1}>{p.title}</h2>
             <p className="journey-project-description">{descriptions[i]}</p>
-            {p.id === "timepiece" && <div className="journey-watch-control">
-              <label htmlFor="journey-disassembly">Раздвиньте детали</label>
-              <input id="journey-disassembly" type="range" min="0" max="100" value={watchSetting} aria-label="Разборка часов" onChange={e => { const value = Number(e.target.value); setWatchSetting(value); window.dispatchEvent(new CustomEvent("journey:watch", { detail: value / 100 })); }} />
-              <button onClick={() => { setWatchSetting(52); window.dispatchEvent(new CustomEvent("journey:watch", { detail: null })); }}>Авто</button>
-            </div>}
           </div>
-          <PortfolioLink className="journey-open-project" to={`/work/${p.id}`}><span>Внутри проекта</span><Arrow /></PortfolioLink>
+          <button
+            type="button"
+            className="journey-showcase-trigger"
+            aria-haspopup="dialog"
+            onClick={event => {
+              event.currentTarget.focus({ preventScroll: true });
+              setShowcase(p);
+            }}
+          >
+            <span className="journey-showcase-label">Попробовать</span>
+            <span className="journey-showcase-tile" aria-hidden="true">
+              <span className="journey-showcase-arrow"><ShowcaseChevron /></span>
+              <span className="journey-showcase-trail">
+                {[1, 0.78, 0.54, 0.32, 0.18].map(opacity => (
+                  <span key={opacity} style={{ opacity }}><ShowcaseChevron /></span>
+                ))}
+              </span>
+            </span>
+          </button>
         </section>)}
       </div>
       <p className="journey-passage" aria-hidden="true">По ту сторону формы</p>
       <div className="journey-position" aria-hidden="true"><span>{String(active).padStart(2, "0")}</span><span>{journeyChapters[active].title}</span></div>
       <footer className="journey-controls">
-        <span className="journey-scroll-cue">{status === "loading" ? "Открываем пространство…" : active === 0 ? "Прокрутите, чтобы войти" : active === 1 ? "Механизм в ваших руках" : next ? "Листайте, чтобы пройти дальше" : "Финальный зал"}</span>
+        <span className="journey-scroll-cue">{status === "loading" ? "Открываем пространство…" : active === 0 ? "Прокрутите, чтобы войти" : next ? "Листайте, чтобы пройти дальше" : "Финальный зал"}</span>
         <nav className="journey-rail" aria-label="Остановки путешествия">
           <span className="journey-rail-line" aria-hidden="true"><i /></span>
           {journeyChapters.map((chapter, i) => <button key={chapter.id} className={i === active ? "is-active" : ""} onClick={() => seekJourney(chapter.at)} aria-current={i === active ? "step" : undefined} aria-label={chapter.title} title={chapter.title}><span className="journey-rail-dot" /><span className="journey-rail-number">{String(i).padStart(2, "0")}</span></button>)}
@@ -121,6 +147,7 @@ export function Home() {
         <div className="journey-index-list">{projects.map((p, i) => <PortfolioLink key={p.id} className="journey-index-row" to={`/work/${p.id}`} onClick={closeIndex}><span className="journey-index-no">{p.number}</span><img src={p.screen} alt="" width="192" height="108" loading="lazy" /><span className="journey-index-name">{p.title}<small>{p.kicker}</small></span><Arrow /></PortfolioLink>)}</div>
         <div className="journey-index-bottom"><button onClick={() => travel(0.24)}>Внутрь механизма <Arrow /></button><a href={author.github} target="_blank" rel="noreferrer">Мой GitHub <Arrow /></a><PortfolioLink to="/credits" onClick={closeIndex}>Источники</PortfolioLink></div>
       </dialog>
+      {showcase && <ProjectShowcase project={showcase} onClose={() => setShowcase(null)} />}
     </main>
   );
 }

@@ -3,6 +3,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { createAtelierMaterials, createClearGlass } from "./materials";
 import { createMachine } from "./machine";
 import { batchRigidMeshes } from "./batching";
+import { GALLERY_SHUTTER_DELAY, journeyChapters } from "./chapters";
 import { bendGalleryPoint, finaleRoom, galleryFloor, galleryStops, placeGalleryRoom, wingX, wingZ } from "./galleryRoute";
 
 /** The entrance and adjoining portfolio wing share the same material library. */
@@ -192,6 +193,12 @@ export function createArchitecture() {
   finalHall.add(finaleLight);
 
   const roomColors = ["#6c3328", "#66523b", "#353c55"];
+  const shutters: { leaves: THREE.Group[]; from: number; to: number }[] = [];
+  const shutterWidth = 9.15;
+  const shutterRest = shutterWidth / 2 + 0.012;
+  const shutterMetal = materials.own(materials.steel.clone());
+  shutterMetal.color.set("#222b32");
+  shutterMetal.roughness = 0.47;
   galleryStops.slice(1).forEach((distance, index) => {
     const room = new THREE.Group();
     placeGalleryRoom(room, distance);
@@ -208,6 +215,26 @@ export function createArchitecture() {
     }
     box(materials.steel, [18.2, 0.32, 0.85], [0, 10.55, -3.72], room);
     box(materials.steel, [18.2, 0.27, 0.66], [0, 11.65, 5.5], room);
+    const gate = new THREE.Group();
+    gate.name = "Gallery / sliding shutters";
+    gate.position.z = 6.5;
+    room.add(gate);
+    box(materials.steel, [19.1, 0.42, 0.75], [0, 11.18, 0], gate);
+    const leaves = [-1, 1].map(side => {
+      box(materials.steel, [0.38, 11.15, 0.75], [side * 9.35, 5.58, 0], gate);
+      const leaf = new THREE.Group();
+      leaf.position.x = side * shutterRest;
+      gate.add(leaf);
+      box(shutterMetal, [shutterWidth, 10.98, 0.38], [0, 5.53, 0], leaf);
+      for (const x of [-2.75, 0, 2.75]) {
+        box(materials.trim, [0.048, 10.4, 0.028], [x, 5.53, 0.197], leaf);
+      }
+      box(materials.polished, [0.068, 10.93, 0.055],
+        [-side * (shutterWidth / 2 - 0.048), 5.53, 0.207], leaf);
+      return leaf;
+    });
+    const chapter = journeyChapters[index + 2];
+    shutters.push({ leaves, from: chapter.from + GALLERY_SHUTTER_DELAY, to: chapter.at - 0.005 });
     const light = new THREE.PointLight(["#ffd3a6", "#f9dfb9", "#ccdcff"][index], 32, 17, 2);
     light.position.set(-2.8, 5.3, 4.4);
     room.add(light);
@@ -237,8 +264,16 @@ export function createArchitecture() {
     finale: finale.group,
     interact: machine.interact,
     update(progress: number, time: number) {
+      let shuttersChanged = false;
+      for (const { leaves, from, to } of shutters) {
+        const offset = shutterRest + shutterWidth * THREE.MathUtils.smootherstep(progress, from, to);
+        if (leaves[1].position.x === offset) continue;
+        leaves[0].position.x = -offset;
+        leaves[1].position.x = offset;
+        shuttersChanged = true;
+      }
       const machineChanged = machine.update(progress, time);
-      return finale.update(progress, time) || machineChanged;
+      return finale.update(progress, time) || machineChanged || shuttersChanged;
     },
     dispose() {
       machine.dispose();
