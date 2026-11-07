@@ -42,7 +42,7 @@ for (let room = 0; room < stops.length; room++) {
   // Give the corner after the watch and the approach to ПРОЯВЛЕНО more
   // of the scroll range without changing the settled reading poses.
   const enter = room === 0 || room === 2 ? -0.030 : -0.020;
-  const leave = room === 1 ? 0.030 : 0.020;
+  const leave = room === stops.length - 1 ? FINALE_FROM - at : room === 1 ? 0.030 : 0.020;
   for (const offset of [enter, 0, leave]) {
     keys.push({
       at: at + offset,
@@ -87,7 +87,7 @@ const clamp = (value: number, min: number, max: number) =>
  * Absolute camera rig: the caller owns scroll/pointer damping and rendering.
  * fit() reapplies the last pose for the new aspect. update() uses no clock/RAF.
  * camera.userData.journeyVisibility is a scene-owner hint; this module does not
- * change visibility or layers of rooms it does not own. Room indices are 0..3.
+ * change visibility or layers of rooms it does not own.
  */
 export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCamera {
   let aspect = Math.max(0.1, camera.aspect || 1);
@@ -101,6 +101,7 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
   const finaleLook = new THREE.Vector3(finaleRoom.x, 3.2, finaleRoom.z);
   const galleryLook = new THREE.Vector3();
   const previousPoint = new THREE.Vector3();
+  const previousLook = new THREE.Vector3(), entryVelocity = new THREE.Vector3();
   const values = new Float64Array(7);
   const visibility: JourneyVisibility = {portrait: aspect < 1.25, activeRoom: null, visibleRooms: allRooms};
   camera.userData.journeyVisibility = visibility;
@@ -169,14 +170,18 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
     const p = Math.min(lastProgress, FINALE_FROM);
     let fov = sample(p, pointer, reduced, position, look);
     if (lastProgress > FINALE_FROM) {
-      const t = THREE.MathUtils.smoothstep(lastProgress, FINALE_FROM, JOURNEY_LIMIT);
+      const u = clamp((lastProgress - FINALE_FROM) / (JOURNEY_LIMIT - FINALE_FROM), 0, 1);
+      const t = u + u * u - u * u * u;
       const compact = 1 - THREE.MathUtils.smoothstep(aspect, 0.82, 1.25);
       galleryLook.copy(look);
       finaleCurve.v0.copy(position);
-      finaleCurve.v1.copy(position);
-      finaleCurve.v1.x += 8;
+      sample(FINALE_FROM - 0.0001, pointer, reduced, previousPoint, previousLook);
+      entryVelocity.copy(position).sub(previousPoint).multiplyScalar(1 / 0.0001);
+      finaleCurve.v1.copy(position).addScaledVector(entryVelocity, (JOURNEY_LIMIT - FINALE_FROM) / 3);
+      // Enter the clear side aisle before passing the last display. This keeps
+      // the camera away from its face instead of enlarging it across the view.
       finaleCurve.v3.set(finaleView.x - compact * 0.8, finaleView.y, finaleView.z - compact * 3.1);
-      finaleCurve.v2.set(finaleCurve.v3.x, 3.05, -32.8);
+      finaleCurve.v2.set(finaleCurve.v3.x, 3.05, finaleCurve.v3.z);
       finaleCurve.getPoint(t, position);
       finaleCurve.getPoint(Math.max(0, t - 0.015), previousPoint);
       finaleCurve.getPoint(Math.min(1, t + 0.04), look);

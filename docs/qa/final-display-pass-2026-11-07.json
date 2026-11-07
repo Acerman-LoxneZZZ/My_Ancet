@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-07",
+  "replaces": "Retaining the tutor room for the entire finale, introduced in 2ef9ff6.",
+  "changes": [
+    "The final approach keeps moving through progress 0.846 to 0.858 instead of stopping.",
+    "The final camera curve matches incoming speed and direction, then moves into the aisle past the display.",
+    "The room is culled after the camera crosses behind its screen plane and its complete bounds leave the view.",
+    "A fresh visit directly to the finale does not load the old display."
+  ],
+  "validation": {
+    "testsPassed": 171,
+    "cameraEntrySpeedRatioTolerance": [
+      0.95,
+      1.05
+    ],
+    "cameraEntryDirectionDotMinimum": 0.999,
+    "testedAspectRatios": [
+      0.45,
+      0.46208530805687204,
+      0.4613733905579399,
+      1,
+      1.6,
+      2.164102564102564
+    ],
+    "physicalChecks": [
+      "Camera stays outside the display bounds with near-plane clearance.",
+      "No room is hidden while its bounds intersect the camera view.",
+      "Backtracking restores the room before it re-enters the view."
+    ],
+    "typecheck": "passed",
+    "productionBuild": "passed"
+  },
+  "limits": "Browser viewport checks and geometric camera tests; no real-phone GPU benchmark."
+}

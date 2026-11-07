@@ -53,4 +53,32 @@ describe("gallery camera transitions", () => {
     rail.update(1, [0, 0], false);
     expect(camera.position.distanceTo(new Vector3(finaleView.x, finaleView.y, finaleView.z))).toBeLessThan(0.01);
   });
+
+  it("keeps advancing from the last display into the final turn", () => {
+    const camera = new PerspectiveCamera();
+    const rail = createJourneyCamera(camera);
+    rail.fit(1.6);
+    rail.update(0.846, [0, 0], false);
+    const previous = camera.position.clone();
+    for (let step = 1; step <= 12; step++) {
+      rail.update(0.846 + step * 0.001, [0, 0], false);
+      expect(camera.position.distanceTo(previous)).toBeGreaterThan(0.02);
+      previous.copy(camera.position);
+    }
+  });
+
+  it.each([0.45, 1.6, 844 / 390])("enters the final turn without a speed or direction step at aspect %s", aspect => {
+    const camera = new PerspectiveCamera();
+    const rail = createJourneyCamera(camera);
+    rail.fit(aspect);
+    rail.update(FINALE_FROM - 0.0001, [0, 0], false);
+    const before = camera.position.clone();
+    rail.update(FINALE_FROM, [0, 0], false);
+    const join = camera.position.clone();
+    rail.update(FINALE_FROM + 0.0001, [0, 0], false);
+    const incoming = join.clone().sub(before), outgoing = camera.position.clone().sub(join);
+    expect(outgoing.length() / incoming.length()).toBeGreaterThan(0.95);
+    expect(outgoing.length() / incoming.length()).toBeLessThan(1.05);
+    expect(incoming.normalize().dot(outgoing.normalize())).toBeGreaterThan(0.999);
+  });
 });

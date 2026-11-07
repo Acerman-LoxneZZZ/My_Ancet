@@ -43,7 +43,7 @@ const smooth = (start: number, end: number, progress: number): number => {
 };
 
 /** Mount exhibit assets as the camera approaches each room. */
-export function createExhibits(prepareObject: (object: THREE.Object3D) => Promise<void> = async () => {}): {
+export function createExhibits(prepareObject: (object: THREE.Object3D) => Promise<void> = async () => {}, camera?: THREE.PerspectiveCamera): {
   group: THREE.Group;
   prepare(progress: number, onMount: () => void): void;
   update(progress: number): boolean;
@@ -70,6 +70,17 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
   let disposed = false;
   let lastAspect = 16 / 9;
   let lastProgress = 0;
+  let finalScreen: THREE.Group | undefined;
+  const finalBounds = new THREE.Box3();
+  const finalScreenPlane = new THREE.Plane();
+  const finalNormal = new THREE.Vector3(), finalPoint = new THREE.Vector3();
+  const viewProjection = new THREE.Matrix4(), frustum = new THREE.Frustum();
+  const finalRoomPassed = () => {
+    if (!camera || !finalScreen || finalBounds.isEmpty()) return true;
+    if (finalScreenPlane.distanceToPoint(camera.position) >= -0.35) return false;
+    frustum.setFromProjectionMatrix(viewProjection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    return !frustum.intersectsBox(finalBounds);
+  };
 
   const ownGeometry = <T extends THREE.BufferGeometry>(value: T): T => {
     geometries.add(value);
@@ -160,9 +171,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
       group.add(roomGroup);
       // Closed shutters already hide the exhibits from the camera.
       const visibleFrom = index === 0 ? chapter.from - 0.075 : galleryShutterStart(chapter);
-      // The last room remains part of the view as the camera turns into the finale.
-      const end = index === exhibitChapters.length - 1 ? JOURNEY_LIMIT : chapter.to;
-      rooms[index] = {group: roomGroup, ready: false, visibleFrom, end};
+      rooms[index] = {group: roomGroup, ready: false, visibleFrom, end: chapter.to};
       return roomGroup;
     }
 
@@ -420,6 +429,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
       if (disposed) return;
       const parent = room(index);
       const screen = panel(parent, exhibitChapters[index].title, images[id], 7, 4.375);
+      if (index === exhibitChapters.length - 1) finalScreen = screen.group;
       const sculpture = new THREE.Group();
       if (id === 'dal') {
         const ring = mesh(new THREE.TorusGeometry(1.33, 0.065, 10, 56), atelier.brass);
@@ -457,8 +467,9 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
     const prepare = (progress: number, onMount: () => void) => {
       if (disposed) return;
       exhibitChapters.forEach((chapter, index) => {
-        const end = index === exhibitChapters.length - 1 ? JOURNEY_LIMIT : chapter.to;
-        if (requested.has(index) || (index > 0 && progress < chapter.from - 0.14) || progress > end + 0.055) return;
+        const pastRoom = progress > chapter.to + 0.055;
+        const leavingFinalRoom = index === exhibitChapters.length - 1 && progress < JOURNEY_LIMIT;
+        if (requested.has(index) || (index > 0 && progress < chapter.from - 0.14) || (pastRoom && !leavingFinalRoom)) return;
         requested.add(index);
         void loaders[index]().then(async () => {
           if (disposed) return;
@@ -479,7 +490,9 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
       let changed = false;
       for (const entry of rooms) {
         if (!entry) continue;
-        const visible = entry.ready && lastProgress >= entry.visibleFrom && lastProgress <= entry.end + 0.055;
+        const leavingFinalRoom = entry === rooms[exhibitChapters.length - 1] && !finalRoomPassed();
+        const visible = entry.ready && lastProgress >= entry.visibleFrom
+          && (lastProgress <= entry.end + 0.055 || leavingFinalRoom);
         changed ||= entry.group.visible !== visible;
         entry.group.visible = visible;
       }
@@ -504,6 +517,14 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
       const screenY = mix(3.75, 2.3);
       const screenScale = mix(0.88, 5.5 / 6.4);
       for (const layout of layouts) layout(mix, screenX, screenY, screenScale);
+      const finalRoom = rooms[exhibitChapters.length - 1];
+      if (finalRoom && finalScreen) {
+        finalRoom.group.updateWorldMatrix(true, true);
+        finalBounds.setFromObject(finalRoom.group).expandByScalar(0.2);
+        finalNormal.set(0, 0, 1).transformDirection(finalScreen.matrixWorld);
+        finalPoint.setFromMatrixPosition(finalScreen.matrixWorld);
+        finalScreenPlane.setFromNormalAndCoplanarPoint(finalNormal, finalPoint);
+      }
       updateVisibility();
     };
 
