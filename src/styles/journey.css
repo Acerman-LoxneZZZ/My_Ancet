@@ -129,7 +129,6 @@ html.in-journey { background: #060a0d; scroll-behavior: auto; scroll-padding-top
 .journey-ending-side p { color: #b3bfc4; font-size: 14px; }
 .journey-ending-side .journey-open-project { margin-top: 16px; width: 100%; }
 .journey-credits { display: block; width: fit-content; font-size: 11px; color: #89969d; margin-top: 24px; }
-.journey-passage { position: fixed; z-index: 5; left: 0; right: 0; top: 21%; text-align: center; opacity: 0; pointer-events: none; font-size: clamp(16px, 1.7vw, 25px); letter-spacing: -.02em; }
 .journey-position { position: fixed; z-index: 5; left: var(--journey-edge); top: 125px; display: flex; align-items: center; gap: 12px; color: #a8b4bb; font-size: 11px; pointer-events: none; }
 .journey-position > span:first-child { font-family: Consolas, monospace; border-right: 1px solid #b3bfc43d; padding-right: 12px; }
 .journey-controls { position: fixed; z-index: 10; inset: auto var(--journey-edge) 24px; display: grid; grid-template-columns: 1fr minmax(220px,360px) 1fr; align-items: end; gap: 40px; height: 60px; }

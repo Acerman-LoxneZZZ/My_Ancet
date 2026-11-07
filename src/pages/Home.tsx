@@ -34,8 +34,6 @@ export function Home() {
   const presentation = useRef<{
     page: HTMLElement;
     rail: HTMLElement | null;
-    passage: HTMLElement | null;
-    passageOpacity: number;
     panels: { element: HTMLElement; opacity: number; hidden?: boolean; interactive?: boolean }[];
   } | null>(null);
   const [active, setActive] = useState(0);
@@ -53,8 +51,6 @@ export function Home() {
       presentation.current = {
         page,
         rail: page.querySelector<HTMLElement>(".journey-rail-line i"),
-        passage: page.querySelector<HTMLElement>(".journey-passage"),
-        passageOpacity: NaN,
         panels: [...page.querySelectorAll<HTMLElement>("[data-journey-panel]")]
           .map(element => ({ element, opacity: NaN })),
       };
@@ -95,11 +91,6 @@ export function Home() {
         state.interactive = interactive;
       }
     });
-    const passageOpacity = smooth(0.085, 0.12, p) * (1 - smooth(0.145, 0.18, p));
-    if (view.passage && view.passageOpacity !== passageOpacity) {
-      view.passage.style.opacity = String(passageOpacity);
-      view.passageOpacity = passageOpacity;
-    }
   }, []);
   const closeIndex = () => { indexDialog.current?.close(); setIndexOpen(false); menuButton.current?.focus(); };
   const openIndex = () => { indexDialog.current?.showModal(); setIndexOpen(true); };
@@ -182,7 +173,6 @@ export function Home() {
           <ReactiveName name={finaleChapter.title} as="h2" />
         </section>
       </div>
-      <p className="journey-passage" aria-hidden="true">По ту сторону формы</p>
       <div className="journey-position" aria-hidden="true"><span>{String(active).padStart(2, "0")}</span><span>{journeyChapters[active].title}</span></div>
       <footer className="journey-controls">
         <span className="journey-scroll-cue">{status === "loading" ? "Открываем пространство…" : active === 0 ? "Прокрутите, чтобы войти" : next ? "Листайте, чтобы пройти дальше" : "Финальный зал"}</span>

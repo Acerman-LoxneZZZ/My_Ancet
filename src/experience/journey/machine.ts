@@ -314,10 +314,11 @@ export function createMachine(m: AtelierMaterials, finale = false) {
         gear(content, -2.70, y, i % 2 ? 0.55 : 0.52, -0.08 + (i % 2) * 0.16, 36, i % 2 ? -0.035 : 0.038);
       });
     } else if (index === 1) {
-      gear(content, -0.39, 0.98, 0.39, -0.12, 28, 0.04);
-      gear(content, 0.44, 1.55, 0.59, 0.08, 42, -0.027);
-      gear(content, 1.62, 2.37, 0.82, -0.12, 56, 0.019);
-      gear(content, 2.68, 3.15, 0.48, 0.10, 32, -0.033);
+      // Leave clearance for the tooth tips inside the diagonal crystal frame.
+      gear(content, -0.39, 0.98, 0.29, -0.12, 28, 0.04);
+      gear(content, 0.44, 1.55, 0.44, 0.08, 42, -0.027);
+      gear(content, 1.62, 2.37, 0.46, -0.12, 56, 0.019);
+      gear(content, 2.68, 3.15, 0.44, 0.10, 32, -0.033);
       beam(content, new THREE.Vector3(-0.7, 0.9, -0.42), new THREE.Vector3(2.9, 3.5, -0.42), 0.14, 0.25, m.steel);
       beam(content, new THREE.Vector3(-0.6, 0.76, -0.21), new THREE.Vector3(2.6, 3.03, -0.21), 0.025, 0.05, m.polished);
     } else {
