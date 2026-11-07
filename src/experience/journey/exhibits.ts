@@ -9,6 +9,7 @@ import {getProject, timepieceHero} from '../../content/portfolio';
 
 type Room = {
   group: THREE.Group;
+  ready: boolean;
   visibleFrom: number;
   end: number;
 };
@@ -42,7 +43,7 @@ const smooth = (start: number, end: number, progress: number): number => {
 };
 
 /** Mount exhibit assets as the camera approaches each room. */
-export function createExhibits(): {
+export function createExhibits(prepareObject: (object: THREE.Object3D) => Promise<void> = async () => {}): {
   group: THREE.Group;
   prepare(progress: number, onMount: () => void): void;
   update(progress: number): boolean;
@@ -154,11 +155,12 @@ export function createExhibits(): {
       const chapter = exhibitChapters[index];
       const roomGroup = new THREE.Group();
       roomGroup.name = `journey-room-${chapter.id}`;
+      roomGroup.visible = false;
       placeGalleryRoom(roomGroup, galleryStops[index]);
       group.add(roomGroup);
       // Closed shutters already hide the exhibits from the camera.
-      const visibleFrom = index === 0 ? 0 : galleryShutterStart(chapter);
-      rooms.push({group: roomGroup, visibleFrom, end: chapter.to});
+      const visibleFrom = index === 0 ? chapter.from - 0.075 : galleryShutterStart(chapter);
+      rooms[index] = {group: roomGroup, ready: false, visibleFrom, end: chapter.to};
       return roomGroup;
     }
 
@@ -453,11 +455,15 @@ export function createExhibits(): {
     const prepare = (progress: number, onMount: () => void) => {
       if (disposed) return;
       exhibitChapters.forEach((chapter, index) => {
-        if (requested.has(index) || progress < chapter.from - 0.075 || progress > chapter.to + 0.055) return;
+        if (requested.has(index) || (index > 0 && progress < chapter.from - 0.14) || progress > chapter.to + 0.055) return;
         requested.add(index);
-        void loaders[index]().then(() => {
+        void loaders[index]().then(async () => {
           if (disposed) return;
           fit(lastAspect);
+          try { await prepareObject(rooms[index].group); }
+          catch (error) { if (!disposed) console.warn('Could not prepare gallery resources', chapter.id, error); }
+          if (disposed) return;
+          rooms[index].ready = true;
           update(lastProgress);
           onMount();
         }).catch(error => {
@@ -469,7 +475,8 @@ export function createExhibits(): {
     const updateVisibility = () => {
       let changed = false;
       for (const entry of rooms) {
-        const visible = lastProgress >= entry.visibleFrom && lastProgress <= entry.end + 0.055;
+        if (!entry) continue;
+        const visible = entry.ready && lastProgress >= entry.visibleFrom && lastProgress <= entry.end + 0.055;
         changed ||= entry.group.visible !== visible;
         entry.group.visible = visible;
       }

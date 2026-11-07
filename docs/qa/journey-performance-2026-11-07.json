@@ -1,0 +1,252 @@
+{
+  "date": "2026-11-07",
+  "baselineRevision": "94cdea1",
+  "method": "Same IAB tab, viewport and navigation sequence: surface -> FARO -> Egypt -> Proyavleno -> timepiece -> finale. Temporary opt-in instrumentation was removed after comparison. CPU samples cover scene/camera updates, renderer.render and caption updates. Frame intervals cover consecutive active frames only.",
+  "conditions": {
+    "viewport": [
+      1280,
+      720
+    ],
+    "devicePixelRatio": 1,
+    "drawingBuffer": [
+      1280,
+      720
+    ],
+    "imageQualitySettings": "Unchanged: pixel ratio caps, adaptive quality thresholds, reflection resolution and cadence, antialiasing, shadows, lighting, materials, models, camera path and easing.",
+    "limitations": "One before/after pass on this machine, without isolating driver shader-cache effects. This is not a cross-device FPS guarantee or a pixel-exact animation comparison."
+  },
+  "before": [
+    {
+      "label": "0.337",
+      "frames": 191,
+      "objects": 397,
+      "intervals": {
+        "mean": 32.112041884816755,
+        "p95": 16.80000000000109,
+        "max": 1683.3999999999996
+      },
+      "cpu": {
+        "mean": 20.33350785240453,
+        "p95": 7.700000047683716,
+        "max": 1674.4000000953674
+      },
+      "over50ms": 2
+    },
+    {
+      "label": "0.459",
+      "frames": 163,
+      "objects": 413,
+      "intervals": {
+        "mean": 17.17852760736191,
+        "p95": 16.80000000000291,
+        "max": 83.30000000000291
+      },
+      "cpu": {
+        "mean": 3.9171779199611922,
+        "p95": 4.700000047683716,
+        "max": 84.40000009536743
+      },
+      "over50ms": 1
+    },
+    {
+      "label": "0.582",
+      "frames": 151,
+      "objects": 432,
+      "intervals": {
+        "mean": 31.899999999999963,
+        "p95": 16.80000000000291,
+        "max": 2283.300000000003
+      },
+      "cpu": {
+        "mean": 18.278145692206376,
+        "p95": 4.299999952316284,
+        "max": 2291.7999999523163
+      },
+      "over50ms": 1
+    },
+    {
+      "label": "0.214",
+      "frames": 198,
+      "objects": 432,
+      "intervals": {
+        "mean": 16.666666666666668,
+        "p95": 16.80000000000291,
+        "max": 16.89999999999418
+      },
+      "cpu": {
+        "mean": 3.9010100954710833,
+        "p95": 5.700000047683716,
+        "max": 7
+      },
+      "over50ms": 0
+    },
+    {
+      "label": "1",
+      "frames": 235,
+      "objects": 451,
+      "intervals": {
+        "mean": 16.737872340425508,
+        "p95": 16.800000000017462,
+        "max": 33.60000000000582
+      },
+      "cpu": {
+        "mean": 3.8302127645370807,
+        "p95": 5.200000047683716,
+        "max": 22.899999856948853
+      },
+      "over50ms": 0
+    }
+  ],
+  "after": [
+    {
+      "label": "0.337",
+      "frames": 198,
+      "objects": 397,
+      "intervals": {
+        "mean": 16.834848484848482,
+        "p95": 16.800000000000182,
+        "max": 33.30000000000018
+      },
+      "cpu": {
+        "mean": 4.7712121274736194,
+        "p95": 7,
+        "max": 43.80000019073486
+      },
+      "over50ms": 0
+    },
+    {
+      "label": "0.459",
+      "frames": 168,
+      "objects": 413,
+      "intervals": {
+        "mean": 16.667857142857148,
+        "p95": 16.799999999999272,
+        "max": 16.80000000000291
+      },
+      "cpu": {
+        "mean": 3.7273809640180495,
+        "p95": 7.1000001430511475,
+        "max": 10.5
+      },
+      "over50ms": 0
+    },
+    {
+      "label": "0.582",
+      "frames": 167,
+      "objects": 432,
+      "intervals": {
+        "mean": 16.667664670658684,
+        "p95": 16.80000000000291,
+        "max": 16.80000000000291
+      },
+      "cpu": {
+        "mean": 3.4323353196332556,
+        "p95": 5.099999904632568,
+        "max": 10.200000047683716
+      },
+      "over50ms": 0
+    },
+    {
+      "label": "0.214",
+      "frames": 198,
+      "objects": 432,
+      "intervals": {
+        "mean": 16.667676767676753,
+        "p95": 16.80000000000291,
+        "max": 16.90000000000873
+      },
+      "cpu": {
+        "mean": 3.426262637581488,
+        "p95": 5.799999952316284,
+        "max": 7
+      },
+      "over50ms": 0
+    },
+    {
+      "label": "1",
+      "frames": 236,
+      "objects": 451,
+      "intervals": {
+        "mean": 16.666949152542347,
+        "p95": 16.80000000000291,
+        "max": 16.90000000000873
+      },
+      "cpu": {
+        "mean": 3.0101694979910123,
+        "p95": 4,
+        "max": 4.599999904632568
+      },
+      "over50ms": 0
+    }
+  ],
+  "screenshots": [
+    {
+      "scene": "faro",
+      "size": [
+        1265,
+        712
+      ],
+      "meanAbsoluteDifference": 0.2542504922206925,
+      "percentOfFullScale": 0.09970607538066373
+    },
+    {
+      "scene": "egypt",
+      "size": [
+        1265,
+        712
+      ],
+      "meanAbsoluteDifference": 0.0002660952465544551,
+      "percentOfFullScale": 0.00010435107708017848
+    },
+    {
+      "scene": "proyavleno",
+      "size": [
+        1265,
+        712
+      ],
+      "meanAbsoluteDifference": 0.18921999674320142,
+      "percentOfFullScale": 0.07420392029145154
+    },
+    {
+      "scene": "timepiece",
+      "size": [
+        1265,
+        712
+      ],
+      "meanAbsoluteDifference": 0.4063751831949194,
+      "percentOfFullScale": 0.15936281693918408
+    },
+    {
+      "scene": "finale",
+      "size": [
+        1265,
+        712
+      ],
+      "meanAbsoluteDifference": 0.005850394516735503,
+      "percentOfFullScale": 0.002294272359504119,
+      "note": "The mechanism is time-dependent; captures are not synchronized to its animation phase."
+    }
+  ],
+  "validation": {
+    "testsPassed": 160,
+    "testFilesPassed": 16,
+    "newRegressionTests": [
+      "shared texture uploads and both shader variants",
+      "render-target restoration while compilation is pending and on failure",
+      "GPU preparation disposal",
+      "watch preparation and original visibility boundary",
+      "direct jumps with earlier rooms unloaded",
+      "unmount during exhibit preparation"
+    ],
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "finalProductionBuildWithoutInstrumentation": "passed",
+    "mainJourneyBrowserErrorsOrWarnings": [],
+    "productionSmoke": {
+      "nativeScroll": "passed",
+      "openAndCloseFaroShowcase": "passed",
+      "diagnosticCodeRemoved": true,
+      "note": "The unchanged FARO iframe emitted a Direct3D shader precision warning (X4122); the journey itself had no errors or warnings."
+    }
+  }
+}

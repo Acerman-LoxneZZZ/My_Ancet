@@ -7,6 +7,7 @@ import { createJourneyReflection } from "../experience/journey/reflection";
 import { FINALE_FROM, JOURNEY_LIMIT } from "../experience/journey/chapters";
 import { createAtelierLighting } from "../experience/journey/lighting";
 import { entrancePose, limitEntranceStep, openingCaptionEnd } from "../experience/journey/entrance";
+import { createJourneyResources } from "../experience/journey/resources";
 
 type Props = {
   onFrame: (progress: number) => void;
@@ -54,6 +55,8 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     renderer.shadowMap.autoUpdate = false;
     renderer.setClearColor(0x080e15, 1);
     const scene = new THREE.Scene();
+    // The screen and mirror share the same world transforms for this frame.
+    scene.matrixWorldAutoUpdate = false;
     scene.background = new THREE.Color(0x080e15);
     scene.fog = new THREE.FogExp2(0x101c28, 0.006);
     const camera = new THREE.PerspectiveCamera(50, 1, 0.08, 90);
@@ -63,9 +66,11 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     const reflection = createJourneyReflection(compact);
     scene.add(reflection.floor);
     const rail = createJourneyCamera(camera);
-    const exhibits = createExhibits();
+    const resources = createJourneyResources(renderer, scene, camera, reflection.floor.getRenderTarget());
+    const exhibits = createExhibits(resources.prepare);
     scene.add(exhibits.group);
     let alive = true;
+    let resourcesReady = false;
     let raf = 0;
     let maxY = 1;
     let target = 0;
@@ -177,7 +182,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     };
     function tick(now: number) {
       raf = 0;
-      if (!alive || pause.current || document.hidden) return;
+      if (!alive || !resourcesReady || pause.current || document.hidden) return;
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       if (pilot) {
@@ -240,6 +245,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
         shadowDirty = false;
         lastShadow = now;
       }
+      scene.updateMatrixWorld();
       reflection.prepare(camera, now, machineChanged || exhibitsChanged, invalidated || exhibitsChanged);
       renderer.render(scene, camera);
       if (!ready) {
@@ -267,7 +273,16 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       cancelAnimationFrame(raf);
       statusCallback.current("fallback");
     };
+    void resources.prepare(scene).catch(error => {
+      if (alive) console.warn("Could not prepare journey resources", error);
+    }).then(() => {
+      if (!alive) return;
+      resourcesReady = true;
+      last = performance.now();
+      invalidate();
+    });
     resize();
+    exhibits.prepare(target, exhibitMounted);
     progress = target;
     rail.update(progress, pointer, motion.matches);
     architecture.update(progress, 0, entrancePose(progress, Infinity, motion.matches));
@@ -292,6 +307,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     return () => {
       alive = false;
       wake.current = undefined;
+      resources.dispose();
       cancelAnimationFrame(raf);
       observer.disconnect();
       window.removeEventListener("scroll", readScroll);

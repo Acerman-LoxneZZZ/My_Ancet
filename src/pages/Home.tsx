@@ -31,6 +31,13 @@ export function Home() {
   const menuButton = useRef<HTMLButtonElement>(null);
   const pendingTravel = useRef<number | null>(null);
   const activeRef = useRef(0);
+  const presentation = useRef<{
+    page: HTMLElement;
+    rail: HTMLElement | null;
+    passage: HTMLElement | null;
+    passageOpacity: number;
+    panels: { element: HTMLElement; opacity: number; hidden?: boolean; interactive?: boolean }[];
+  } | null>(null);
   const [active, setActive] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const [indexOpen, setIndexOpen] = useState(false);
@@ -42,11 +49,25 @@ export function Home() {
   const frame = useCallback((p: number) => {
     const page = root.current;
     if (!page) return;
-    page.style.setProperty("--journey-progress", String(p / JOURNEY_LIMIT));
+    if (presentation.current?.page !== page) {
+      presentation.current = {
+        page,
+        rail: page.querySelector<HTMLElement>(".journey-rail-line i"),
+        passage: page.querySelector<HTMLElement>(".journey-passage"),
+        passageOpacity: NaN,
+        panels: [...page.querySelectorAll<HTMLElement>("[data-journey-panel]")]
+          .map(element => ({ element, opacity: NaN })),
+      };
+    }
+    const view = presentation.current;
+    // This property only drives the rail. Keeping it here avoids invalidating
+    // inherited styles across every panel and letter on every scroll frame.
+    view.rail?.style.setProperty("--journey-progress", String(p / JOURNEY_LIMIT));
     const next = chapterIndex(p);
     if (activeRef.current !== next) { activeRef.current = next; setActive(next); }
     const openingOpacity = 1 - smooth(shadowHold.to, openingCaptionEnd, p);
-    page.querySelectorAll<HTMLElement>("[data-journey-panel]").forEach((panel, i) => {
+    view.panels.forEach((state, i) => {
+      const panel = state.element;
       const chapter = journeyChapters[i];
       const center = chapter.at;
       const reveal = i > 1
@@ -57,14 +78,28 @@ export function Home() {
         : reveal
           * (i === projects.length ? 1 - smooth(FINALE_FROM, FINALE_FROM + 0.025, p)
             : 1 - smooth(center + 0.026, center + 0.054, p));
-      panel.style.opacity = String(opacity);
-      panel.style.transform = `translate3d(0,${(1 - opacity) * 16}px,0)`;
-      panel.inert = opacity < 0.12;
-      panel.setAttribute("aria-hidden", String(opacity < 0.12));
-      panel.style.pointerEvents = opacity > 0.12 ? "auto" : "none";
+      if (state.opacity !== opacity) {
+        panel.style.opacity = String(opacity);
+        panel.style.transform = `translate3d(0,${(1 - opacity) * 16}px,0)`;
+        state.opacity = opacity;
+      }
+      const hidden = opacity < 0.12;
+      if (state.hidden !== hidden) {
+        panel.inert = hidden;
+        panel.setAttribute("aria-hidden", String(hidden));
+        state.hidden = hidden;
+      }
+      const interactive = opacity > 0.12;
+      if (state.interactive !== interactive) {
+        panel.style.pointerEvents = interactive ? "auto" : "none";
+        state.interactive = interactive;
+      }
     });
-    const passage = page.querySelector<HTMLElement>(".journey-passage");
-    if (passage) passage.style.opacity = String(smooth(0.085, 0.12, p) * (1 - smooth(0.145, 0.18, p)));
+    const passageOpacity = smooth(0.085, 0.12, p) * (1 - smooth(0.145, 0.18, p));
+    if (view.passage && view.passageOpacity !== passageOpacity) {
+      view.passage.style.opacity = String(passageOpacity);
+      view.passageOpacity = passageOpacity;
+    }
   }, []);
   const closeIndex = () => { indexDialog.current?.close(); setIndexOpen(false); menuButton.current?.focus(); };
   const openIndex = () => { indexDialog.current?.showModal(); setIndexOpen(true); };
