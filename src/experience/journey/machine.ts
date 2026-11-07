@@ -253,7 +253,7 @@ export function createMachine(m: AtelierMaterials, finale = false) {
       const chassisShape = outline(definition.points, 0.90);
       const bores: Point[] = index === 0
         ? [[-2.7, 2.64], [-2.7, 1.56], [-2.7, 0.48], [-2.7, -0.6], [-2.7, -1.68]]
-        : index === 1 ? [[0.44, 1.55], [1.62, 2.37], [2.68, 3.15]]
+        : index === 1 ? [[0.44, 1.55], [1.62, 2.15], [2.68, 3.15]]
           : [[-0.75, -0.72], [0.17, -1.37], [1.42, -2.13]];
       for (const [x, y] of bores) {
         const bore = new THREE.Path();
@@ -317,7 +317,7 @@ export function createMachine(m: AtelierMaterials, finale = false) {
       // Leave clearance for the tooth tips inside the diagonal crystal frame.
       gear(content, -0.39, 0.98, 0.29, -0.12, 28, 0.04);
       gear(content, 0.44, 1.55, 0.44, 0.08, 42, -0.027);
-      gear(content, 1.62, 2.37, 0.46, -0.12, 56, 0.019);
+      gear(content, 1.62, 2.15, 0.63, -0.12, 56, 0.019);
       gear(content, 2.68, 3.15, 0.44, 0.10, 32, -0.033);
       beam(content, new THREE.Vector3(-0.7, 0.9, -0.42), new THREE.Vector3(2.9, 3.5, -0.42), 0.14, 0.25, m.steel);
       beam(content, new THREE.Vector3(-0.6, 0.76, -0.21), new THREE.Vector3(2.6, 3.03, -0.21), 0.025, 0.05, m.polished);
