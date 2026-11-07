@@ -2,7 +2,7 @@
 .light-line { position: relative; display: inline-block; isolation: isolate; max-width: 100%; color: color-mix(in srgb, var(--ink) calc((1 - var(--line-progress, 1)) * 100%), var(--accent)); }
 .light-line::after { content: ''; position: absolute; z-index: -1; left: 0; right: 0; bottom: .06em; height: .16em; background: var(--accent); opacity: .28; transform: scaleX(var(--line-progress, 1)); transform-origin: left; }
 
-.scope-panel { --fan-progress: 1; perspective: 1100px; }
+.scope-panel { --fan-progress: 1; perspective: 1100px; overflow: clip; }
 .scope-panel > article { transform-origin: 0 50%; transform: translateX(calc((1 - var(--fan-progress)) * 65px)) rotateY(calc((1 - var(--fan-progress)) * -22deg)); opacity: calc(.88 + var(--fan-progress) * .12); }
 
 .faq-entry { --wave-progress: 1; --entry-offset: 38px; position: relative; }

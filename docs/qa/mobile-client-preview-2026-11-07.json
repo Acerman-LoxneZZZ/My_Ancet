@@ -1,0 +1,72 @@
+{
+  "date": "2026-11-07",
+  "scope": "Final gallery turn, mobile preview and public client publication",
+  "fixes": [
+    "The final tutor exhibit remains visible through progress 1.0, including direct reload at the finale.",
+    "Phone rotation restores the normalized scroll position after native scroll anchoring.",
+    "Proyavleno scroll-animated service cards are clipped to their panels instead of widening the mobile page."
+  ],
+  "checks": [
+    {
+      "viewport": [
+        360,
+        800
+      ],
+      "pageWidth": 345,
+      "scrollWidth": 345,
+      "verified": [
+        "home",
+        "six-project menu open/close",
+        "gallery navigation",
+        "FARO iframe and local cart 0 to 1"
+      ]
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "pageWidth": 375,
+      "scrollWidth": 375,
+      "verified": [
+        "home",
+        "tutor gallery stop",
+        "tutor iframe lesson step 1 to 2",
+        "close showcase",
+        "native scroll through the final turn"
+      ]
+    },
+    {
+      "viewport": [
+        430,
+        932
+      ],
+      "pageWidth": 415,
+      "scrollWidth": 415,
+      "verified": [
+        "Proyavleno gallery stop",
+        "Proyavleno iframe",
+        "iframe overflow fixed: 399 to 389 for a 389 px client width"
+      ]
+    },
+    {
+      "viewport": [
+        844,
+        390
+      ],
+      "verified": [
+        "landscape gallery controls",
+        "DAL reading stop",
+        "rotation preserves progress: 0.704 to 0.7040120404556993"
+      ]
+    }
+  ],
+  "validation": {
+    "testsPassed": 162,
+    "testFilesPassed": 16,
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "assets": "27 source copies, 6 isolated demo files and 47 watch parts verified"
+  },
+  "limits": "Checks ran in desktop Chromium/IAB with mobile viewport sizes. Physical iPhone Safari, physical Android Chrome, touch input and real-phone GPU performance were not tested."
+}

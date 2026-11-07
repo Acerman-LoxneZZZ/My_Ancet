@@ -4,7 +4,7 @@ import {cloneModel, materialsOf, unit} from '../worlds/shared';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {createAtelierMaterials} from './materials';
 import {galleryStops, placeGalleryRoom} from './galleryRoute';
-import {exhibitChapters, galleryShutterStart} from './chapters';
+import {exhibitChapters, galleryShutterStart, JOURNEY_LIMIT} from './chapters';
 import {getProject, timepieceHero} from '../../content/portfolio';
 
 type Room = {
@@ -160,7 +160,9 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
       group.add(roomGroup);
       // Closed shutters already hide the exhibits from the camera.
       const visibleFrom = index === 0 ? chapter.from - 0.075 : galleryShutterStart(chapter);
-      rooms[index] = {group: roomGroup, ready: false, visibleFrom, end: chapter.to};
+      // The last room remains part of the view as the camera turns into the finale.
+      const end = index === exhibitChapters.length - 1 ? JOURNEY_LIMIT : chapter.to;
+      rooms[index] = {group: roomGroup, ready: false, visibleFrom, end};
       return roomGroup;
     }
 
@@ -455,7 +457,8 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
     const prepare = (progress: number, onMount: () => void) => {
       if (disposed) return;
       exhibitChapters.forEach((chapter, index) => {
-        if (requested.has(index) || (index > 0 && progress < chapter.from - 0.14) || progress > chapter.to + 0.055) return;
+        const end = index === exhibitChapters.length - 1 ? JOURNEY_LIMIT : chapter.to;
+        if (requested.has(index) || (index > 0 && progress < chapter.from - 0.14) || progress > end + 0.055) return;
         requested.add(index);
         void loaders[index]().then(async () => {
           if (disposed) return;

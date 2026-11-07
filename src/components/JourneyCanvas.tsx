@@ -72,6 +72,8 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     let alive = true;
     let resourcesReady = false;
     let raf = 0;
+    let scrollRestoreRaf = 0;
+    let restoringScroll = false;
     let maxY = 1;
     let target = 0;
     let progress = 0;
@@ -112,6 +114,8 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       reflection.fit(viewportWidth * pixelRatio, viewportHeight * pixelRatio, quality);
     };
     const readScroll = () => {
+      // A resize can clamp scrollY before its resize event reaches us.
+      if (restoringScroll || (viewportWidth > 0 && (innerWidth !== viewportWidth || innerHeight !== viewportHeight))) return;
       const next = unit(window.scrollY / maxY) * JOURNEY_LIMIT;
       if (next === target) return;
       target = next;
@@ -120,6 +124,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     };
     const resize = () => {
       const w = innerWidth, h = innerHeight;
+      const preserveScroll = viewportWidth > 0 && (w !== viewportWidth || h !== viewportHeight);
       maxY = Math.max(1, document.documentElement.scrollHeight - h);
       // Cap the actual pixel buffer, not the CSS viewport.
       const limit = w < 700 ? 1200 : 1900;
@@ -131,6 +136,21 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
         exhibits.fit(w / h);
         budgetChanged = performance.now();
         invalidate();
+      }
+      // svh changes the entire scroll track on phone rotation. Keep the same
+      // chapter rather than letting the browser clamp the old pixel offset.
+      if (preserveScroll) {
+        restoringScroll = true;
+        cancelAnimationFrame(scrollRestoreRaf);
+        const restore = (frames: number) => {
+          if (!alive) return;
+          maxY = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+          window.scrollTo({ top: target / JOURNEY_LIMIT * maxY, behavior: "instant" });
+          // Native scroll anchoring can run after the resize callback.
+          if (frames > 0) scrollRestoreRaf = requestAnimationFrame(() => restore(frames - 1));
+          else { scrollRestoreRaf = 0; restoringScroll = false; readScroll(); }
+        };
+        restore(2);
       }
       readScroll();
     };
@@ -309,6 +329,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       wake.current = undefined;
       resources.dispose();
       cancelAnimationFrame(raf);
+      cancelAnimationFrame(scrollRestoreRaf);
       observer.disconnect();
       window.removeEventListener("scroll", readScroll);
       window.removeEventListener("resize", resize);

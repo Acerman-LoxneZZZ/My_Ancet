@@ -62,4 +62,30 @@ describe("prepared gallery exhibits", () => {
     expect(mounted).not.toHaveBeenCalled();
     expect(exhibits.group.children).toHaveLength(0);
   });
+
+  it("keeps the final exhibit mounted and visible throughout the turn into the finale", async () => {
+    const exhibits = createExhibits();
+    try {
+      exhibits.update(0.826);
+      const mounted = vi.fn();
+      exhibits.prepare(0.826, mounted);
+      await vi.waitFor(() => expect(mounted).toHaveBeenCalledTimes(2));
+      const tutor = exhibits.group.getObjectByName("journey-room-tutor")!;
+      for (const progress of [0.858, 0.91, 0.914, 0.94, 1, 0.94, 0.826]) {
+        exhibits.update(progress);
+        expect(tutor.visible, `progress ${progress}`).toBe(true);
+      }
+    } finally { exhibits.dispose(); }
+  });
+
+  it("loads the last exhibit when restoring a page at the very end", async () => {
+    const exhibits = createExhibits();
+    try {
+      exhibits.update(1);
+      const mounted = vi.fn();
+      exhibits.prepare(1, mounted);
+      await vi.waitFor(() => expect(mounted).toHaveBeenCalledTimes(1));
+      expect(exhibits.group.getObjectByName("journey-room-tutor")?.visible).toBe(true);
+    } finally { exhibits.dispose(); }
+  });
 });
