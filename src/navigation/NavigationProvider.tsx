@@ -39,6 +39,9 @@ const names: Record<string, string> = {
   "/work/timepiece": "Ход времени",
   "/work/faro": "FARO",
   "/work/egypt": "Египет",
+  "/work/proyavleno": "ПРОЯВЛЕНО",
+  "/work/dal": "ДАЛЬ",
+  "/work/tutor": "3D-репетитор",
   "/work/wordflow": "Wordflow",
   "/credits": "Источники",
 };

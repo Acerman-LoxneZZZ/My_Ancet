@@ -1,10 +1,10 @@
 import {useEffect, useRef} from "react";
 import "../styles/reactive-name.css";
 
-const name = "LOXNE";
+type Props = { name: string; as?: "h1" | "h2" };
 
-/** A readable heading first; proximity only changes the visible letterforms. */
-export function ReactiveName() {
+/** A readable heading whose highlights and letterforms respond to the pointer. */
+export function ReactiveName({ name, as: Heading = "h1" }: Props) {
   const heading = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -29,7 +29,10 @@ export function ReactiveName() {
       previousTime = undefined;
       values.fill(0);
       targets.fill(0);
-      glyphs.forEach(glyph => glyph.style.removeProperty("--letter-proximity"));
+      glyphs.forEach(glyph => {
+        glyph.style.removeProperty("--letter-proximity");
+        glyph.style.removeProperty("--shine-x");
+      });
       delete element.dataset.animating;
     };
 
@@ -37,7 +40,7 @@ export function ReactiveName() {
       frame = 0;
       if (disposed) return;
       if (reduced() || !visible || document.hidden) {reset(); return;}
-      const dt = Math.min(0.05, Math.max(0.001, (time - (previousTime ?? time - 1000 / 60)) / 1000));
+      const dt = Math.max(0.001, (time - (previousTime ?? time - 1000 / 60)) / 1000);
       previousTime = time;
       let unsettled = false;
       glyphs.forEach((glyph, index) => {
@@ -60,7 +63,7 @@ export function ReactiveName() {
     };
 
     const release = () => {targets.fill(0); wake();};
-    const invalidate = () => {geometryDirty = true; release();};
+    const invalidate = () => {geometryDirty = true;};
     const pointer = (event: PointerEvent) => {
       if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
       if (reduced() || !visible || document.hidden) return;
@@ -76,6 +79,10 @@ export function ReactiveName() {
         const dy = (event.clientY - (rect.top + rect.height / 2)) / (radius * 0.72);
         const influence = Math.max(0, 1 - Math.hypot(dx, dy));
         targets[index] = influence * influence * (3 - 2 * influence);
+        if (influence > 0) {
+          const shine = (event.clientX - rect.left) / rect.width;
+          glyphs[index].style.setProperty("--shine-x", `${Math.max(0, Math.min(1, shine)) * 100}%`);
+        }
       });
       wake();
     };
@@ -92,12 +99,12 @@ export function ReactiveName() {
     const motionAttribute = new MutationObserver(changeMotion);
     motionAttribute.observe(document.documentElement, {attributes: true, attributeFilter: ["data-motion"]});
     document.fonts.ready.then(() => {if (!disposed) geometryDirty = true;});
-    window.addEventListener("pointermove", pointer, {passive: true});
-    window.addEventListener("pointercancel", release, {passive: true});
+    element.addEventListener("pointermove", pointer, {passive: true});
+    element.addEventListener("pointerleave", release);
+    element.addEventListener("pointercancel", release);
     window.addEventListener("blur", reset);
     window.addEventListener("scroll", invalidate, {passive: true});
     window.addEventListener("resize", invalidate, {passive: true});
-    document.documentElement.addEventListener("pointerleave", release);
     document.addEventListener("visibilitychange", changeVisibility);
     motion.addEventListener("change", changeMotion);
 
@@ -107,22 +114,22 @@ export function ReactiveName() {
       resize.disconnect();
       intersection.disconnect();
       motionAttribute.disconnect();
-      window.removeEventListener("pointermove", pointer);
-      window.removeEventListener("pointercancel", release);
+      element.removeEventListener("pointermove", pointer);
+      element.removeEventListener("pointerleave", release);
+      element.removeEventListener("pointercancel", release);
       window.removeEventListener("blur", reset);
       window.removeEventListener("scroll", invalidate);
       window.removeEventListener("resize", invalidate);
-      document.documentElement.removeEventListener("pointerleave", release);
       document.removeEventListener("visibilitychange", changeVisibility);
       motion.removeEventListener("change", changeMotion);
     };
-  }, []);
+  }, [name, Heading]);
 
-  return <h1 ref={heading} className="reactive-name" aria-label={name} tabIndex={-1}>
+  return <Heading ref={heading} className="reactive-name" aria-label={name} tabIndex={-1}>
     <span className="reactive-name__word" aria-hidden="true">
       {[...name].map((letter, index) => <span className="reactive-name__letter" data-letter={letter} key={index}>
         <span className="reactive-name__glyph">{letter}</span>
       </span>)}
     </span>
-  </h1>;
+  </Heading>;
 }

@@ -1,17 +1,21 @@
 import type { Object3D, Vector3 } from "three";
+import { exhibitChapters } from "./chapters";
 
-export const galleryStops = [24, 52, 80, 108] as const;
+export const galleryStops = exhibitChapters.map((_, index) => 24 + 28 * index);
+export const lastGalleryStop = galleryStops[galleryStops.length - 1];
 const bendStart = 29;
 const bendRadius = 9;
 const bendEnd = bendStart + Math.PI * bendRadius / 2;
 export const wingZ = -bendStart - bendRadius;
-export const galleryFloor = { width: 132, depth: 82, x: 46, z: -22 };
+const extension = lastGalleryStop - 108;
+export const galleryFloor = { width: 132 + extension, depth: 82, x: 46 + extension / 2, z: -22 };
 
 export function wingX(distance: number) {
   return bendRadius + distance - bendEnd;
 }
 
-export const finaleRoom = { x: wingX(108), z: -10.5, width: 15 };
+export const finaleRoom = { x: wingX(lastGalleryStop), z: -10.5, width: 15 };
+export const finaleView = { x: finaleRoom.x + 3.25, y: 3.15, z: finaleRoom.z - 13.2 };
 
 /** Map the straight camera rail into a quarter turn and then the side wing. */
 export function bendGalleryPoint(point: Vector3) {

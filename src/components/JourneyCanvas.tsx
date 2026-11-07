@@ -4,8 +4,9 @@ import { createArchitecture } from "../experience/journey/architecture";
 import { createExhibits } from "../experience/journey/exhibits";
 import { createJourneyCamera } from "../experience/journey/camera";
 import { createJourneyReflection } from "../experience/journey/reflection";
-import { FINALE_FROM, FIRST_GALLERY_REVEAL, JOURNEY_LIMIT } from "../experience/journey/chapters";
+import { FINALE_FROM, JOURNEY_LIMIT } from "../experience/journey/chapters";
 import { createAtelierLighting } from "../experience/journey/lighting";
+import { entrancePose, limitEntranceStep, openingCaptionEnd } from "../experience/journey/entrance";
 
 type Props = {
   onFrame: (progress: number) => void;
@@ -32,12 +33,13 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
   useEffect(() => {
     const element = canvas.current!;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const compact = innerWidth < 700;
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
         canvas: element,
         alpha: false,
-        antialias: true,
+        antialias: !compact,
         powerPreference: "high-performance",
       });
     } catch {
@@ -55,13 +57,14 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     scene.background = new THREE.Color(0x080e15);
     scene.fog = new THREE.FogExp2(0x101c28, 0.006);
     const camera = new THREE.PerspectiveCamera(50, 1, 0.08, 90);
-    const lighting = createAtelierLighting(scene, renderer);
+    const lighting = createAtelierLighting(scene, renderer, compact);
     const architecture = createArchitecture();
     scene.add(architecture.group);
-    const reflection = createJourneyReflection();
+    const reflection = createJourneyReflection(compact);
     scene.add(reflection.floor);
     const rail = createJourneyCamera(camera);
-    let exhibits: Awaited<ReturnType<typeof createExhibits>> | undefined;
+    const exhibits = createExhibits();
+    scene.add(exhibits.group);
     let alive = true;
     let raf = 0;
     let maxY = 1;
@@ -74,19 +77,17 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     let pointerX = 0, pointerY = 0, px = 0, py = 0;
     let pilot: { start: number; from: number; to: number; duration: number } | null = null;
     const pointer: [number, number] = [0, 0];
-    let interactionUntil = 0;
+    let contactStart = -Infinity;
     let shadowDirty = true;
     let lastShadow = -Infinity;
     let lastFrameProgress = NaN;
     let viewportWidth = 0, viewportHeight = 0, viewportDpr = 0;
-    let quality = 0;
+    let quality = compact ? 1 : 0;
     let frameAverage = 16.7;
     let slowTime = 0, fastTime = 0;
     let budgetChanged = performance.now();
     let previousFullCadence = false;
-    let assetsReady = false;
-    let wingReady = false;
-    const availableTarget = () => wingReady ? target : Math.min(target, FIRST_GALLERY_REVEAL);
+    let ready = false;
 
     const schedule = () => {
       if (alive && !raf && !pause.current && !document.hidden) raf = requestAnimationFrame(tick);
@@ -95,6 +96,10 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     const invalidate = () => {
       dirty = true;
       schedule();
+    };
+    const exhibitMounted = () => {
+      shadowDirty = true;
+      invalidate();
     };
     const applyRenderQuality = () => {
       const pixelRatio = viewportDpr * [1, 0.85, 0.72][quality];
@@ -105,6 +110,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       const next = unit(window.scrollY / maxY) * JOURNEY_LIMIT;
       if (next === target) return;
       target = next;
+      exhibits.prepare(target, exhibitMounted);
       invalidate();
     };
     const resize = () => {
@@ -117,7 +123,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
         viewportWidth = w; viewportHeight = h; viewportDpr = dpr;
         applyRenderQuality();
         rail.fit(w / h);
-        exhibits?.fit(w / h);
+        exhibits.fit(w / h);
         budgetChanged = performance.now();
         invalidate();
       }
@@ -138,11 +144,12 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     const seek = (event: Event) => {
       const to = Math.min(JOURNEY_LIMIT, unit(Number((event as CustomEvent<number>).detail)));
       const from = progress;
+      exhibits.prepare(to, exhibitMounted);
       if (motion.matches || (from >= FINALE_FROM && to === 0) || Math.abs(to - from) < 0.000015) {
         pilot = null;
         window.scrollTo({ top: to / JOURNEY_LIMIT * maxY, behavior: "instant" });
         target = to;
-        progress = availableTarget();
+        progress = target;
         invalidate();
       } else {
         pilot = {
@@ -153,9 +160,9 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       }
     };
     const touchMachine = () => {
-      if (progress >= 0.16) return;
+      if (progress >= openingCaptionEnd) return;
       architecture.interact(motion.matches);
-      interactionUntil = performance.now() + 1000;
+      contactStart = performance.now();
       invalidate();
     };
     const touch = (event: PointerEvent) => {
@@ -164,7 +171,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     };
     const navigated = () => {
       readScroll();
-      progress = availableTarget();
+      progress = target;
       pilot = null;
       invalidate();
     };
@@ -181,11 +188,15 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
         if (t === 1) pilot = null;
       }
       const alpha = 1 - Math.exp(-dt / 0.19);
-      const nextProgress = availableTarget();
+      const nextProgress = target;
       const scrollMoving = !motion.matches && Math.abs(progress - nextProgress) > 0.000015;
       const pointerMoving = !motion.matches && Math.abs(px - pointerX) + Math.abs(py - pointerY) > 0.001;
-      const fullCadence = scrollMoving || !!pilot || pointerMoving || (!motion.matches && now < interactionUntil);
-      progress = scrollMoving ? progress + (nextProgress - progress) * alpha : nextProgress;
+      const contact = (now - contactStart) / 1000;
+      const fullCadence = scrollMoving || !!pilot || pointerMoving || (!motion.matches && contact < 1.28);
+      progress = scrollMoving
+        ? limitEntranceStep(progress, progress + (nextProgress - progress) * alpha, dt)
+        : nextProgress;
+      exhibits.prepare(progress, exhibitMounted);
       const pointerAlpha = 1 - Math.exp(-dt / 0.28);
       px = pointerMoving ? px + (pointerX - px) * pointerAlpha : pointerX;
       py = pointerMoving ? py + (pointerY - py) * pointerAlpha : pointerY;
@@ -203,8 +214,8 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       const invalidated = dirty;
       dirty = false;
       const renderInterval = now - lastRender;
-      if (assetsReady && fullCadence && previousFullCadence && renderInterval < 100 && now - budgetChanged > 2500) {
-        frameAverage += (renderInterval - frameAverage) * 0.08;
+      if (ready && fullCadence && previousFullCadence && now - budgetChanged > 2500) {
+        frameAverage += (Math.min(renderInterval, 100) - frameAverage) * 0.08;
         slowTime = frameAverage > 24 ? slowTime + renderInterval : 0;
         fastTime = frameAverage < 18.5 ? fastTime + renderInterval : 0;
         if ((slowTime > 1200 && quality < 2) || (fastTime > 7000 && quality > 0)) {
@@ -219,8 +230,10 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       previousFullCadence = fullCadence;
       lastRender = now;
       rail.update(progress, pointer, motion.matches);
-      const machineChanged = architecture.update(progress, elapsed);
-      const exhibitsChanged = exhibits?.update(progress) ?? false;
+      const entrance = entrancePose(progress, contact, motion.matches);
+      reflection.setEntranceShadow(entrance.assembly, entrance.transfer);
+      const machineChanged = architecture.update(progress, elapsed, entrance);
+      const exhibitsChanged = exhibits.update(progress);
       shadowDirty ||= machineChanged || exhibitsChanged;
       if (shadowDirty && now - lastShadow >= (fullCadence ? 65 : 160) + quality * 35) {
         renderer.shadowMap.needsUpdate = true;
@@ -229,6 +242,10 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       }
       reflection.prepare(camera, now, machineChanged || exhibitsChanged, invalidated || exhibitsChanged);
       renderer.render(scene, camera);
+      if (!ready) {
+        ready = true;
+        statusCallback.current("ready");
+      }
       if (lastFrameProgress !== progress) {
         frameCallback.current(progress);
         lastFrameProgress = progress;
@@ -251,41 +268,10 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       statusCallback.current("fallback");
     };
     resize();
-    progress = availableTarget();
+    progress = target;
     rail.update(progress, pointer, motion.matches);
-    architecture.update(progress, 0);
+    architecture.update(progress, 0, entrancePose(progress, Infinity, motion.matches));
     schedule();
-    void createExhibits().then(async (loaded) => {
-      if (!alive) { loaded.dispose(); return; }
-      exhibits = loaded;
-      exhibits.fit(innerWidth / innerHeight);
-      exhibits.update(progress);
-      scene.add(exhibits.group);
-      invalidate();
-      shadowDirty = true;
-      const warmExhibits = (includeFinale = false) => {
-        const children = includeFinale ? [...loaded.group.children, architecture.finale] : loaded.group.children;
-        const visibility = children.map(child => child.visible);
-        children.forEach(child => { child.visible = true; });
-        try { return renderer.compileAsync(scene, camera); }
-        finally { children.forEach((child, i) => { child.visible = visibility[i]; }); }
-      };
-      await warmExhibits();
-      if (!alive) return;
-      assetsReady = true;
-      budgetChanged = performance.now();
-      invalidate();
-      statusCallback.current("ready");
-      await loaded.loadRemaining();
-      if (!alive) return;
-      await warmExhibits(true);
-      if (!alive) return;
-      wingReady = true;
-      shadowDirty = true;
-      invalidate();
-    }).catch(() => {
-      if (alive) statusCallback.current("fallback");
-    });
     const observer = new ResizeObserver(resize);
     const page = document.querySelector(".journey-page");
     if (page) observer.observe(page);
@@ -322,7 +308,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       document.removeEventListener("visibilitychange", visibility);
       motion.removeEventListener("change", clearPointer);
       element.removeEventListener("webglcontextlost", loseContext);
-      exhibits?.dispose();
+      exhibits.dispose();
       architecture.dispose();
       reflection.dispose();
       lighting.dispose();

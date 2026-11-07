@@ -1,0 +1,50 @@
+[
+  {
+    "id": "pepperoni",
+    "prompt": "Create one premium photorealistic food-photography asset for the FARO pizzeria menu. Reference image is the selected pepperoni pizza, preserve its appetizing natural dough texture, golden blistered rim, slightly cupped toasted pepperoni, melted mozzarella and THREE fresh basil leaves. Isolate ONE whole uncut round pepperoni pizza on a genuinely transparent alpha background. No tabletop, no plate, board, cutlery, objects, ingredients outside the pizza, steam, text or fake checkerboard. This is the first master for six menu photographs from the SAME studio session: lock a 65-degree camera elevation above horizontal, centered object, 85mm product photography perspective, complete crust visible with generous equal margins, pizza occupies 82% of a square 1:1 canvas. Soft large key light fixed upper-left, neutral warm color grading, soft natural gloss rather than plastic shine, crisp natural full-pizza focus and finely resolved food textures. High-end honest-looking advertising photograph, not a 3D render. Neutral realistic proportions, preserve reference baking degree. Maximum available quality, square image. Transparent background INCLUDING all area outside the pizza; no cast shadow outside it.",
+    "source": "exec-c5f7d459-e400-4196-9a3b-45ed21230b80.png",
+    "tool": "Built-in image_gen, no API CLI",
+    "reference": "Owner-selected pepperoni photograph, original unchanged",
+    "role": "Fictional menu illustration with transparent alpha"
+  },
+  {
+    "id": "prosciutto",
+    "source": "exec-410facff-c041-4188-b500-ffb986e40f7a.png",
+    "prompt": "Edit this master FARO menu photograph into another pizza from the SAME studio photoshoot. Change ONLY the toppings inside the crust. Preserve the EXACT outer crust outline, silhouette, char spots, golden baking degree, camera angle and focal length, whole-pizza position and size in the square canvas, upper-left soft lighting, focus, color grading and photographic texture quality. Keep the entire pizza uncut. This must feel like six items photographed by one photographer with a locked camera. Keep a genuinely transparent alpha background, with nothing outside the pizza, no tabletop, plate, boards, utensils, additional objects, text or cast shadow. High-end natural food photograph, full pizza sharply focused. Toppings: tomato sauce, naturally melted mozzarella, a few toasted champignon slices, delicate thin pink folds of prosciutto and small fresh wild rocket leaves. No pepperoni, no basil. Keep the topping readable and restrained, appetizing hand-placed Italian prosciutto pizza.",
+    "tool": "Built-in image_gen, no API CLI",
+    "reference": "pepperoni.png in this session",
+    "role": "Fictional menu illustration with transparent alpha"
+  },
+  {
+    "id": "margherita",
+    "source": "exec-8ed53d11-afe6-4641-b70e-a74279aba50d.png",
+    "prompt": "Edit this master FARO menu photograph into another pizza from the SAME studio photoshoot. Change ONLY the toppings inside the crust. Preserve the EXACT outer crust outline, silhouette, char spots, golden baking degree, camera angle and focal length, whole-pizza position and size in the square canvas, upper-left soft lighting, focus, color grading and photographic texture quality. Keep the entire pizza uncut. This must feel like six items photographed by one photographer with a locked camera. Keep a genuinely transparent alpha background, with nothing outside the pizza, no tabletop, plate, boards, utensils, additional objects, text or cast shadow. High-end natural food photograph, full pizza sharply focused. Toppings: rustic red tomato sauce and naturally melted creamy mozzarella with small toasted patches, exactly THREE fresh green basil leaves. No pepperoni, mushrooms, olives or meat. An appetizing classic margherita.",
+    "tool": "Built-in image_gen, no API CLI",
+    "reference": "pepperoni.png in this session",
+    "role": "Fictional menu illustration with transparent alpha"
+  },
+  {
+    "id": "four-cheese",
+    "source": "exec-d04da7c6-2e36-419e-b3ec-a76950e82ea6.png",
+    "prompt": "Edit this master FARO menu photograph into another pizza from the SAME studio photoshoot. Change ONLY the toppings inside the crust. Preserve the EXACT outer crust outline, silhouette, char spots, golden baking degree, camera angle and focal length, whole-pizza position and size in the square canvas, upper-left soft lighting, focus, color grading and photographic texture quality. Keep the entire pizza uncut. This must feel like six items photographed by one photographer with a locked camera. Keep a genuinely transparent alpha background, with nothing outside the pizza, no tabletop, plate, boards, utensils, additional objects, text or cast shadow. High-end natural food photograph, full pizza sharply focused. Toppings: creamy white four-cheese base, melted mozzarella and cream cheese, small irregular gorgonzola pieces and fine parmesan melted into natural golden toasted patches. No tomato sauce, red toppings, basil, rocket, meat, mushrooms or olives. An appetizing quattro formaggi with nuanced white-and-gold cheese texture.",
+    "tool": "Built-in image_gen, no API CLI",
+    "reference": "pepperoni.png in this session",
+    "role": "Fictional menu illustration with transparent alpha"
+  },
+  {
+    "id": "mushroom",
+    "source": "exec-86a6d530-6587-4556-9511-ba91ec97c204.png",
+    "prompt": "Edit this master FARO menu photograph into another pizza from the SAME studio photoshoot. Change ONLY the toppings inside the crust. Preserve the EXACT outer crust outline, silhouette, char spots, golden baking degree, camera angle and focal length, whole-pizza position and size in the square canvas, upper-left soft lighting, focus, color grading and photographic texture quality. Keep the entire pizza uncut. This must feel like six items photographed by one photographer with a locked camera. Keep a genuinely transparent alpha background, with nothing outside the pizza, no tabletop, plate, boards, utensils, additional objects, text or cast shadow. High-end natural food photograph, full pizza sharply focused. Toppings: creamy white mozzarella base, naturally toasted brown champignon slices, light toasted cheese patches and a subtle truffle-oil sheen. No tomato sauce, pepperoni, olives, basil or rocket. Natural irregular mushroom slices, not perfect repetitive symbols.",
+    "tool": "Built-in image_gen, no API CLI",
+    "reference": "pepperoni.png in this session",
+    "role": "Fictional menu illustration with transparent alpha"
+  },
+  {
+    "id": "salsiccia",
+    "source": "exec-ca53f9cf-e8cc-4b99-8bb1-c773c489cb25.png",
+    "prompt": "Edit this master FARO menu photograph into another pizza from the SAME studio photoshoot. Change ONLY the toppings inside the crust. Preserve the EXACT outer crust outline, silhouette, char spots, golden baking degree, camera angle and focal length, whole-pizza position and size in the square canvas, upper-left soft lighting, focus, color grading and photographic texture quality. Keep the entire pizza uncut. This must feel like six items photographed by one photographer with a locked camera. Keep a genuinely transparent alpha background, with nothing outside the pizza, no tabletop, plate, boards, utensils, additional objects, text or cast shadow. High-end natural food photograph, full pizza sharply focused. Toppings: tomato sauce, melted mozzarella, irregular browned Italian sausage morsels and thin curved petals of roasted red onion. No round pepperoni discs, basil, rocket, mushrooms or olives. Natural savory sausage pizza.",
+    "tool": "Built-in image_gen, no API CLI",
+    "reference": "pepperoni.png in this session",
+    "role": "Fictional menu illustration with transparent alpha"
+  }
+]

@@ -1,0 +1,24 @@
+/* The opening is a scroll-scrubbed photographic sequence from the existing film. */
+.hero-scroll{position:relative}
+.hero-landscape .hero-scene{position:absolute;inset:0;object-position:center 52%;pointer-events:none;transform-origin:center}
+.hero-landscape .hero-scene:not(:first-child){opacity:0}
+.motion-ready .hero-scroll{height:280svh;padding:14px 0}
+.motion-ready .hero-scroll>.hero{position:sticky;top:14px;margin:0 14px;height:calc(100svh - 28px);min-height:0}
+@media(max-width:700px){
+ .motion-ready .hero-scroll{height:260svh;padding:8px 0}
+ .motion-ready .hero-scroll>.hero{top:8px;margin:0 8px;height:calc(100svh - 16px)}
+}
+@media(min-width:701px) and (max-height:760px){
+ .motion-ready .hero-scroll .hero-content{top:24%}
+ .motion-ready .hero-scroll h1{font-size:clamp(64px,7.4vw,106px);margin-bottom:20px}
+ .motion-ready .hero-scroll .hero-content p{font-size:13px;margin-bottom:22px}
+}
+@media(max-width:700px) and (max-height:700px){
+ .motion-ready .hero-scroll .hero-content{top:20%}
+}
+@media(prefers-reduced-motion:reduce){
+ .motion-ready .hero-scroll{height:auto;padding:0}
+ .motion-ready .hero-scroll>.hero{position:relative;top:auto;margin:14px;min-height:760px}
+ .hero-landscape .hero-scene{transform:none!important}
+ .hero-landscape .hero-scene:not(:first-child){display:none}
+}

@@ -75,7 +75,7 @@ export function Header() {
         aria-label="Мобильная навигация"
       >
         <div className="mobile-menu-inner">
-          <span className="meta">Четыре работы</span>
+          <span className="meta">{projects.length} работ</span>
           {projects.map((p) => (
             <PortfolioLink key={p.id} to={`/work/${p.id}`}>
               <span className="meta">{p.number}</span>

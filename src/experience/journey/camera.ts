@@ -1,6 +1,7 @@
 import * as THREE from "three";
-import { bendGalleryPoint, finaleRoom, galleryStops } from "./galleryRoute";
-import { FINALE_FROM, JOURNEY_LIMIT } from "./chapters";
+import { bendGalleryPoint, finaleRoom, finaleView, galleryStops } from "./galleryRoute";
+import { exhibitChapters, FINALE_FROM, JOURNEY_LIMIT } from "./chapters";
+import { entranceEnd, shadowHold } from "./entrance";
 
 type Point = readonly [number, number, number];
 type Key = {
@@ -22,30 +23,33 @@ export type JourneyCamera = {
   update(progress: number, pointer: readonly [number, number], reduced: boolean): void;
 };
 
-const stops = [0.24, 0.42, 0.60, 0.78] as const;
+const stops = exhibitChapters.map(chapter => chapter.at);
 const centers = galleryStops.map(distance => -distance);
-const allRooms = [0, 1, 2, 3] as const;
-const singleRooms = [[0], [1], [2], [3]] as const;
+const allRooms = stops.map((_, index) => index);
+const singleRooms = allRooms.map(index => [index]);
 const noRooms: readonly number[] = [];
 
 const keys: Key[] = [
-  {at: 0, position: [7.8, 2.7, 17], look: [-3.5, 3.4, -0.4], fov: 34},
-  {at: 0.03, position: [7.8, 2.7, 17], look: [-3.5, 3.4, -0.4], fov: 34},
-  {at: 0.07, position: [4.9, 3.0, 10.7], look: [-0.4, 3.3, -5], fov: 40},
-  {at: 0.11, position: [0.15, 3.1, 2.2], look: [0, 3.2, -16], fov: 46},
-  {at: 0.14, position: [0, 3, -4], look: [0, 3, -24], fov: 50},
+  {at: 0, position: [7.1, 7.1, 19.3], look: [-3.55, 2.22, 0], fov: 37},
+  {at: shadowHold.to, position: [7.1, 7.1, 19.3], look: [-3.55, 2.22, 0], fov: 37},
+  {at: 0.079, position: [4.5, 5.7, 12.8], look: [-0.8, 2.45, -4], fov: 43},
+  {at: 0.103, position: [0.65, 3.95, 5.5], look: [0, 2.8, -11], fov: 52},
+  {at: 0.126, position: [0, 3.3, 0.35], look: [0, 3, -18], fov: 50},
+  {at: entranceEnd, position: [0, 3, -6.1], look: [-0.5, 3, -24], fov: 49},
 ];
 for (let room = 0; room < stops.length; room++) {
   const at = stops[room], z = centers[room];
-  // A three-unit dolly across the entire reading window. Matching endpoint
-  // velocities let the connecting Hermite arcs accelerate without a cut.
-  for (const offset of [-0.045, 0, 0.045]) {
+  // Give the corner after the watch and the approach to ПРОЯВЛЕНО more
+  // of the scroll range without changing the settled reading poses.
+  const enter = room === 0 || room === 2 ? -0.030 : -0.020;
+  const leave = room === 1 ? 0.030 : 0.020;
+  for (const offset of [enter, 0, leave]) {
     keys.push({
       at: at + offset,
-      position: [room === 0 ? 0.4 : 0, room === 0 ? 2.6 : 3.1, z + 12 - offset * (3 / 0.09)],
+      position: [room === 0 ? 0.4 : 0, room === 0 ? 2.6 : 3.1, z + 12 - offset * (3 / 0.06)],
       look: [room === 0 ? 0.6 : 0, room === 0 ? 3.2 : 2.8, z],
       fov: room === 0 ? 44 : 50,
-      zVelocity: -3 / 0.09,
+      zVelocity: -3 / 0.06,
     });
   }
 }
@@ -122,10 +126,11 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
     position.set(values[0], values[1], values[2]);
     look.set(values[3], values[4], values[5]);
     const portraitOpening = clamp((1.3 - aspect) / 0.5, 0, 1)
-      * (1 - clamp((p - 0.035) / 0.055, 0, 1));
-    look.x = THREE.MathUtils.lerp(look.x, -0.3, portraitOpening);
-    look.y = THREE.MathUtils.lerp(look.y, 1.65, portraitOpening);
-    position.x = THREE.MathUtils.lerp(position.x, 5.8, portraitOpening);
+      * (1 - THREE.MathUtils.smootherstep(p, shadowHold.to, 0.104));
+    look.x = THREE.MathUtils.lerp(look.x, 0.65, portraitOpening);
+    look.y = THREE.MathUtils.lerp(look.y, -0.23, portraitOpening);
+    position.x = THREE.MathUtils.lerp(position.x, 6.65, portraitOpening);
+    position.z += 1.65 * portraitOpening;
 
     // Portrait exhibits are stacked by the scene owner. A bounded distance
     // adjustment leaves the opening monolith large and preserves the aisle.
@@ -146,14 +151,15 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
     const screenCenter = THREE.MathUtils.lerp(4.7, 0, compact);
     const aisleOffset = compact > 0.28 ? screenCenter + 3.45 : 0;
     const distance = -position.z;
-    for (const stop of galleryStops) {
+    for (const [room, stop] of galleryStops.entries()) {
       const entering = THREE.MathUtils.smootherstep(distance, stop - 8, stop - 3);
-      const leaving = THREE.MathUtils.smootherstep(distance, stop + 1, stop + 5);
+      const leaveBy = room === 0 || room === 2 ? 10 : 5;
+      const leaving = THREE.MathUtils.smootherstep(distance, stop + 1, stop + leaveBy);
       position.x += aisleOffset * entering * (1 - leaving);
     }
     bendGalleryPoint(position);
     bendGalleryPoint(look);
-    return values[6];
+    return values[6] + portraitOpening * 7;
   };
 
   const update: JourneyCamera["update"] = (progress, pointer, reduced) => {
@@ -169,8 +175,7 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
       finaleCurve.v0.copy(position);
       finaleCurve.v1.copy(position);
       finaleCurve.v1.x += 8;
-      finaleCurve.v3.set(finaleRoom.x + THREE.MathUtils.lerp(1.4, 0.45, compact), 2.9,
-        finaleRoom.z - 13.2 - compact * 3.1);
+      finaleCurve.v3.set(finaleView.x - compact * 0.8, finaleView.y, finaleView.z - compact * 3.1);
       finaleCurve.v2.set(finaleCurve.v3.x, 3.05, -32.8);
       finaleCurve.getPoint(t, position);
       finaleCurve.getPoint(Math.max(0, t - 0.015), previousPoint);
@@ -190,9 +195,9 @@ export function createJourneyCamera(camera: THREE.PerspectiveCamera): JourneyCam
     camera.updateMatrixWorld();
 
     visibility.portrait = aspect < 1.25;
-    visibility.activeRoom = p < 0.165 || p > 0.875
+    visibility.activeRoom = p < exhibitChapters[0].from || lastProgress > FINALE_FROM
       ? null
-      : stops.reduce((nearest, stop, room) => Math.abs(stop - p) < Math.abs(stops[nearest] - p) ? room : nearest, 0);
+      : stops.reduce<number>((nearest, stop, room) => Math.abs(stop - p) < Math.abs(stops[nearest] - p) ? room : nearest, 0);
     visibility.visibleRooms = visibility.portrait
       ? visibility.activeRoom === null ? noRooms : singleRooms[visibility.activeRoom]
       : allRooms;

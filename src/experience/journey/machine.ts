@@ -22,7 +22,8 @@ export function createMachine(m: AtelierMaterials, finale = false) {
   const own = <T extends THREE.BufferGeometry>(value: T) => { geometries.add(value); return value; };
   const leaves: Leaf[] = [];
   const rotors: Rotor[] = [];
-  const glass = m.own(createClearGlass("Cabinet / clear optical crystal"));
+  const sweep = { height: { value: 0 }, intensity: { value: 0 } };
+  const glass = m.own(createClearGlass("Cabinet / clear optical crystal", finale ? undefined : sweep));
   const boxGeometry = own(new RoundedBoxGeometry(1, 1, 1, 2, 0.06));
   const unitCylinder = own(new THREE.CylinderGeometry(1, 1, 1, 32));
   const screwGeometry = own(new THREE.CylinderGeometry(0.038, 0.038, 0.045, 24));
@@ -90,6 +91,7 @@ export function createMachine(m: AtelierMaterials, finale = false) {
     return mesh;
   }
   let ballMeshes: [THREE.Mesh, THREE.Mesh] | undefined;
+  const diagonalTrack = { stop: new THREE.Vector3(), direction: new THREE.Vector3() };
   function createBallTrack(parent: THREE.Group, points: readonly Point[], vertical: boolean) {
     const midpoint = (a: Point, b: Point) => new THREE.Vector3((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, 0.05);
     const low = midpoint(points[0], points[vertical ? 1 : 3]);
@@ -127,6 +129,10 @@ export function createMachine(m: AtelierMaterials, finale = false) {
       const lip = box(parent, m.polished, [0.29, 0.035, 0.48], [p.x, p.y, p.z]);
       lip.position.addScaledVector(direction, -side * 0.06);
       lip.quaternion.copy(stop.quaternion);
+      if (!vertical && side === -1) {
+        diagonalTrack.stop.copy(lip.position);
+        diagonalTrack.direction.copy(direction);
+      }
     }
 
     // The group stays movable when the static meshes are batched.
@@ -344,14 +350,18 @@ export function createMachine(m: AtelierMaterials, finale = false) {
   let lastOpening = -1;
   return {
     group,
+    diagonalTrack,
+    setSweep(height: number, intensity: number) {
+      sweep.height.value = height;
+      sweep.intensity.value = intensity;
+    },
     interact(reduced: boolean) {
       if (reduced) contactAngle += 0.10;
       else contactSpeed = 1.5;
     },
-    update(progress: number, seconds: number) {
+    update(progress: number, seconds: number, opening = 0) {
       const dt = Math.max(0, Math.min(0.1, seconds - time));
       time = seconds;
-      const opening = finale ? 0 : smooth(0.03, 0.145, progress);
       const wasVisible = group.visible;
       group.visible = finale ? progress >= FINALE_FROM : progress < 0.17;
       const openingChanged = opening !== lastOpening;

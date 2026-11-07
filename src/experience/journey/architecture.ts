@@ -3,8 +3,9 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import { createAtelierMaterials, createClearGlass } from "./materials";
 import { createMachine } from "./machine";
 import { batchRigidMeshes } from "./batching";
-import { GALLERY_SHUTTER_DELAY, journeyChapters } from "./chapters";
-import { bendGalleryPoint, finaleRoom, galleryFloor, galleryStops, placeGalleryRoom, wingX, wingZ } from "./galleryRoute";
+import { galleryShutterStart, journeyChapters } from "./chapters";
+import { bendGalleryPoint, finaleRoom, finaleView, galleryFloor, galleryStops, lastGalleryStop, placeGalleryRoom, wingX, wingZ } from "./galleryRoute";
+import { railEnd, railStart, railX, type entrancePose } from "./entrance";
 
 /** The entrance and adjoining portfolio wing share the same material library. */
 export function createArchitecture() {
@@ -48,10 +49,24 @@ export function createArchitecture() {
   group.add(groundShadows);
 
   const pedestalGeometry = own(new RoundedBoxGeometry(8.1, 0.155, 2.4, 2, 0.025));
-  const pedestal = new THREE.Mesh(pedestalGeometry, materials.trim);
-  pedestal.position.y = 0.0425;
-  pedestal.castShadow = pedestal.receiveShadow = true;
-  group.add(pedestal);
+  box(materials.trim, [8.1, 0.025, 2.4], [0, -0.023, 0]);
+  for (const side of [-1, 1]) {
+    box(materials.trim, [2.18, 0.132, 2.4], [side * 2.96, 0.030, 0]);
+  }
+  const inlay = materials.own(new THREE.MeshStandardMaterial({
+    name: "Floor / satin brass guide", color: "#b08b55", roughness: 0.42,
+    metalness: 0.47, roughnessMap: materials.brushing, envMapIntensity: 0.92,
+  }));
+  function inlayBetween(a: THREE.Vector3, b: THREE.Vector3, parent: THREE.Group, width = 0.074) {
+    const strip = box(inlay, [width, 0.016, a.distanceTo(b) + 0.012],
+      [(a.x + b.x) / 2, -0.003, (a.z + b.z) / 2], parent);
+    strip.rotation.y = Math.atan2(a.x - b.x, a.z - b.z);
+    strip.castShadow = false;
+  }
+  for (const side of [-1, 1]) {
+    inlayBetween(new THREE.Vector3(side * railX, 0, railStart),
+      new THREE.Vector3(side * railX, 0, railEnd), group);
+  }
   // Sparse joints remain below the reflection skin, so they cannot alias into dots.
   for (let z = 9; z > -49; z -= 9.6) {
     box(materials.black, [34, 0.006, 0.018], [0, -0.041, z]);
@@ -111,6 +126,70 @@ export function createArchitecture() {
     group.add(partition);
   }
 
+  // Openings are built into the wall with a dark return and a material on the
+  // oblique reveal. The samples share the scale and illumination of the wall.
+  const sampleWall = new THREE.Group();
+  sampleWall.name = "Entrance / four material reveals";
+  sampleWall.position.z = -8.8;
+  group.add(sampleWall);
+  const brassSample = materials.own(materials.polished.clone());
+  brassSample.color.set("#af813f");
+  brassSample.metalness = 0.63;
+  const claySample = materials.own(new THREE.MeshStandardMaterial({
+    name: "FARO / fired terracotta", color: "#874633", roughness: 0.84,
+    bumpMap: materials.stoneMap, bumpScale: 0.016,
+  }));
+  const sandSample = materials.own(new THREE.MeshStandardMaterial({
+    name: "Egypt / cut sandstone", color: "#a79573", roughness: 0.92,
+    bumpMap: materials.stoneMap, bumpScale: 0.032,
+  }));
+  const glassSample = materials.own(new THREE.MeshPhysicalMaterial({
+    name: "ПРОЯВЛЕНО / cold laminated glass", color: "#687a9a", roughness: 0.24,
+    metalness: 0.32, clearcoat: 0.88, clearcoatRoughness: 0.16,
+  }));
+  const samples = [brassSample, claySample, sandSample, glassSample];
+  const wallY = 3.1, slotHeight = 4.45, slotWidth = 0.62;
+  const apertureWidth = 6;
+  for (const side of [-1, 1]) {
+    const centerX = side * 6.7;
+    box(materials.black, [7.4, 6.8, 0.7], [centerX, 8.72, 0], sampleWall);
+    box(materials.black, [7.4, 0.90, 0.7], [centerX, 0.41, 0], sampleWall);
+    const centers = side < 0 ? [-5.86, -3.86] : [3.86, 5.86];
+    let edge = side < 0 ? -10.4 : apertureWidth / 2;
+    for (const x of centers) {
+      const width = x - slotWidth / 2 - edge;
+      box(materials.black, [width, slotHeight, 0.7], [edge + width / 2, wallY, 0], sampleWall);
+      box(materials.steel, [0.035, slotHeight, 0.08], [x - side * 0.325, wallY, 0.37], sampleWall);
+      box(materials.black, [slotWidth, slotHeight, 0.11], [x, wallY, -0.93], sampleWall);
+      box(materials.steel, [slotWidth, 0.055, 1.14], [x, wallY - slotHeight / 2, -0.24], sampleWall);
+      const index = (side < 0 ? 0 : 2) + centers.indexOf(x);
+      const finish = samples[index];
+      const reveal = new THREE.Group();
+      reveal.position.set(x + side * 0.21, wallY, -0.39);
+      reveal.rotation.y = side * -0.55;
+      sampleWall.add(reveal);
+      box(finish, [0.39, slotHeight - 0.08, 0.06], [0, 0, 0], reveal);
+      const courses = [15, 10, 6, 3][index];
+      for (let i = 1; i < courses; i++) {
+        const y = (i / courses - 0.5) * slotHeight;
+        box(index === 0 ? materials.brass : index === 3 ? materials.trim : materials.black,
+          [0.37, [0.018, 0.045, 0.026, 0.016][index], 0.042], [0, y, 0.044], reveal);
+        if (index === 2) {
+          box(materials.black, [0.021, slotHeight / courses, 0.03], [i % 2 ? -0.09 : 0.06, y - 0.35, 0.04], reveal);
+        }
+      }
+      edge = x + slotWidth / 2;
+    }
+    const end = side < 0 ? -apertureWidth / 2 : 10.4;
+    box(materials.black, [end - edge, slotHeight, 0.7], [(end + edge) / 2, wallY, 0], sampleWall);
+    box(materials.steel, [0.18, 10.5, 0.62], [side * 3.10, 5.25, 0.13], sampleWall);
+  }
+  box(materials.black, [apertureWidth, 2.05, 0.76], [0, 11.0, 0], sampleWall);
+  const sampleLight = new THREE.RectAreaLight("#f1e8da", 0.95, 8, 3);
+  sampleLight.position.set(0, 6.7, 1.5);
+  sampleLight.lookAt(0, 2.8, -1.2);
+  sampleWall.add(sampleLight);
+
   // The watch alcove keeps its relief wall. The aisle opens on its right.
   const chamber = new THREE.Group();
   chamber.position.set(-2.2, 0, -28);
@@ -146,7 +225,7 @@ export function createArchitecture() {
   const wing = new THREE.Group();
   wing.name = "Gallery / projects after the bend";
   group.add(wing);
-  const endX = wingX(118);
+  const endX = wingX(lastGalleryStop + 10);
   const wingLength = endX - 10.5;
   const wingMiddle = 10.5 + wingLength / 2;
   box(materials.black, [22, 12.7, 0.8], [0, 6.2, wingZ - 9.7]);
@@ -192,7 +271,8 @@ export function createArchitecture() {
   finaleLight.position.set(finaleRoom.x + 1.1, 6.2, finaleRoom.z - 4.5);
   finalHall.add(finaleLight);
 
-  const roomColors = ["#6c3328", "#66523b", "#353c55"];
+  const roomColors = ["#6c3328", "#66523b", "#413652", "#2e4b47", "#345065"];
+  const lightColors = ["#ffd3a6", "#f9dfb9", "#dacbff", "#b7e1cb", "#b7d7ff"];
   const shutters: { leaves: THREE.Group[]; from: number; to: number }[] = [];
   const shutterWidth = 9.15;
   const shutterRest = shutterWidth / 2 + 0.012;
@@ -234,25 +314,45 @@ export function createArchitecture() {
       return leaf;
     });
     const chapter = journeyChapters[index + 2];
-    shutters.push({ leaves, from: chapter.from + GALLERY_SHUTTER_DELAY, to: chapter.at - 0.005 });
-    const light = new THREE.PointLight(["#ffd3a6", "#f9dfb9", "#ccdcff"][index], 32, 17, 2);
+    shutters.push({ leaves, from: galleryShutterStart(chapter), to: chapter.at - 0.005 });
+    const light = new THREE.PointLight(lightColors[index], 32, 17, 2);
     light.position.set(-2.8, 5.3, 4.4);
     room.add(light);
   });
 
-  // Slim metal inlays turn with the camera rail and carry the eye into the wing.
+  // Carry the paired inlays through the bend. One peels off into the final hall.
   for (const side of [-1, 1]) {
-    for (let distance = 26; distance < 110; distance += 3) {
-      const start = new THREE.Vector3(side * 2.25, 0, -distance);
-      const end = new THREE.Vector3(side * 2.25, 0, -distance - 2.55);
+    const endDistance = lastGalleryStop + (side > 0 ? -7 : 2);
+    for (let distance = -railEnd; distance < endDistance; distance += 1) {
+      const start = new THREE.Vector3(side * railX, 0, -distance);
+      const end = new THREE.Vector3(side * railX, 0, -distance - 1);
       bendGalleryPoint(start);
       bendGalleryPoint(end);
-      const strip = box(materials.polished, [0.028, 0.012, start.distanceTo(end)],
-        [(start.x + end.x) / 2, -0.009, (start.z + end.z) / 2], wing);
-      strip.rotation.y = Math.atan2(start.x - end.x, start.z - end.z);
-      strip.castShadow = false;
+      inlayBetween(start, end, wing);
     }
   }
+  // The sight plane through the track makes its lower stop and the inlay
+  // collinear in the final view, while the guide itself stays in the floor.
+  const { stop, direction } = finale.diagonalTrack;
+  const sightPlane = new THREE.Plane().setFromCoplanarPoints(
+    new THREE.Vector3(finaleView.x, finaleView.y, finaleView.z),
+    finale.group.localToWorld(stop.clone()),
+    finale.group.localToWorld(stop.clone().add(direction)),
+  );
+  const railInSightPlane = (z: number) => new THREE.Vector3(
+    -(sightPlane.normal.z * z + sightPlane.constant) / sightPlane.normal.x, 0, z,
+  );
+  const floorEnd = railInSightPlane(finaleRoom.z - 1.21);
+  const straightStart = railInSightPlane(floorEnd.z - 8);
+  const returnRail = new THREE.CubicBezierCurve3(
+    new THREE.Vector3(wingX(lastGalleryStop - 7), 0, wingZ + railX),
+    new THREE.Vector3(wingX(lastGalleryStop - 7) + 7.2, 0, wingZ + railX),
+    straightStart.clone().add(new THREE.Vector3(0.3, 0, -4.3)),
+    straightStart,
+  );
+  const bends = returnRail.getPoints(22);
+  for (let i = 1; i < bends.length; i++) inlayBetween(bends[i - 1], bends[i], finalHall);
+  inlayBetween(straightStart, floorEnd, finalHall);
   const fill = new THREE.PointLight("#f0b46c", 24, 16, 2);
   fill.position.set(-2.2, 4.7, -26);
   const interior = new THREE.PointLight("#e5ae63", 2.0, 12, 2);
@@ -263,7 +363,7 @@ export function createArchitecture() {
     group,
     finale: finale.group,
     interact: machine.interact,
-    update(progress: number, time: number) {
+    update(progress: number, time: number, entrance: ReturnType<typeof entrancePose>) {
       let shuttersChanged = false;
       for (const { leaves, from, to } of shutters) {
         const offset = shutterRest + shutterWidth * THREE.MathUtils.smootherstep(progress, from, to);
@@ -272,7 +372,8 @@ export function createArchitecture() {
         leaves[1].position.x = offset;
         shuttersChanged = true;
       }
-      const machineChanged = machine.update(progress, time);
+      machine.setSweep(entrance.sweep, entrance.glint);
+      const machineChanged = machine.update(progress, time, entrance.opening);
       return finale.update(progress, time) || machineChanged || shuttersChanged;
     },
     dispose() {

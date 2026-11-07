@@ -11,6 +11,7 @@
 | FARO / `.research/pizza` | [Acerman-LoxneZZZ/pizza](https://github.com/Acerman-LoxneZZZ/pizza) | `ca7e99fe59ec5f61ad49c812da8a4659f6c47fda` |
 | Египет / `.research/egi` | [Acerman-LoxneZZZ/egi](https://github.com/Acerman-LoxneZZZ/egi) | `1a4725dc9285a8d45ffead5f4342a3e3d94df92d` |
 | Wordflow / `.research/EnCard` | [Acerman-LoxneZZZ/EnCard](https://github.com/Acerman-LoxneZZZ/EnCard) | `43a41053321f6c96d7880c14bf353dd384380ced` |
+| ПРОЯВЛЕНО / `.research/DemoLan` | [Acerman-LoxneZZZ/DemoLan](https://github.com/Acerman-LoxneZZZ/DemoLan) | `c45cd37079ca724c7ac6fbeb57aec0571f9c58a4` |
 
 Исходные checkout используются только для чтения. Полные репозитории, серверная конфигурация, рабочие базы и резервные копии не включаются в `public/` или продуктовую сборку. Наличие публичного репозитория не заменяет отдельные notices его сторонних материалов.
 
@@ -25,7 +26,9 @@
 | Таблица деталей | `public/assets/data/watch-parts.json` | 42 343 байта; названия, описания, rest transforms и диапазоны разборки |
 | Часы, Blender | `assets/source/timepiece/pocket-watch.blend` | 6 347 266 байт; из `chasi/assets/blender/pocket-watch.blend` |
 | Pizza, browser GLB | `public/assets/models/pizza-web.glb` | 3 552 568 байт; исходный подготовленный Meshopt/WebP ресурс FARO |
+| Pizza для галереи | `public/assets/models/gallery-pizza.glb` | 979 968 байт. Та же геометрия Meshopt, цвет 1024², карты нормалей и шероховатости 512² |
 | Pizza, Blender | `assets/source/faro/pizza-source.blend` | 14 591 847 байт; из `pizza/assets/pizza-video/scene-3d/pizza-source.blend` |
+| Лента ПРОЯВЛЕНО | `public/assets/models/gallery-ribbon.glb` | 54 804 байта. Исходная процедурная геометрия с уменьшенным числом сегментов, без текстур |
 | Монолит | `src/experience/worlds/MonolithWorld.ts` | Новая процедурная геометрия; не скачанная модель и не вымышленный BLEND |
 
 BLEND остаются вне публичной папки. Настройки монолита описаны в [assets/source/monolith/README.md](assets/source/monolith/README.md). Часы демонстрируют конструкцию и разборку; физическая симуляция рабочего механизма и историческая точность не заявляются.
@@ -36,7 +39,9 @@ BLEND остаются вне публичной папки. Настройки 
 
 ## Изображения
 
-Все восемь снимков сохранены главным агентом непосредственно из работающих локальных оригиналов, до оформления новых обложек. Они не созданы генератором изображений и не перерисованы. Wordflow снят на синтетическом состоянии preview `wordflow.preview.synthetic.v1:`, шесть слов и одна коллекция.
+Первые восемь снимков сохранены из работающих локальных оригиналов до оформления обложек. Wordflow снят на синтетическом состоянии preview `wordflow.preview.synthetic.v1:`, шесть слов и одна коллекция.
+
+Первый экран ПРОЯВЛЕНО и галерея концептов сняты в Chromium с локальной сборки DemoLan и сохранены как WebP. В живой витрине используется статическая сборка того же коммита со встроенными лицензиями шрифтов и формой в деморежиме.
 
 | Файл в `public/assets/images/` | Размер |
 | --- | --- |
@@ -71,6 +76,11 @@ BLEND остаются вне публичной папки. Настройки 
 Telegram SDK, profile-client, серверные endpoints, D1 и service worker не скопированы. Внешние запросы блокируются CSP. Оригинальный код автора и искусственные учебные данные здесь различены явно; авторизация и облачная синхронизация не считаются проверенными. Детали и тесты: [Wordflow QA](docs/qa/wordflow-demo.md).
 
 ## Воспроизводимость
+
+- «ДАЛЬ». В `public/demos/dal` лежит статическая сборка `dist/` из [DalSait на коммите b19e02c](https://github.com/Acerman-LoxneZZZ/DalSait/tree/b19e02cea6e320c7016c9f7f42ecd33f3e8599ff). Источники фотографий сохранены в `assets/*.origin.txt`. Для локальных шрифтов применяются [Manrope OFL](public/assets/fonts/Manrope-LICENSE.txt) и [Cormorant Garamond OFL](public/assets/fonts/Cormorant-LICENSE.txt).
+- «3D-репетитор». В `public/demos/tutor` лежит статическая сборка из [3d-repetitor на коммите 90dbc07](https://github.com/Acerman-LoxneZZZ/3d-repetitor/tree/90dbc0764bb7a6bd8e9a5f03adf6da6a2b1f0fc3). Ссылки адаптированы для вложенного адреса. В демо используется нейтральный заголовок «Математика». Сохранены режим предпросмотра, учебные материалы и [лицензия Manrope](public/demos/tutor/assets/fonts/OFL.txt).
+- `dal-original.webp`, `dal-detail.webp`, `tutor-original.webp` и `tutor-detail.webp` сняты с этих сборок в Chrome.
+- `egypt-gateway-gallery.webp` и `egypt-landscape-gallery.webp` — уменьшенные копии исходных PNG для экранов в 3D-зале. WebP сохраняет прозрачность портала.
 
 Для модели часов в галерее `node scripts/prepare-gallery-watch.mjs <временный.glb>` собирает внешние детали в промежуточный GLB. Финальный файл создаёт `npm exec --yes --package=@gltf-transform/cli@4.5.0 -- gltf-transform meshopt <временный.glb> public/assets/models/gallery-watch.glb --level medium`.
 

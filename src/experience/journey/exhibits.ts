@@ -4,12 +4,12 @@ import {cloneModel, materialsOf, unit} from '../worlds/shared';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {createAtelierMaterials} from './materials';
 import {galleryStops, placeGalleryRoom} from './galleryRoute';
-import {journeyChapters} from './chapters';
-import {timepieceHero} from '../../content/portfolio';
+import {exhibitChapters, galleryShutterStart} from './chapters';
+import {getProject, timepieceHero} from '../../content/portfolio';
 
 type Room = {
   group: THREE.Group;
-  start: number;
+  visibleFrom: number;
   end: number;
 };
 
@@ -28,11 +28,12 @@ const imagePaths = {
   watch: timepieceHero,
   faro: '/assets/images/faro-original.jpg',
   menu: '/assets/images/faro-menu.jpg',
-  gateway: '/assets/images/egypt-gateway.png',
-  landscape: '/assets/images/egypt-landscape.png',
+  gateway: '/assets/images/egypt-gateway-gallery.webp',
+  landscape: '/assets/images/egypt-landscape-gallery.webp',
   egypt: '/assets/images/egypt-original.jpg',
-  wordflow: '/assets/images/wordflow-original.jpg',
-  dictionary: '/assets/images/wordflow-dictionary.jpg',
+  proyavleno: getProject('proyavleno')!.screen,
+  dal: getProject('dal')!.screen,
+  tutor: getProject('tutor')!.screen,
 } as const;
 
 const smooth = (start: number, end: number, progress: number): number => {
@@ -40,14 +41,14 @@ const smooth = (start: number, end: number, progress: number): number => {
   return t * t * (3 - 2 * t);
 };
 
-/** Load the watch before bringing in the rest of the portfolio wing. */
-export async function createExhibits(): Promise<{
+/** Mount exhibit assets as the camera approaches each room. */
+export function createExhibits(): {
   group: THREE.Group;
-  loadRemaining(): Promise<void>;
+  prepare(progress: number, onMount: () => void): void;
   update(progress: number): boolean;
   fit(aspect: number): void;
   dispose(): void;
-}> {
+} {
   const group = new THREE.Group();
   group.name = 'journey-exhibits';
   const geometries = new Set<THREE.BufferGeometry>();
@@ -55,8 +56,15 @@ export async function createExhibits(): Promise<{
   const textures = new Set<THREE.Texture>();
   const atelier = createAtelierMaterials();
   const images = {} as Record<keyof typeof imagePaths, THREE.Texture>;
-  const watchLease = modelAssets.acquire('/assets/models/gallery-watch.glb');
-  let pizzaLease: ReturnType<typeof modelAssets.acquire> | undefined;
+  const leases: ReturnType<typeof modelAssets.acquire>[] = [];
+  const requested = new Set<number>();
+  const layouts: ((mix: (wide: number, narrow: number) => number, x: number, y: number, scale: number) => void)[] = [];
+  const poses: ((progress: number) => boolean)[] = [];
+  const loadModel = (path: string) => {
+    const lease = modelAssets.acquire(path);
+    leases.push(lease);
+    return lease.promise;
+  };
   const rooms: Room[] = [];
   let disposed = false;
   let lastAspect = 16 / 9;
@@ -87,8 +95,7 @@ export async function createExhibits(): Promise<{
     textures.clear();
     atelier.dispose();
     rooms.length = 0;
-    watchLease.release();
-    pizzaLease?.release();
+    leases.forEach(lease => lease.release());
   };
 
   try {
@@ -107,14 +114,6 @@ export async function createExhibits(): Promise<{
       const failed = loads.find(result => result.status === 'rejected');
       if (failed?.status === 'rejected') throw failed.reason;
     };
-    const [watchResult, posterResult] = await Promise.allSettled([
-      watchLease.promise,
-      loadImages(['watch']),
-    ]);
-    if (watchResult.status === 'rejected') throw watchResult.reason;
-    if (posterResult.status === 'rejected') throw posterResult.reason;
-    const watchSource = watchResult.value;
-
     const metal = ownMaterial(new THREE.MeshStandardMaterial({
       name: 'Exhibit / satin metal', color: '#89939d', metalness: 0.78,
       roughness: 0.26, envMapIntensity: 0.75,
@@ -152,12 +151,14 @@ export async function createExhibits(): Promise<{
     }
 
     function room(index: number): THREE.Group {
-      const chapter = journeyChapters[index + 1];
+      const chapter = exhibitChapters[index];
       const roomGroup = new THREE.Group();
       roomGroup.name = `journey-room-${chapter.id}`;
       placeGalleryRoom(roomGroup, galleryStops[index]);
       group.add(roomGroup);
-      rooms.push({group: roomGroup, start: chapter.from, end: chapter.to});
+      // Closed shutters already hide the exhibits from the camera.
+      const visibleFrom = index === 0 ? 0 : galleryShutterStart(chapter);
+      rooms.push({group: roomGroup, visibleFrom, end: chapter.to});
       return roomGroup;
     }
 
@@ -219,89 +220,100 @@ export async function createExhibits(): Promise<{
       };
     }
 
-    const watchRoom = room(0);
+    const loadWatch = async () => {
+      const [source] = await Promise.all([loadModel('/assets/models/gallery-watch.glb'), loadImages(['watch'])]);
+      if (disposed) return;
+      const watchRoom = room(0);
 
-    const watchClone = cloneModel(watchSource.scene);
-    watchClone.materials.forEach(material => materials.add(material));
-    const glass = ownMaterial(new THREE.MeshPhysicalMaterial({
-      name: 'Watch / thin optical crystal', color: '#d5e2e9',
-      roughness: 0.18, ior: 1.46, specularIntensity: 0.5,
-      transparent: true, opacity: 0.08, depthWrite: false,
-    }));
-    const dialInk = ownMaterial(new THREE.MeshBasicMaterial({
-      name: 'Watch / charcoal dial printing', color: '#282723',
-    }));
-    watchClone.object.traverse(object => {
-      if (!(object instanceof THREE.Mesh)) return;
-      const material = object.material;
-      if (!(material instanceof THREE.MeshStandardMaterial)) return;
-      object.castShadow = true;
-      object.receiveShadow = !/enamel$/i.test(material.name);
-      if (material.name === 'Optical crystal') {
-        object.material = glass;
-        object.renderOrder = 2;
-        object.castShadow = object.receiveShadow = false;
-      } else if (material.name === 'Charcoal dial printing') {
-        object.material = dialInk;
-        object.castShadow = object.receiveShadow = false;
-      } else if (material.name === 'Blued steel hands') {
-        material.color.set('#172b40');
-        material.metalness = 0.72;
-        material.roughness = 0.34;
-      } else if (/brass|steel|aged case/i.test(material.name)) {
-        material.roughness = /polished/i.test(material.name) ? 0.28 : 0.39;
-      } else if (/enamel$/i.test(material.name)) {
-        material.roughness = 0.63;
-      }
-    });
-    const watchBounds = new THREE.Box3().setFromObject(watchClone.object);
-    const watchSize = watchBounds.getSize(new THREE.Vector3());
-    const watchScale = Math.min(4 / Math.max(0.001, watchSize.y), 3.4 / Math.max(0.001, watchSize.x));
-    const watchCenter = watchBounds.getCenter(new THREE.Vector3());
-    watchClone.object.position.sub(watchCenter);
-    const watchNormalized = new THREE.Group();
-    watchNormalized.scale.setScalar(watchScale);
-    watchNormalized.add(watchClone.object);
-    const watchObject = new THREE.Group();
-    watchObject.name = 'journey-assembled-watch';
-    watchObject.add(watchNormalized);
-    const plinth = new THREE.Group();
-    plinth.name = 'Timepiece / bevelled mineral display plinth';
-    const plinthGeometry = ownGeometry(new RoundedBoxGeometry(5.55, 1.05, 3.5, 3, 0.075));
-    const plinthBody = new THREE.Mesh(plinthGeometry, atelier.stone);
-    plinthBody.position.y = 0.54;
-    plinthBody.castShadow = plinthBody.receiveShadow = true;
-    const plinthTop = mesh(new RoundedBoxGeometry(5.62, 0.06, 3.56, 2, 0.024), atelier.silver);
-    plinthTop.position.y = 1.085;
-    const inset = mesh(new THREE.BoxGeometry(5.36, 0.027, 3.32), atelier.polished);
-    inset.position.y = 0.96;
-    plinth.add(plinthBody, plinthTop, inset);
-    watchRoom.add(plinth, watchObject);
-    contact(plinth, 7.5, 5.2);
-    const watchMount = {
-      place(x: number, y: number, z: number, scale = 1) {
-        watchObject.position.set(x, y, z);
-        watchObject.scale.setScalar(scale);
-        plinth.position.set(x, 0, z);
-        plinth.scale.set(scale, 1, scale);
-      },
+      const watchClone = cloneModel(source.scene);
+      watchClone.materials.forEach(material => materials.add(material));
+      const glass = ownMaterial(new THREE.MeshPhysicalMaterial({
+        name: 'Watch / thin optical crystal', color: '#d5e2e9',
+        roughness: 0.18, ior: 1.46, specularIntensity: 0.5,
+        transparent: true, opacity: 0.08, depthWrite: false,
+      }));
+      const dialInk = ownMaterial(new THREE.MeshBasicMaterial({
+        name: 'Watch / charcoal dial printing', color: '#282723',
+      }));
+      watchClone.object.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        const material = object.material;
+        if (!(material instanceof THREE.MeshStandardMaterial)) return;
+        object.castShadow = true;
+        object.receiveShadow = !/enamel$/i.test(material.name);
+        if (material.name === 'Optical crystal') {
+          object.material = glass;
+          object.renderOrder = 2;
+          object.castShadow = object.receiveShadow = false;
+        } else if (material.name === 'Charcoal dial printing') {
+          object.material = dialInk;
+          object.castShadow = object.receiveShadow = false;
+        } else if (material.name === 'Blued steel hands') {
+          material.color.set('#172b40');
+          material.metalness = 0.72;
+          material.roughness = 0.34;
+        } else if (/brass|steel|aged case/i.test(material.name)) {
+          material.roughness = /polished/i.test(material.name) ? 0.28 : 0.39;
+        } else if (/enamel$/i.test(material.name)) {
+          material.roughness = 0.63;
+        }
+      });
+      const watchBounds = new THREE.Box3().setFromObject(watchClone.object);
+      const watchSize = watchBounds.getSize(new THREE.Vector3());
+      const watchScale = Math.min(4 / Math.max(0.001, watchSize.y), 3.4 / Math.max(0.001, watchSize.x));
+      const watchCenter = watchBounds.getCenter(new THREE.Vector3());
+      watchClone.object.position.sub(watchCenter);
+      const watchNormalized = new THREE.Group();
+      watchNormalized.scale.setScalar(watchScale);
+      watchNormalized.add(watchClone.object);
+      const watchObject = new THREE.Group();
+      watchObject.name = 'journey-assembled-watch';
+      watchObject.add(watchNormalized);
+      const plinth = new THREE.Group();
+      plinth.name = 'Timepiece / bevelled mineral display plinth';
+      const plinthGeometry = ownGeometry(new RoundedBoxGeometry(5.55, 1.05, 3.5, 3, 0.075));
+      const plinthBody = new THREE.Mesh(plinthGeometry, atelier.stone);
+      plinthBody.position.y = 0.54;
+      plinthBody.castShadow = plinthBody.receiveShadow = true;
+      const plinthTop = mesh(new RoundedBoxGeometry(5.62, 0.06, 3.56, 2, 0.024), atelier.silver);
+      plinthTop.position.y = 1.085;
+      const inset = mesh(new THREE.BoxGeometry(5.36, 0.027, 3.32), atelier.polished);
+      inset.position.y = 0.96;
+      plinth.add(plinthBody, plinthTop, inset);
+      watchRoom.add(plinth, watchObject);
+      contact(plinth, 7.5, 5.2);
+      const watchMount = {
+        place(x: number, y: number, z: number, scale = 1) {
+          watchObject.position.set(x, y, z);
+          watchObject.scale.setScalar(scale);
+          plinth.position.set(x, 0, z);
+          plinth.scale.set(scale, 1, scale);
+        },
+      };
+      const watchScreen = panel(watchRoom, 'KARpOV / first screen', images.watch, 6.4, 6.4 * 1000 / 1440);
+      layouts.push((mix, screenX, screenY, screenScale) => {
+        watchScreen.place(screenX, screenY, -1.4, screenScale);
+        watchScreen.group.rotation.y = mix(-0.16, 0);
+        watchMount.place(mix(-2.25, 0), mix(3.48, 6.1), 0.35, mix(1.17, 0.83));
+      });
+      rotate(watchObject, 0, 0.23, 0.09, 0.04);
     };
-    const watchScreen = panel(watchRoom, 'KARpOV / first screen', images.watch, 6.4, 6.4 * 1000 / 1440);
-    let fitRemaining: ((mix: (wide: number, narrow: number) => number, screenX: number, screenY: number, screenScale: number) => void) | undefined;
-    let updateRemaining: ((progress: number) => void) | undefined;
-    const loadRemaining = async () => {
+
+    const rotate = (object: THREE.Object3D, index: number, start: number, amount: number, span: number) => {
+      const at = exhibitChapters[index].at;
+      poses.push(progress => {
+        const yaw = start + smooth(at - span, at, progress) * amount;
+        if (object.rotation.y === yaw) return false;
+        object.rotation.y = yaw;
+        return true;
+      });
+    };
+
+    const loadFaro = async () => {
+      const [source] = await Promise.all([loadModel('/assets/models/gallery-pizza.glb'), loadImages(['faro', 'menu'])]);
       if (disposed) return;
-      pizzaLease = modelAssets.acquire('/assets/models/pizza-web.glb');
-      const keys = (Object.keys(imagePaths) as (keyof typeof imagePaths)[]).filter(key => key !== 'watch');
-      const [pizzaResult, imageResult] = await Promise.allSettled([pizzaLease.promise, loadImages(keys)]);
-      if (disposed) return;
-      if (pizzaResult.status === 'rejected') throw pizzaResult.reason;
-      if (imageResult.status === 'rejected') throw imageResult.reason;
-      const pizzaSource = pizzaResult.value;
       const faroRoom = room(1);
-      const egyptRoom = room(2);
-      const wordflowRoom = room(3);
-      const pizzaClone = cloneModel(pizzaSource.scene);
+      const pizzaClone = cloneModel(source.scene);
       pizzaClone.materials.forEach(material => materials.add(material));
       pizzaClone.object.traverse(object => {
         if (!(object instanceof THREE.Mesh)) return;
@@ -331,7 +343,18 @@ export async function createExhibits(): Promise<{
       const pizzaMount = mounted(faroRoom, pizzaObject, 3.5, 4.0);
       const faroScreen = panel(faroRoom, 'faro-original-screen', images.faro, 6.4, 3.6);
       const menuScreen = panel(faroRoom, 'faro-original-menu', images.menu, 2.8, 1.575);
+      layouts.push((mix, screenX, screenY, screenScale) => {
+        faroScreen.place(screenX, screenY, mix(0, 1.25), screenScale);
+        pizzaMount.place(mix(-3.7, -1.5), mix(2.5, 6.1), 0.45, mix(1, 0.78));
+        menuScreen.place(mix(-4.4, 2.1), mix(6.2, 5.7), mix(-0.85, -0.04), mix(1.2, 0.75));
+      });
+      rotate(pizzaObject, 1, -0.08, 0.16, 0.04);
+    };
 
+    const loadEgypt = async () => {
+      await loadImages(['egypt', 'landscape', 'gateway']);
+      if (disposed) return;
+      const egyptRoom = room(2);
       const portal = new THREE.Group();
       portal.name = 'journey-original-egypt-portal';
       const portalWidth = 7.2;
@@ -348,63 +371,135 @@ export async function createExhibits(): Promise<{
       portal.add(panorama, gateway);
       const portalMount = mounted(egyptRoom, portal, portalHeight, 7.25);
       const egyptScreen = panel(egyptRoom, 'egypt-original-screen', images.egypt, 6.4, 3.6);
-
-      const wordScreen = panel(wordflowRoom, 'wordflow-original-card', images.wordflow, 2.6, 2.6 * 844 / 390);
-      const dictionaryScreen = panel(wordflowRoom, 'wordflow-original-dictionary', images.dictionary, 2.6, 2.6 * 844 / 390);
-      fitRemaining = (mix, screenX, screenY, screenScale) => {
-        faroScreen.place(screenX, screenY, mix(0, 1.25), screenScale);
-        pizzaMount.place(mix(-3.7, -1.5), mix(2.5, 6.1), 0.45, mix(1, 0.78));
-        menuScreen.place(mix(-4.4, 2.1), mix(6.2, 5.7), mix(-0.85, -0.04), mix(1.2, 0.75));
+      layouts.push((mix, screenX, screenY, screenScale) => {
         egyptScreen.place(screenX, screenY, mix(0, 1.25), screenScale);
         portalMount.place(mix(-4.3, 0), mix(2.45, 6.35), -0.10, mix(1, 0.84));
-        wordScreen.place(mix(-2.8, -1.45), mix(3.35, 3.1), 0, mix(1, 0.91));
-        dictionaryScreen.place(mix(2.8, 1.45), mix(3.35, 3.1), 0, mix(1, 0.91));
+      });
+    };
+
+    const loadRibbon = async () => {
+      const [source] = await Promise.all([loadModel('/assets/models/gallery-ribbon.glb'), loadImages(['proyavleno'])]);
+      if (disposed) return;
+      const ribbonRoom = room(3);
+      // The original analytic ribbon, sampled for the gallery's viewing distance.
+      const ribbonSource = source.scene.getObjectByName('Proyavleno_ribbon');
+      if (!(ribbonSource instanceof THREE.Mesh)) throw new Error('Gallery ribbon mesh is missing');
+      const ribbonGeometry = ribbonSource.geometry;
+      const ribbonMaterial = ownMaterial(new THREE.MeshPhysicalMaterial({
+        name: 'ПРОЯВЛЕНО / satin silver with a lavender edge',
+        color: '#c5bcdb', metalness: 0.56, roughness: 0.29,
+        clearcoat: 0.35, clearcoatRoughness: 0.26, envMapIntensity: 1.4,
+        emissive: '#403055', emissiveIntensity: 0.31,
+      }));
+      ribbonMaterial.onBeforeCompile = shader => {
+        shader.fragmentShader = shader.fragmentShader.replace('#include <opaque_fragment>', `
+          float ribbonFacing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
+          outgoingLight += vec3(0.31, 0.14, 0.68) * pow(1.0 - ribbonFacing, 2.7);
+          #include <opaque_fragment>
+        `);
       };
-      updateRemaining = progress => {
-        pizzaObject.rotation.y = -0.08 + smooth(0.36, 0.42, progress) * 0.16;
-      };
-      fit(lastAspect);
-      updateRemaining(lastProgress);
+      const ribbonObject = new THREE.Group();
+      ribbonObject.name = 'journey-original-proyavleno-ribbon';
+      ribbonObject.add(new THREE.Mesh(ribbonGeometry, ribbonMaterial));
+      const ribbonHeight = ribbonGeometry.boundingBox!.max.y - ribbonGeometry.boundingBox!.min.y;
+      const ribbonMount = mounted(ribbonRoom, ribbonObject, ribbonHeight, 3.35);
+      const ribbonScreen = panel(ribbonRoom, 'ПРОЯВЛЕНО / original screen', images.proyavleno, 6.4, 4);
+      layouts.push((mix, screenX, screenY, screenScale) => {
+        ribbonScreen.place(screenX, screenY - mix(0, 0.24), mix(-0.5, 1.68), screenScale * mix(1, 0.94));
+        ribbonMount.place(mix(-3.35, 0), mix(3.5, 6.42), 0.30, mix(1, 0.77));
+      });
+      rotate(ribbonObject, 3, -0.36, 0.58, 0.054);
+    };
+
+    const loadNewExhibit = async (index: number, id: 'dal' | 'tutor') => {
+      await loadImages([id]);
+      if (disposed) return;
+      const parent = room(index);
+      const screen = panel(parent, exhibitChapters[index].title, images[id], 7, 4.375);
+      const sculpture = new THREE.Group();
+      if (id === 'dal') {
+        const ring = mesh(new THREE.TorusGeometry(1.33, 0.065, 10, 56), atelier.brass);
+        const innerRing = mesh(new THREE.TorusGeometry(1.15, 0.025, 8, 48), atelier.polished);
+        const needle = mesh(new THREE.ConeGeometry(0.27, 1.02, 4), atelier.brass);
+        needle.position.y = 0.48;
+        const tail = mesh(new THREE.ConeGeometry(0.27, 1.02, 4), atelier.steel);
+        tail.rotation.z = Math.PI;
+        tail.position.y = -0.48;
+        sculpture.add(ring, innerRing, needle, tail);
+        sculpture.rotation.z = -0.32;
+      } else {
+        const vertices = [[-1.15, -0.95], [1.14, -0.95], [-1.15, 1.16]];
+        vertices.forEach(([x, y], index) => {
+          const [nextX, nextY] = vertices[(index + 1) % vertices.length];
+          const edge = mesh(new THREE.BoxGeometry(Math.hypot(nextX - x, nextY - y), 0.10, 0.15), atelier.polished);
+          edge.position.set((x + nextX) / 2, (y + nextY) / 2, 0);
+          edge.rotation.z = Math.atan2(nextY - y, nextX - x);
+          sculpture.add(edge);
+        });
+        const glassShape = new THREE.Shape(vertices.map(([x, y]) => new THREE.Vector2(x, y)));
+        sculpture.add(mesh(new THREE.ShapeGeometry(glassShape), backing));
+        sculpture.rotation.z = 0.22;
+      }
+      const mount = mounted(parent, sculpture, 2.75, 2.9);
+      layouts.push((mix, screenX, screenY, scale) => {
+        screen.place(screenX, screenY, mix(-0.4, 1.3), scale * 0.91);
+        mount.place(mix(-3.5, 0), mix(3.7, 5.65), 0.42, mix(1.04, 0.88));
+      });
+      rotate(sculpture, index, -0.22, 0.37, 0.05);
+    };
+
+    const loaders = [loadWatch, loadFaro, loadEgypt, loadRibbon,
+      () => loadNewExhibit(4, 'dal'), () => loadNewExhibit(5, 'tutor')];
+    const prepare = (progress: number, onMount: () => void) => {
+      if (disposed) return;
+      exhibitChapters.forEach((chapter, index) => {
+        if (requested.has(index) || progress < chapter.from - 0.075 || progress > chapter.to + 0.055) return;
+        requested.add(index);
+        void loaders[index]().then(() => {
+          if (disposed) return;
+          fit(lastAspect);
+          update(lastProgress);
+          onMount();
+        }).catch(error => {
+          if (!disposed) console.warn('Could not load gallery exhibit', chapter.id, error);
+        });
+      });
     };
 
     const updateVisibility = () => {
+      let changed = false;
       for (const entry of rooms) {
-        entry.group.visible = lastProgress <= entry.end + 0.08
-          && (entry.group === watchRoom || lastProgress >= entry.start - 0.12);
+        const visible = lastProgress >= entry.visibleFrom && lastProgress <= entry.end + 0.055;
+        changed ||= entry.group.visible !== visible;
+        entry.group.visible = visible;
       }
+      return changed;
     };
+
     const update = (progress: number) => {
       if (disposed) return false;
       lastProgress = unit(progress);
-      updateVisibility();
-      const yaw = 0.23 + smooth(0.18, 0.24, lastProgress) * 0.09;
-      const rotationChanged = watchObject.rotation.y !== yaw;
-      watchObject.rotation.y = yaw;
-      updateRemaining?.(lastProgress);
-      return rotationChanged;
+      let changed = updateVisibility();
+      for (const pose of poses) changed = pose(lastProgress) || changed;
+      return changed;
     };
 
     const fit = (aspect: number) => {
       if (disposed) return;
-      const safeAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1.6;
-      lastAspect = safeAspect;
-      const compact = 1 - smooth(0.82, 1.25, safeAspect);
+      lastAspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1.6;
+      const compact = 1 - smooth(0.82, 1.25, lastAspect);
       const mix = (wide: number, narrow: number) => THREE.MathUtils.lerp(wide, narrow, compact);
-      // Desktop keeps the aisle x=-0.5…+0.5 free. The host uses a side rail
-      // during portrait transit, where the display becomes a vertical pair.
+      // Keep the center aisle free on desktop and stack the displays in portrait.
       const screenX = mix(4.7, 0);
       const screenY = mix(3.75, 2.3);
       const screenScale = mix(0.88, 5.5 / 6.4);
-      watchScreen.place(screenX, screenY, -1.4, screenScale);
-      watchScreen.group.rotation.y = mix(-0.16, 0);
-      watchMount.place(mix(-2.25, 0), mix(3.48, 6.1), 0.35, mix(1.17, 0.83));
-      fitRemaining?.(mix, screenX, screenY, screenScale);
+      for (const layout of layouts) layout(mix, screenX, screenY, screenScale);
       updateVisibility();
     };
 
     fit(16 / 9);
     update(0);
-    return {group, loadRemaining, update, fit, dispose};
+    return {group, prepare, update, fit, dispose};
   } catch (error) {
     dispose();
     throw error;

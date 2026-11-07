@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getProject, nextProject, type Project } from "../content/portfolio";
+import { getProject, nextProject, projectCount, type Project } from "../content/portfolio";
+import { galleryProjectId } from "../experience/journey/chapters";
 import { PortfolioLink } from "../navigation/NavigationProvider";
 import { ProjectCover } from "../components/ProjectCover";
 import { MediaViewer } from "../components/MediaViewer";
@@ -268,6 +269,12 @@ const sourceAlt: Record<Project["id"], [string, string]> = {
     "Исходный каменный портал и панорама экспозиции «Египет»",
     "Глава египетской экспозиции с текстом и изображением",
   ],
+  proyavleno: [
+    "Первый экран «ПРОЯВЛЕНО» со светящейся лентой",
+    "Галерея концептов сайтов для частной практики",
+  ],
+  dal: ["Первый экран сайта ДАЛЬ с горным озером", "Вращающаяся галерея направлений"],
+  tutor: ["Первый экран сайта репетитора с авторским портретом", "Страница разбора квадратного уравнения"],
   wordflow: [
     "Оригинальный интерфейс Wordflow: карточка и ответы на учебных данных",
     "Оригинальный интерфейс словарей Wordflow на учебных данных",
@@ -289,15 +296,22 @@ export function CasePage() {
         ? { width: 1265, height: 712 }
         : project.id === "faro"
           ? { width: 1270, height: 714 }
-          : { width: 1272, height: 716 };
+          : project.id === "proyavleno"
+            ? { width: 896, height: 560 }
+            : project.id === "egypt"
+              ? { width: 1272, height: 716 }
+              : { width: 1280, height: 800 };
+  const detailDimensions = project.id === "proyavleno"
+    ? { width: 1280, height: 800 }
+    : dimensions;
 
   return (
     <main id="main" className={`case-page case-${project.id}`}>
       <div className="case-topline">
-        <PortfolioLink to="/" project={project.id} className="quiet-link">
+        <PortfolioLink to="/" project={galleryProjectId(project.id)} className="quiet-link">
           <Arrow direction="left" /> Вернуться в галерею
         </PortfolioLink>
-        <span className="meta">{project.number} / 4</span>
+        <span className="meta">{project.number} / {projectCount}</span>
       </div>
       <header className="case-heading">
         <p className="eyebrow">{project.kicker}</p>
@@ -374,7 +388,7 @@ export function CasePage() {
               <img
                 src={project.detail}
                 alt={sourceAlt[project.id][1]}
-                {...dimensions}
+                {...detailDimensions}
                 loading="lazy"
               />
             </MediaViewer>

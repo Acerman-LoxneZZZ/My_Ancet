@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { RectAreaLightUniformsLib } from "three/addons/lights/RectAreaLightUniformsLib.js";
 
 /** Fixed studio sources: the camera moves through the light, not with it. */
-export function createAtelierLighting(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
+export function createAtelierLighting(scene: THREE.Scene, renderer: THREE.WebGLRenderer, compact: boolean) {
   RectAreaLightUniformsLib.init();
   const environmentScene = new THREE.Scene();
   environmentScene.background = new THREE.Color("#101922");
@@ -25,7 +25,7 @@ export function createAtelierLighting(scene: THREE.Scene, renderer: THREE.WebGLR
   softbox("#eaf1f4", 0.8, 11, 5, [0, 10, 0], [0, 0, 0]);
   softbox("#8dabc7", 0.55, 13, 8, [0, 5, -10], [0, 3, 0]);
   const pmrem = new THREE.PMREMGenerator(renderer);
-  const environment = pmrem.fromScene(environmentScene, 0.035, 0.1, 100);
+  const environment = pmrem.fromScene(environmentScene, 0.035, 0.1, 100, { size: compact ? 128 : 256 });
   pmrem.dispose();
   resources.forEach(value => value.dispose());
   environmentScene.clear();
@@ -36,7 +36,7 @@ export function createAtelierLighting(scene: THREE.Scene, renderer: THREE.WebGLR
   key.position.set(-7, 13, 11);
   key.target.position.set(0, 2.5, -9);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.mapSize.setScalar(compact ? 1024 : 2048);
   Object.assign(key.shadow.camera, { left: -18, right: 18, top: 17, bottom: -17, near: 0.5, far: 78 });
   key.shadow.bias = -0.00012;
   key.shadow.normalBias = 0.008;

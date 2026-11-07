@@ -1,0 +1,37 @@
+{
+  "source": "https://sketchfab.com/3d-models/pizza-40d50989fec1460f8838b608d999ccd0",
+  "author": "Rigsters",
+  "license": "CC BY 4.0",
+  "originalDiffuse": [
+    1024,
+    1024
+  ],
+  "restoredDiffuse": [
+    4096,
+    4096
+  ],
+  "restoration": "Real-ESRGAN x4plus blended 40% with Lanczos-resampled original",
+  "changes": "Removed serving board, centered and scaled the scan; diffuse restoration.",
+  "originalBoundsBlender": {
+    "min": [
+      -0.29223981499671936,
+      -0.23860523104667664,
+      -0.009190934710204601
+    ],
+    "max": [
+      0.24451835453510284,
+      0.2796609103679657,
+      0.04418838769197464
+    ]
+  },
+  "normalizationScale": 11.178218312416918,
+  "triangles": 49964,
+  "browserExport": {
+    "file": "pizza-web.glb",
+    "bytes": 3552568,
+    "originalBytes": 10502924,
+    "geometryCompression": "Meshopt",
+    "textureEncoding": "WebP quality 92, original dimensions preserved",
+    "originalDiffuseIsNative4K": false
+  }
+}

@@ -1,4 +1,4 @@
-h1.reactive-name[aria-label] {
+.reactive-name[aria-label] {
   width: fit-content;
   max-width: 100%;
   margin: 0;
@@ -6,11 +6,11 @@ h1.reactive-name[aria-label] {
   overflow: visible;
   color: var(--text, #f1f0ea);
   font-family: inherit;
-  font-size: clamp(80px, 14vw, 220px);
+  font-size: var(--reactive-name-size, clamp(52px, 13vw, 220px));
   font-weight: 500;
   font-style: normal;
-  line-height: 0.86;
-  letter-spacing: -0.085em;
+  line-height: 0.95;
+  letter-spacing: normal;
   text-align: left;
   text-transform: none;
   white-space: nowrap;
@@ -41,7 +41,10 @@ h1.reactive-name[aria-label] {
   --letter-proximity: 0;
   display: block;
   position: absolute;
-  inset: 0 auto auto 0;
+  /* The gradient needs room for the heavier glyph's ink and descenders. */
+  inset: -0.16em auto auto -0.08em;
+  width: max-content;
+  padding: 0.16em 0.08em;
   color: inherit;
   font-weight: 500;
   font-variation-settings: "wght" calc(500 + 100 * var(--letter-proximity));
@@ -53,6 +56,21 @@ h1.reactive-name[aria-label] {
 
 .reactive-name[data-animating] .reactive-name__glyph {
   will-change: transform;
+}
+
+@supports (background-clip: text) and (color: color-mix(in srgb, white, black)) {
+  .reactive-name .reactive-name__glyph {
+    --shine-x: 50%;
+    --shine-strength: calc(var(--letter-proximity) * 100%);
+    background-image: linear-gradient(105deg,
+      currentColor calc(var(--shine-x) - 50%),
+      color-mix(in srgb, #77dfff var(--shine-strength), currentColor) calc(var(--shine-x) - 22%),
+      color-mix(in srgb, #e5a7ff var(--shine-strength), currentColor) var(--shine-x),
+      color-mix(in srgb, #ffd18f var(--shine-strength), currentColor) calc(var(--shine-x) + 24%),
+      currentColor calc(var(--shine-x) + 50%));
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

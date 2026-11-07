@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183d35">
+  <meta name="description" content="ДАЛЬ — коллекция мест, которые остаются с тобой. Кинематографичный журнал путешествий.">
+  <title>ДАЛЬ — за пределами привычного</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="assets/manrope.css">
+  <link rel="stylesheet" href="assets/cormorant.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="hero-motion.css">
+  <link rel="stylesheet" href="story-slider.css">
+  <script src="app.js?v=20261021-story-slider" defer></script>
+  <script src="story-slider.js?v=20261021" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Перейти к содержимому</a>
+  <div class="reading-progress" aria-hidden="true"></div>
+  <svg class="svg-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="arrow-up" viewBox="0 0 24 24"><path d="M6 18 18 6M6 6h12v12"/></symbol>
+    <symbol id="star" viewBox="0 0 64 64"><path d="M32 2v60M2 32h60M10.8 10.8l42.4 42.4M10.8 53.2l42.4-42.4"/></symbol>
+    <symbol id="play" viewBox="0 0 24 24"><path d="m9 5 11 7-11 7Z"/></symbol>
+    <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+  </defs></svg>
+  <main id="main">
+    <div class="hero-scroll">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-landscape" role="img" aria-label="Тихое озеро среди гор в золотом свете заката">
+        <img class="hero-scene" src="assets/hero.jpg" alt="" aria-hidden="true" fetchpriority="high">
+        <img class="hero-scene" src="assets/mountains.jpg" alt="" aria-hidden="true" decoding="async">
+        <img class="hero-scene" src="assets/iceland.jpg" alt="" aria-hidden="true" decoding="async">
+        <img class="hero-scene" src="assets/night.jpg" alt="" aria-hidden="true" decoding="async">
+      </div>
+      <div class="hero-shade"></div>
+      <header class="header">
+        <a href="#" class="logo" aria-label="ДАЛЬ — на главную">ДАЛЬ<span class="logo-dot">.</span></a>
+        <nav aria-label="Основная навигация"><a href="#places">Места</a><a href="#route">Путь</a><a href="#journal">Моменты</a></nav>
+        <a class="header-link" href="#places">Навстречу миру <svg><use href="#arrow-up"/></svg></a>
+      </header>
+      <div class="hero-content">
+        <h1 id="hero-title" tabindex="-1"><span class="hero-line">За пределами</span><span class="hero-line"><em>привычного.</em></span></h1>
+        <p>Мир больше, чем кажется.<br>Давай почувствуем его вместе.</p>
+        <a class="button button-paper" href="#places">Найти своё место <span class="button-icon"><svg><use href="#arrow-up"/></svg></span></a>
+      </div>
+      <div class="hero-bottom">
+        <a class="scroll-note" href="#intro"><span class="scroll-line"></span><span>Листай. Дальше — больше.</span></a>
+        <span class="hero-edition">Коллекция впечатлений / 2026</span>
+        <button class="film-preview" data-film aria-haspopup="dialog"><span class="film-image"><img src="assets/night.jpg" alt=""/><span class="play-circle"><svg><use href="#play"/></svg></span></span><span class="film-copy"><span>Остановись на мгновение</span><strong>Почувствуй ДАЛЬ</strong><small>История в четырёх кадрах</small></span><svg class="film-arrow"><use href="#arrow-up"/></svg></button>
+      </div>
+      <span class="hero-frame-mark" aria-hidden="true">Почувствовать. Запомнить. Вернуться.</span>
+    </section>
+    </div>
+
+    <section class="intro section-shell" id="intro" aria-labelledby="intro-title">
+      <div class="intro-symbol" aria-hidden="true"><svg><use href="#star"/></svg></div>
+      <div class="intro-main"><h2 id="intro-title" class="reveal-text">Есть места, в которых<br>ты становишься <em>ближе к себе.</em></h2><div class="intro-foot"><p>Дорога без спешки. Воздух, который хочется сохранить. И маленькие моменты, из которых складывается большое путешествие.</p><span class="handwritten">За ними и отправимся.</span></div></div>
+    </section>
+
+    <section class="wheel-section" id="places" aria-labelledby="places-title">
+      <div class="wheel-stage">
+        <div class="wheel-heading"><h2 id="places-title">Куда зовёт <em>твоя тишина?</em></h2><p>Пять направлений. Тысяча способов почувствовать.</p></div>
+        <div class="wheel-track" aria-hidden="true"></div>
+        <div class="wheel-rotor">
+          <button class="destination-card" data-destination="0" style="--angle:-56deg" aria-label="Открыть историю Японии"><img src="assets/japan.jpg" loading="lazy" alt="Традиционная японская улица среди цветущих деревьев"><span><strong>Япония</strong><small>Искусство замечать</small></span><svg><use href="#arrow-up"/></svg></button>
+          <button class="destination-card" data-destination="1" style="--angle:-28deg" aria-label="Открыть историю Намибии"><img src="assets/desert.jpg" loading="lazy" alt="Золотистые дюны пустыни"><span><strong>Намибия</strong><small>Там, где время замирает</small></span><svg><use href="#arrow-up"/></svg></button>
+          <button class="destination-card is-active" data-destination="2" style="--angle:0deg" aria-label="Открыть историю Доломитовых Альп"><img src="assets/dolomites.jpg" loading="lazy" alt="Величественные вершины Доломитовых Альп"><span><strong>Доломиты</strong><small>Выше повседневности</small></span><svg><use href="#arrow-up"/></svg></button>
+          <button class="destination-card" data-destination="3" style="--angle:28deg" aria-label="Открыть историю Исландии"><img src="assets/iceland.jpg" loading="lazy" alt="Водопад в зелёной долине Исландии"><span><strong>Исландия</strong><small>На краю другого мира</small></span><svg><use href="#arrow-up"/></svg></button>
+          <button class="destination-card" data-destination="4" style="--angle:56deg" aria-label="Открыть историю северных озёр"><img src="assets/lake.jpg" loading="lazy" alt="Озеро в окружении гор"><span><strong>Северные озёра</strong><small>Глубина тишины</small></span><svg><use href="#arrow-up"/></svg></button>
+        </div>
+        <div class="wheel-caption"><button class="round-button" data-wheel-prev aria-label="Предыдущее направление"><svg class="arrow-left"><use href="#arrow"/></svg></button><div class="wheel-current" aria-live="polite"><span id="place-country">Италия · горная история</span><strong id="place-name">Доломиты</strong><span id="place-count">03 / 05</span></div><button class="round-button" data-wheel-next aria-label="Следующее направление"><svg><use href="#arrow"/></svg></button></div>
+        <p class="wheel-hint">Прокрути, чтобы исследовать · Нажми на фото, чтобы узнать больше</p>
+        <div class="wheel-side-note" aria-hidden="true">У каждого места свой ритм</div>
+      </div>
+    </section>
+
+    <section class="landscape-interlude" aria-label="Горы и бесконечный простор"><img src="assets/mountains.jpg" loading="lazy" alt="Солнечные лучи над бескрайней горной долиной"><div class="interlude-shade"></div><p class="reveal-text">Иногда лучший план —<br><em>свернуть с маршрута.</em></p><span>И оказаться именно там, где нужно.</span></section>
+
+    <section class="route section-shell" id="route" aria-labelledby="route-title">
+      <div class="route-left"><h2 id="route-title">Путь важнее<br><em>точки на карте.</em></h2><p>Один остров. Четыре остановки.<br>Маленькая история о том, как отпустить спешку.</p><div class="route-photo"><img src="assets/iceland.jpg" alt="Водопад среди зелёных скал" loading="lazy"><div><span>Исландия</span><span>Заметки с края света</span></div></div><button class="text-link" data-story="3">Вся история Исландии <svg><use href="#arrow-up"/></svg></button></div>
+      <div class="timeline"><div class="timeline-line"><div class="timeline-fill"></div></div>
+        <article class="timeline-stop"><span class="timeline-dot"></span><div class="stop-meta"><span>День 1</span><span>Рейкьявик</span></div><h3>Начать с чистого листа.</h3><p>Потеряться в тихих улицах. Найти кофе у старой гавани. Почувствовать, как привычный ритм остаётся где-то далеко.</p><span class="stop-detail">Город, океан и первый глубокий вдох</span></article>
+        <article class="timeline-stop"><span class="timeline-dot"></span><div class="stop-meta"><span>День 2</span><span>Южное побережье</span></div><h3>Слушать воду.</h3><p>Стоять рядом с водопадом и забыть о словах. Наблюдать, как океан рисует белые линии на чёрном песке.</p><span class="stop-detail">Сельяландсфосс → Рейнисфьяра</span></article>
+        <article class="timeline-stop"><span class="timeline-dot"></span><div class="stop-meta"><span>День 3</span><span>Ледниковая лагуна</span></div><h3>Увидеть время.</h3><p>Медленные льдины. Прозрачный холодный воздух. Здесь понимаешь: не каждую минуту нужно чем-то заполнять.</p><span class="stop-detail">Йёкюльсаурлоун и берег ледяных осколков</span></article>
+        <article class="timeline-stop"><span class="timeline-dot"></span><div class="stop-meta"><span>День 4</span><span>Обратная дорога</span></div><h3>Увезти главное.</h3><p>Повернуть обратно. Остановиться ещё раз без причины. Забрать с собой не сувенир, а новое ощущение мира.</p><span class="stop-detail">Твоя собственная последняя остановка</span></article>
+      </div>
+    </section>
+
+    <section class="journal" id="journal" aria-labelledby="journal-title">
+      <div class="journal-header section-shell"><div><h2 id="journal-title">Счастье не позирует.<br><em>Оно случается.</em></h2><p>Небольшие открытки из большого мира.</p></div><div class="journal-controls"><button class="round-button" data-journal-prev aria-label="Предыдущие фотографии"><svg class="arrow-left"><use href="#arrow"/></svg></button><button class="round-button" data-journal-next aria-label="Следующие фотографии"><svg><use href="#arrow"/></svg></button></div></div>
+      <div class="polaroid-rail" tabindex="0" aria-label="Фотоальбом. Можно пролистывать горизонтально">
+        <button class="polaroid" data-story="2" style="--tilt:-7deg"><span class="polaroid-photo"><img src="assets/dolomites.jpg" alt="Острые горные вершины" loading="lazy"></span><span class="polaroid-caption">Утро выше облаков</span><span class="polaroid-place">Доломиты, Италия</span></button>
+        <button class="polaroid" data-story="4" style="--tilt:5deg"><span class="polaroid-photo"><img src="assets/lake.jpg" alt="Тихое голубое озеро" loading="lazy"></span><span class="polaroid-caption">Здесь можно молчать</span><span class="polaroid-place">У воды</span></button>
+        <button class="polaroid" data-story="0" style="--tilt:-4deg"><span class="polaroid-photo"><img src="assets/japan.jpg" alt="Весна в японском городе" loading="lazy"></span><span class="polaroid-caption">Мир в маленьких деталях</span><span class="polaroid-place">Япония</span></button>
+        <button class="polaroid" data-story="1" style="--tilt:7deg"><span class="polaroid-photo"><img src="assets/desert.jpg" alt="Дюны в мягком вечернем свете" loading="lazy"></span><span class="polaroid-caption">Ничего лишнего</span><span class="polaroid-place">Намибия</span></button>
+        <button class="polaroid" data-story="3" style="--tilt:-5deg"><span class="polaroid-photo"><img src="assets/iceland.jpg" alt="Водопад среди зелёных склонов" loading="lazy"></span><span class="polaroid-caption">Дышать. Просто дышать.</span><span class="polaroid-place">Исландия</span></button>
+        <button class="polaroid" data-story="2" style="--tilt:4deg"><span class="polaroid-photo"><img src="assets/night.jpg" alt="Ночное звёздное небо над горами" loading="lazy"></span><span class="polaroid-caption">Когда зажигаются звёзды</span><span class="polaroid-place">Где-то далеко</span></button>
+      </div>
+      <div class="journal-bottom section-shell"><span>Сохраняй моменты, а не координаты.</span><span class="handwritten">Твоя история ещё впереди.</span></div>
+    </section>
+
+    <section class="outro" id="start" aria-labelledby="outro-title"><div class="outro-decoration" aria-hidden="true"><svg><use href="#star"/></svg></div><div class="outro-main"><h2 id="outro-title">Мир ждёт.<br><em>А ты?</em></h2><p>Необязательно знать весь путь.<br>Достаточно почувствовать, куда хочется.</p>
+      <div class="story-restart" data-story-restart hidden>
+        <div class="story-slider" data-story-slider>
+          <span class="story-slider-fill" aria-hidden="true"></span>
+          <span class="story-slider-label" aria-hidden="true">Начать свою историю</span>
+          <span class="story-slider-done" aria-hidden="true">Снова навстречу миру</span>
+          <span class="story-slider-thumb" aria-hidden="true"><svg><use href="#arrow"/></svg></span>
+          <input class="story-slider-input" type="range" min="0" max="100" step="1" value="0" aria-label="Начать свою историю: вернуться к началу" aria-describedby="story-slider-help">
+        </div>
+        <p class="story-slider-help" id="story-slider-help">Сдвинь вправо — и снова в путь.</p>
+        <span class="story-slider-status" role="status" aria-live="polite"></span>
+      </div>
+      <a class="button button-paper" href="#" data-story-fallback>Начать свою историю <span class="button-icon"><svg><use href="#arrow-up"/></svg></span></a>
+    </div><div class="outro-photo"><img src="assets/forest.jpg" alt="Солнечный свет проходит сквозь высокие деревья" loading="lazy"><span class="handwritten">Увидимся где-то в ДАЛИ.</span></div></section>
+    <footer class="footer"><a class="logo" href="#">ДАЛЬ<span class="logo-dot">.</span></a><p>Ближе к миру. Ближе к себе.</p><span>Авторский концепт · 2026</span><a href="#" class="back-top">Наверх <svg><use href="#arrow-up"/></svg></a></footer>
+  </main>
+  <div class="story-return" aria-hidden="true"><div class="story-return-panel story-return-top"></div><div class="story-return-panel story-return-bottom"></div><span class="story-return-mark logo">ДАЛЬ<span class="logo-dot">.</span></span></div>
+
+  <dialog class="story-dialog" id="story-dialog" aria-labelledby="story-title"><div class="dialog-layout"><div class="dialog-visual"><img id="story-image" src="assets/dolomites.jpg" alt=""><div class="story-photo-shade"></div><span class="dialog-photo-caption" id="story-caption"></span></div><div class="dialog-copy"><button class="dialog-close round-button" data-close aria-label="Закрыть историю"><svg><use href="#close"/></svg></button><h2 id="story-title"></h2><span class="story-location" id="story-location"></span><p id="story-description"></p><div class="story-details" id="story-details"></div><p class="story-disclaimer">Редакционная идея путешествия — вдохновение для твоего собственного маршрута.</p><button class="text-link" data-story-next>Ещё одна история <svg><use href="#arrow"/></svg></button></div></div></dialog>
+  <dialog class="film-dialog" id="film-dialog" aria-labelledby="film-title"><img id="film-full-image" src="assets/hero.jpg" alt=""><div class="film-full-shade"></div><div class="film-top"><span class="logo">ДАЛЬ.</span><button class="round-button" data-film-close aria-label="Закрыть фотоисторию"><svg><use href="#close"/></svg></button></div><div class="film-text"><span id="film-count">1 / 4</span><h2 id="film-title">Сначала — остановиться.</h2><p id="film-subtitle">Оставить шум по ту сторону дороги.</p></div><div class="film-bottom"><button class="round-button" data-film-prev aria-label="Предыдущий кадр"><svg class="arrow-left"><use href="#arrow"/></svg></button><div class="film-bars" aria-hidden="true"><span><i></i></span><span><i></i></span><span><i></i></span><span><i></i></span></div><button class="film-pause" data-film-pause>Пауза</button><button class="round-button" data-film-next aria-label="Следующий кадр"><svg><use href="#arrow"/></svg></button></div></dialog>
+</body>
+</html>

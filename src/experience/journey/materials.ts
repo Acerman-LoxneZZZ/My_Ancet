@@ -1,19 +1,36 @@
 import * as THREE from "three";
 
 /** Blend over the full-resolution scene, with a stronger tint at grazing angles. */
-export function createClearGlass(name: string) {
+export function createClearGlass(name: string, sweep?: { height: { value: number }; intensity: { value: number } }) {
   const material = new THREE.MeshPhysicalMaterial({
     name, color: "#b7cfdd", roughness: 0.28, opacity: 0.035,
     transparent: true, depthWrite: false,
     specularIntensity: 0.42, envMapIntensity: 0.5,
   });
   material.onBeforeCompile = shader => {
+    if (sweep) {
+      shader.uniforms.sweepHeight = sweep.height;
+      shader.uniforms.sweepIntensity = sweep.intensity;
+      shader.vertexShader = "varying float crystalHeight;\n" + shader.vertexShader
+        .replace("#include <begin_vertex>", "#include <begin_vertex>\ncrystalHeight = position.y;");
+      shader.fragmentShader = `
+        varying float crystalHeight;
+        uniform float sweepHeight;
+        uniform float sweepIntensity;
+      ` + shader.fragmentShader;
+    }
     shader.fragmentShader = shader.fragmentShader.replace("#include <opaque_fragment>", `
       float facing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
       diffuseColor.a += 0.42 * pow(1.0 - facing, 3.0);
+      ${sweep ? `
+        float streak = (1.0 - smoothstep(0.025, 0.21, abs(crystalHeight - sweepHeight))) * sweepIntensity;
+        outgoingLight += vec3(0.54, 0.72, 0.87) * streak;
+        diffuseColor.a += 0.27 * streak;
+      ` : ""}
       #include <opaque_fragment>
     `);
   };
+  material.customProgramCacheKey = () => sweep ? "crystal-sweep" : "crystal";
   return material;
 }
 

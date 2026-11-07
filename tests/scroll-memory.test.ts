@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { getProject, projects } from "../src/content/portfolio";
+import { galleryProjectId, journeyChapters } from "../src/experience/journey/chapters";
 import {
   ScrollMemory,
   resolveGalleryReturn,
@@ -115,7 +117,7 @@ describe("ScrollMemory", () => {
 });
 
 describe("resolveGalleryReturn", () => {
-  it.each(["timepiece", "faro", "egypt", "wordflow"] as const)(
+  it.each(["timepiece", "faro", "egypt", "proyavleno"] as const)(
     "returns a direct %s case to its own exhibit when no snapshot exists",
     (project) => {
       expect(resolveGalleryReturn(project)).toEqual({
@@ -126,6 +128,20 @@ describe("resolveGalleryReturn", () => {
       });
     },
   );
+
+  it("keeps the projects in chapter order and returns the archived Wordflow case to the fourth exhibit", () => {
+    const exhibitChapters = journeyChapters.slice(1, -1).map(({ id }) => id);
+    expect(exhibitChapters).toEqual(projects.map(({ id }) => id));
+    expect(exhibitChapters[3]).toBe("proyavleno");
+    expect(exhibitChapters).not.toContain("wordflow");
+
+    const archived = getProject("wordflow");
+    expect(archived?.showcase.src).toBe("/demos/wordflow/index.html");
+    expect(resolveGalleryReturn(galleryProjectId(archived!.id))).toMatchObject({
+      chapter: "proyavleno",
+      focusId: "world-proyavleno-title",
+    });
+  });
 
   it("preserves a saved history position even if it belongs to another chapter", () => {
     const saved = Object.freeze({

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from "react";
-import type { Project } from "../content/portfolio";
+import { projectCount, type Project } from "../content/portfolio";
 import { Arrow } from "./Icon";
 
 export function ProjectShowcase({ project, onClose }: { project: Project; onClose: () => void }) {
@@ -7,6 +7,10 @@ export function ProjectShowcase({ project, onClose }: { project: Project; onClos
   const closeButton = useRef<HTMLButtonElement>(null);
   const [loaded, setLoaded] = useState(false);
   const demo = project.showcase;
+  const usesOwnPoster = project.id === "faro" || project.id === "proyavleno";
+  const sandbox = "allow-scripts allow-same-origin allow-popups"
+    + (project.id === "timepiece" ? " allow-downloads" : "")
+    + (project.id === "proyavleno" ? " allow-forms" : "");
 
   useLayoutEffect(() => {
     const element = dialog.current;
@@ -23,7 +27,7 @@ export function ProjectShowcase({ project, onClose }: { project: Project; onClos
       onClose={onClose}
     >
       <div className="journey-showcase-copy">
-        <p className="journey-caption-label">{project.number} / 04</p>
+        <p className="journey-caption-label">{project.number} / {projectCount}</p>
         <h2 id="journey-showcase-title">{project.title}</h2>
         <a
           className="journey-open-project"
@@ -41,15 +45,14 @@ export function ProjectShowcase({ project, onClose }: { project: Project; onClos
             Закрыть <span aria-hidden="true">×</span>
           </button>
         </div>
-        <div className="journey-showcase-screen" data-portrait={project.id === "wordflow"}>
-          {!loaded && <img src={project.screen} alt="" />}
+        <div className="journey-showcase-screen" data-portrait={project.id === "wordflow"}
+          data-project={project.id} aria-busy={!loaded}>
+          {!loaded && !usesOwnPoster && <img src={project.screen} alt="" />}
           <iframe
             src={demo.src}
             title={`${project.title} — интерактивная витрина`}
             aria-describedby="journey-showcase-instruction"
-            sandbox={project.id === "timepiece"
-              ? "allow-scripts allow-same-origin allow-popups allow-downloads"
-              : "allow-scripts allow-same-origin allow-popups"}
+            sandbox={sandbox}
             referrerPolicy="no-referrer"
             data-loaded={loaded}
             onLoad={() => setLoaded(true)}
