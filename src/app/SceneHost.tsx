@@ -1,3 +1,4 @@
+import { publicUrl } from "../lib/publicUrl";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
@@ -82,7 +83,7 @@ export default function SceneHost() {
           );
         return createWorld(key as WorldId, {
           quality,
-          resolveAsset: (path) => `/assets/${path}`,
+          resolveAsset: (path) => publicUrl(`/assets/${path}`),
         });
       },
       dispose: (world) => world.dispose(),

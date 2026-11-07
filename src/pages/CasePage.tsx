@@ -1,3 +1,4 @@
+import { publicUrl } from "../lib/publicUrl";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getProject, nextProject, projectCount, type Project } from "../content/portfolio";
@@ -45,7 +46,7 @@ function TimepieceInspector() {
   useEffect(() => {
     const controller = new AbortController();
     setError(false);
-    fetch("/assets/data/watch-parts.json", { signal: controller.signal })
+    fetch(publicUrl("/assets/data/watch-parts.json"), { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error("Watch data unavailable");
         return response.json();
@@ -97,7 +98,7 @@ function TimepieceInspector() {
           <img
             className="scene-fallback inspector-fallback"
             hidden={ready}
-            src="/assets/images/timepiece-exploded.jpg"
+            src={publicUrl("/assets/images/timepiece-exploded.jpg")}
             alt="Сохранённый снимок разборки часов в исходном приложении"
             width="1265"
             height="712"
@@ -242,7 +243,7 @@ function WordflowDemo() {
         <iframe
           ref={frame}
           className="wordflow-iframe"
-          src="/demos/wordflow/index.html"
+          src={publicUrl("/demos/wordflow/index.html")}
           title="Wordflow — демонстрация на шести учебных словах"
           width="390"
           height="844"

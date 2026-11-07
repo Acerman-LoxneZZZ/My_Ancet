@@ -1,3 +1,4 @@
+import { publicUrl } from "../lib/publicUrl";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { LoadingScreen } from "../components/LoadingScreen";
 import { author, projectCount, projects, type Project } from "../content/portfolio";
@@ -127,7 +128,7 @@ export function Home() {
         <Suspense fallback={null}><JourneyCanvas onFrame={frame} onStatus={setStatus} onLoadProgress={loadingProgress} paused={indexOpen || !!showcase || status === "fallback"} /></Suspense>
         <div className="journey-vignette" aria-hidden="true" />
         {status === "fallback" && <div className="journey-fallback" aria-hidden="true">
-          {next ? <img src={projects[active - 1]?.screen ?? "/assets/images/monolith-fallback.svg"} alt="" /> : <span className="journey-fallback-letter">И</span>}
+          {next ? <img src={projects[active - 1]?.screen ?? publicUrl("/assets/images/monolith-fallback.svg")} alt="" /> : <span className="journey-fallback-letter">И</span>}
         </div>}
       </div>
       <header className="journey-header">

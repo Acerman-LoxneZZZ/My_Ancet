@@ -1,3 +1,4 @@
+import { publicUrl } from "../lib/publicUrl";
 import { useRef, useState } from "react";
 import { Arrow } from "./Icon";
 export function Showreel() {
@@ -33,8 +34,8 @@ export function Showreel() {
         {loaded && (
           <video
             ref={video}
-            src="/assets/video/portfolio-showreel.mp4"
-            poster="/assets/images/showreel-poster.jpg"
+            src={publicUrl("/assets/video/portfolio-showreel.mp4")}
+            poster={publicUrl("/assets/images/showreel-poster.jpg")}
             controls
             playsInline
             preload="metadata"

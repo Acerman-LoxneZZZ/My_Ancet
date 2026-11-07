@@ -1,3 +1,4 @@
+import { publicUrl } from "../lib/publicUrl";
 import { useEffect, type ReactNode } from "react";
 import { projects } from "../content/portfolio";
 import { PortfolioLink } from "../navigation/NavigationProvider";
@@ -62,7 +63,7 @@ export function Credits() {
             Атрибуция распространяется также на рендеры модели. Полное исходное
             уведомление:{" "}
             <a
-              href="/assets/licenses/FARO-ATTRIBUTION.md"
+              href={publicUrl("/assets/licenses/FARO-ATTRIBUTION.md")}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -81,7 +82,7 @@ export function Credits() {
           <p>
             Надписи модели используют DejaVu. Сохранено{" "}
             <a
-              href="/assets/licenses/DejaVu.txt"
+              href={publicUrl("/assets/licenses/DejaVu.txt")}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -112,7 +113,7 @@ export function Credits() {
         </section>
         <section className="credits-section" aria-labelledby="credits-castle">
           <h2 id="credits-castle">Castle — Камень и время</h2>
-          <p>В витрине работает исходный сайт из <External href="https://github.com/Acerman-LoxneZZZ/castle/tree/fb79bf9ee0a3d002d13a52a6c61724fa0b450077">репозитория автора</External>. Фотографии сопровождаются исходными ссылками и лицензиями в галереях; полный <a href="/demos/castle/assets/sources.json">перечень источников</a> сохранён. Изображения подготовлены в WebP для загрузки в браузере.</p>
+          <p>В витрине работает исходный сайт из <External href="https://github.com/Acerman-LoxneZZZ/castle/tree/fb79bf9ee0a3d002d13a52a6c61724fa0b450077">репозитория автора</External>. Фотографии сопровождаются исходными ссылками и лицензиями в галереях; полный <a href={publicUrl("/demos/castle/assets/sources.json")}>перечень источников</a> сохранён. Изображения подготовлены в WebP для загрузки в браузере.</p>
           <p>Каменные ворота и латунный анкх в залах портфолио построены из объёмной геометрии для этой галереи.</p>
         </section>
         <section className="credits-section" aria-labelledby="credits-fonts">
@@ -121,7 +122,7 @@ export function Credits() {
             Локальные Manrope и Cormorant Garamond распространяются с исходными
             уведомлениями SIL Open Font License 1.1:{" "}
             <a
-              href="/assets/fonts/Manrope-LICENSE.txt"
+              href={publicUrl("/assets/fonts/Manrope-LICENSE.txt")}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -129,7 +130,7 @@ export function Credits() {
             </a>{" "}
             и{" "}
             <a
-              href="/assets/fonts/Cormorant-LICENSE.txt"
+              href={publicUrl("/assets/fonts/Cormorant-LICENSE.txt")}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -150,7 +151,7 @@ export function Credits() {
           <p>
             Для браузерной 3D-сцены сохранены лицензии{" "}
             <a
-              href="/assets/licenses/Three-MIT.txt"
+              href={publicUrl("/assets/licenses/Three-MIT.txt")}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -158,7 +159,7 @@ export function Credits() {
             </a>{" "}
             и{" "}
             <a
-              href="/assets/licenses/Meshoptimizer-MIT.txt"
+              href={publicUrl("/assets/licenses/Meshoptimizer-MIT.txt")}
               target="_blank"
               rel="noopener noreferrer"
             >

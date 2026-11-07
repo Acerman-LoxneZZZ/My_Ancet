@@ -1,3 +1,4 @@
+import { publicUrl } from "../lib/publicUrl";
 import type { ProjectId } from "../experience/types";
 
 export type { ProjectId } from "../experience/types";
@@ -31,11 +32,11 @@ export const author = {
   github: "https://github.com/Acerman-LoxneZZZ",
 };
 
-const faroDemo = "/demos/faro/index.html";
-const proyavlenoDemo = "/demos/proyavleno/index.html";
-const dalDemo = "/demos/dal/index.html";
-const tutorDemo = "/demos/tutor/index.html";
-export const timepieceHero = "/assets/images/timepiece-karpov-hero.jpg";
+const faroDemo = publicUrl("/demos/faro/index.html");
+const proyavlenoDemo = publicUrl("/demos/proyavleno/index.html");
+const dalDemo = publicUrl("/demos/dal/index.html");
+const tutorDemo = publicUrl("/demos/tutor/index.html");
+export const timepieceHero = publicUrl("/assets/images/timepiece-karpov-hero.jpg");
 
 export const projects: Project[] = [
   {
@@ -53,11 +54,11 @@ export const projects: Project[] = [
     status: "Демонстрационная экспозиция, без симуляции рабочего механизма",
     accent: "#c49b5c",
     screen: timepieceHero,
-    detail: "/assets/images/timepiece-exploded.jpg",
+    detail: publicUrl("/assets/images/timepiece-exploded.jpg"),
     detailLabel: "Разборка в исходном проекте",
     repository: "https://github.com/Acerman-LoxneZZZ/chasi",
     showcase: {
-      src: "/demos/timepiece/index.html",
+      src: publicUrl("/demos/timepiece/index.html"),
       instruction: "Прокрутите внутри витрины, чтобы рассмотреть устройство часов KARpOV и попробовать гравировку.",
     },
     facts: [
@@ -96,8 +97,8 @@ export const projects: Project[] = [
     role: "Сайт, свет и камера, подготовка 3D-ресурсов для браузера, меню и корзина",
     status: "Вымышленная пиццерия, без оплаты и отправки заказов",
     accent: "#e66744",
-    screen: "/assets/images/faro-original.jpg",
-    detail: "/assets/images/faro-menu.jpg",
+    screen: publicUrl("/assets/images/faro-original.jpg"),
+    detail: publicUrl("/assets/images/faro-menu.jpg"),
     detailLabel: "Меню исходного сайта",
     repository: "https://github.com/Acerman-LoxneZZZ/pizza",
     demo: {
@@ -144,12 +145,12 @@ export const projects: Project[] = [
     role: "Интерфейс и 3D-сцена, режиссура прокрутки, адаптация чтения и оформление источников",
     status: "Авторская экспозиция, доступна локально",
     accent: "#dcb878",
-    screen: "/assets/images/egypt-gallery-home.webp",
-    detail: "/assets/images/egypt-chapter.jpg",
+    screen: publicUrl("/assets/images/egypt-gallery-home.webp"),
+    detail: publicUrl("/assets/images/egypt-chapter.jpg"),
     detailLabel: "Глава исходной экспозиции",
     repository: "https://github.com/Acerman-LoxneZZZ/egi",
     showcase: {
-      src: "/demos/egypt/index.html",
+      src: publicUrl("/demos/egypt/index.html"),
       instruction: "Прокрутите внутри витрины, чтобы пройти через портал и открыть главы экспозиции.",
     },
     facts: ["Семь глав", "HTML-содержание без WebGL", "Three.js, GSAP, Lenis"],
@@ -184,8 +185,8 @@ export const projects: Project[] = [
     role: "Структура, тексты, интерфейс, WebGL-скульптура и анимация прокрутки",
     status: "Авторский лендинг с демонстрационной формой",
     accent: "#bda1ff",
-    screen: "/assets/images/proyavleno-original.webp",
-    detail: "/assets/images/proyavleno-concepts.webp",
+    screen: publicUrl("/assets/images/proyavleno-original.webp"),
+    detail: publicUrl("/assets/images/proyavleno-concepts.webp"),
     detailLabel: "Галерея концептов",
     repository: "https://github.com/Acerman-LoxneZZZ/DemoLan",
     demo: { url: proyavlenoDemo, label: "Открыть ПРОЯВЛЕНО" },
@@ -223,8 +224,8 @@ export const projects: Project[] = [
     role: "Дизайн сайта, галерея направлений, маршрут и интерактивная фотоистория",
     status: "Авторский сайт, рабочее демо",
     accent: "#a1c7b3",
-    screen: "/assets/images/dal-original.webp",
-    detail: "/assets/images/dal-detail.webp",
+    screen: publicUrl("/assets/images/dal-original.webp"),
+    detail: publicUrl("/assets/images/dal-detail.webp"),
     detailLabel: "Галерея направлений",
     repository: "https://github.com/Acerman-LoxneZZZ/DalSait",
     demo: { url: dalDemo, label: "Открыть ДАЛЬ" },
@@ -248,8 +249,8 @@ export const projects: Project[] = [
     role: "Дизайн, анимация портрета и интерфейс учебных разборов",
     status: "Демонстрационный сайт с учебными примерами",
     accent: "#515ee8",
-    screen: "/assets/images/tutor-original.webp",
-    detail: "/assets/images/tutor-detail.webp",
+    screen: publicUrl("/assets/images/tutor-original.webp"),
+    detail: publicUrl("/assets/images/tutor-detail.webp"),
     detailLabel: "Разбор квадратного уравнения",
     repository: "https://github.com/Acerman-LoxneZZZ/3d-repetitor",
     demo: { url: tutorDemo, label: "Открыть сайт репетитора" },
@@ -273,12 +274,12 @@ export const projects: Project[] = [
     role: "Дизайн, композиция, анимация прокрутки и управление галереями",
     status: "Авторский сайт, рабочее демо",
     accent: "#172b25",
-    screen: "/assets/images/castle-original.webp",
-    detail: "/assets/images/castle-detail.webp",
+    screen: publicUrl("/assets/images/castle-original.webp"),
+    detail: publicUrl("/assets/images/castle-detail.webp"),
     detailLabel: "Галерея замков Европы",
     repository: "https://github.com/Acerman-LoxneZZZ/castle",
-    demo: { url: "/demos/castle/index.html", label: "Открыть Замок" },
-    showcase: { src: "/demos/castle/index.html", instruction: "Прокрутите между башнями к галереям. Фотографии можно переключать стрелками, клавишами и свайпами." },
+    demo: { url: publicUrl("/demos/castle/index.html"), label: "Открыть Замок" },
+    showcase: { src: publicUrl("/demos/castle/index.html"), instruction: "Прокрутите между башнями к галереям. Фотографии можно переключать стрелками, клавишами и свайпами." },
     facts: ["Две галереи замков", "Каменный портал", "Управление клавиатурой и жестами"],
     decisions: [
       { title: "Архитектура как переход", text: "Башни и арка обрамляют первый экран и ведут к следующим разделам при прокрутке." },
@@ -303,13 +304,13 @@ const wordflow: Project = {
   role: "Интерфейс и логика обучения, структура данных, Telegram-вход и синхронизация профилей",
   status: "Telegram Mini App, демо в портфолио работает без входа",
   accent: "#c4b6f5",
-  screen: "/assets/images/wordflow-original.jpg",
-  detail: "/assets/images/wordflow-dictionary.jpg",
+  screen: publicUrl("/assets/images/wordflow-original.jpg"),
+  detail: publicUrl("/assets/images/wordflow-dictionary.jpg"),
   detailLabel: "Словари на учебных данных",
   repository: "https://github.com/Acerman-LoxneZZZ/EnCard",
   demo: { url: "https://t.me/WordsENRUbot", label: "Открыть в Telegram" },
   showcase: {
-    src: "/demos/wordflow/index.html",
+    src: publicUrl("/demos/wordflow/index.html"),
     instruction: "Нажмите на карточку, чтобы увидеть перевод, и выберите свой ответ.",
   },
   facts: [

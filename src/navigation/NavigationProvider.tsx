@@ -8,7 +8,7 @@ import {
   type AnchorHTMLAttributes,
 } from "react";
 import { flushSync } from "react-dom";
-import { useLocation, useNavigate, type Location } from "react-router-dom";
+import { useHref, useLocation, useNavigate, type Location } from "react-router-dom";
 import { gsap } from "gsap";
 import {
   createTransitionController,
@@ -228,10 +228,11 @@ export function PortfolioLink({
   project?: ProjectId;
 }) {
   const { go } = usePortfolioNavigation();
+  const href = useHref(to);
   return (
     <a
       {...props}
-      href={to}
+      href={href}
       onClick={(event) => {
         onClick?.(event);
         if (

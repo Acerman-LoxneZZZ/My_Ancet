@@ -9,6 +9,7 @@
     "typecheck":"tsc --noEmit",
     "test":"vitest run",
     "build":"tsc --noEmit && vite build",
+    "build:pages":"tsc --noEmit && node scripts/build-pages.mjs",
     "preview":"vite preview --host 127.0.0.1 --port 4310 --strictPort",
     "check:assets":"node scripts/check-assets.mjs",
     "remotion:studio":"npm run studio --workspace=remotion",

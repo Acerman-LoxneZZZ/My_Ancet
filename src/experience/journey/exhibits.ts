@@ -1,3 +1,4 @@
+import { publicUrl } from "../../lib/publicUrl";
 import * as THREE from 'three';
 import {modelAssets} from '../worlds/modelAssets';
 import {cloneModel, materialsOf, unit} from '../worlds/shared';
@@ -28,8 +29,8 @@ type MountedObject = {
 
 const imagePaths = {
   watch: timepieceHero,
-  faro: '/assets/images/faro-original.jpg',
-  menu: '/assets/images/faro-menu.jpg',
+  faro: publicUrl('/assets/images/faro-original.jpg'),
+  menu: publicUrl('/assets/images/faro-menu.jpg'),
   egypt: getProject('egypt')!.screen,
   proyavleno: getProject('proyavleno')!.screen,
   dal: getProject('dal')!.screen,
@@ -235,7 +236,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
     }
 
     const loadWatch = async () => {
-      const [source] = await Promise.all([loadModel('/assets/models/gallery-watch.glb'), loadImages(['watch'])]);
+      const [source] = await Promise.all([loadModel(publicUrl('/assets/models/gallery-watch.glb')), loadImages(['watch'])]);
       if (disposed) return;
       const watchRoom = room(0);
 
@@ -324,7 +325,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
     };
 
     const loadFaro = async () => {
-      const [source] = await Promise.all([loadModel('/assets/models/gallery-pizza.glb'), loadImages(['faro', 'menu'])]);
+      const [source] = await Promise.all([loadModel(publicUrl('/assets/models/gallery-pizza.glb')), loadImages(['faro', 'menu'])]);
       if (disposed) return;
       const faroRoom = room(1);
       const pizzaClone = cloneModel(source.scene);
@@ -380,7 +381,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
     };
 
     const loadRibbon = async () => {
-      const [source] = await Promise.all([loadModel('/assets/models/gallery-ribbon.glb'), loadImages(['proyavleno'])]);
+      const [source] = await Promise.all([loadModel(publicUrl('/assets/models/gallery-ribbon.glb')), loadImages(['proyavleno'])]);
       if (disposed) return;
       const ribbonRoom = room(3);
       // The original analytic ribbon, sampled for the gallery's viewing distance.

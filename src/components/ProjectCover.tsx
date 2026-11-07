@@ -1,3 +1,4 @@
+import { publicUrl } from "../lib/publicUrl";
 import type { Project } from "../content/portfolio";
 import type { CSSProperties } from "react";
 export function ProjectCover({
@@ -61,7 +62,7 @@ export function ProjectCover({
       {p.id === "egypt" && (
         <div className="portal-object">
           <img
-            src="/assets/images/egypt-gateway.png"
+            src={publicUrl("/assets/images/egypt-gateway.png")}
             alt=""
             loading="lazy"
             width="1788"

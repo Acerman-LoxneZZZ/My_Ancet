@@ -25,7 +25,17 @@ npm.cmd run build
 npm.cmd run preview
 ```
 
-Production preview также использует **http://127.0.0.1:4310/**; перед ним остановите dev-сервер. Он обслуживает результат `dist/`. Для хостинга маршрутов `/work/:id` и `/credits` нужен SPA fallback на `index.html`; деплой здесь не выполняется.
+Production preview также использует **http://127.0.0.1:4310/**; перед ним остановите dev-сервер. Он обслуживает результат `dist/`. Для хостинга маршрутов `/work/:id` и `/credits` нужен SPA fallback на `index.html`.
+
+### GitHub Pages
+
+Адрес сайта: **https://acerman-loxnezzz.github.io/My_Ancet/**. Workflow `.github/workflows/pages.yml` собирает и публикует ветку `codex/smooth-journey` при каждом push. В Settings → Pages выбран источник GitHub Actions.
+
+```sh
+npm run build:pages
+```
+
+Эта сборка использует базовый путь `/My_Ancet/`, адаптирует пути в готовых демо и добавляет `404.html` для открытия внутренних страниц напрямую. Другой путь можно задать через `PAGES_BASE_PATH`. Локальная разработка продолжает работать от корня `/`.
 
 `check:assets` сравнивает подготовленные ресурсы с их источниками и запрещает исходные базы/профили/BLEND в `public/`. В текущем исследовательском workspace имеются `.research/chasi`, `.research/pizza`, `.research/egi`, `.research/EnCard` на зафиксированных commits. Повторная проверка копий BLEND и тесты оригинального Wordflow требуют этих исходников. Если переносится только продуктовая папка без `.research/`, источники нужно восстановить по [ASSET_SOURCES.md](ASSET_SOURCES.md); обычная сборка использует уже подготовленный `public/`.
 
