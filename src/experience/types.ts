@@ -1,5 +1,5 @@
 import type * as THREE from "three";
-export type ProjectId = "timepiece" | "faro" | "egypt" | "proyavleno" | "dal" | "tutor" | "wordflow";
+export type ProjectId = "timepiece" | "faro" | "egypt" | "proyavleno" | "dal" | "tutor" | "castle" | "wordflow";
 export type WorldId = "monolith" | "timepiece" | "faro";
 export type Quality = {
   tier: "desktop" | "mobile" | "low";

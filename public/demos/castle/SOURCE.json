@@ -1,0 +1,87 @@
+{
+  "repository": "https://github.com/Acerman-LoxneZZZ/castle",
+  "commit": "fb79bf9ee0a3d002d13a52a6c61724fa0b450077",
+  "sourceDirectory": "dist",
+  "modifications": [
+    "Local copy of the original Ogg Medium webfont; font family and styles unchanged.",
+    "Runtime images encoded as WebP at quality 92; original JPEGs kept where smaller. Hero and cutout dimensions retained.",
+    "Gallery photos resized to a maximum edge of 1600 px; full-screen backgrounds to 2560 px.",
+    "Deferred non-hero images, responsive cutout preloads and asynchronous decoding.",
+    "CSP disables form submission and programmatic external connections; no original forms or backend exist."
+  ],
+  "font": {
+    "originalUrl": "https://dcym8fthxf5uu.cloudfront.net/fonts/247a073c-29f5-4a89-aa3a-741020f346fc/OggText-Medium.woff2",
+    "sha256": "b57d1cbbd6d456d35e421161bfbb614f1903dded2b4c27de26d75ebf5a448702"
+  },
+  "images": [
+    {
+      "source": "castle-hd.png",
+      "runtime": "castle-hd.webp"
+    },
+    {
+      "source": "castle-wide.png",
+      "runtime": "castle-wide.webp"
+    },
+    {
+      "source": "castle-cutout.png",
+      "runtime": "castle-cutout.webp"
+    },
+    {
+      "source": "alpsee-background.jpg",
+      "runtime": "alpsee-background.webp"
+    },
+    {
+      "source": "loch-duich-background.jpg",
+      "runtime": "loch-duich-background.webp"
+    },
+    {
+      "source": "lake-geneva-background.jpg",
+      "runtime": "lake-geneva-background.webp"
+    },
+    {
+      "source": "castle-wide-cutout.png",
+      "runtime": "castle-wide-cutout.webp"
+    },
+    {
+      "source": "neuschwanstein.jpg",
+      "runtime": "neuschwanstein.webp"
+    },
+    {
+      "source": "eilean-donan.jpg",
+      "runtime": "eilean-donan.webp"
+    },
+    {
+      "source": "chillon.jpg",
+      "runtime": "chillon.jpg"
+    },
+    {
+      "source": "portal-arch.png",
+      "runtime": "portal-arch.webp"
+    },
+    {
+      "source": "hohenzollern-background.jpg",
+      "runtime": "hohenzollern-background.jpg"
+    },
+    {
+      "source": "mont-saint-michel-background.jpg",
+      "runtime": "mont-saint-michel-background.jpg"
+    },
+    {
+      "source": "segovia-background.jpg",
+      "runtime": "segovia-background.jpg"
+    },
+    {
+      "source": "hohenzollern-foreground.jpg",
+      "runtime": "hohenzollern-foreground.jpg"
+    },
+    {
+      "source": "mont-saint-michel-foreground.jpg",
+      "runtime": "mont-saint-michel-foreground.webp"
+    },
+    {
+      "source": "segovia-foreground.jpg",
+      "runtime": "segovia-foreground.jpg"
+    }
+  ],
+  "attribution": "Original photography credit links and assets/sources.json are retained unchanged."
+}

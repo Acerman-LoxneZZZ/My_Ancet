@@ -4,7 +4,7 @@ import { createArchitecture } from "../experience/journey/architecture";
 import { createExhibits } from "../experience/journey/exhibits";
 import { createJourneyCamera } from "../experience/journey/camera";
 import { createJourneyReflection } from "../experience/journey/reflection";
-import { FINALE_FROM, JOURNEY_LIMIT } from "../experience/journey/chapters";
+import { clampJourneyProgress, FINALE_FROM, JOURNEY_LIMIT } from "../experience/journey/chapters";
 import { createAtelierLighting } from "../experience/journey/lighting";
 import { entrancePose, limitEntranceStep, openingCaptionEnd } from "../experience/journey/entrance";
 import { createJourneyResources } from "../experience/journey/resources";
@@ -12,19 +12,22 @@ import { createJourneyResources } from "../experience/journey/resources";
 type Props = {
   onFrame: (progress: number) => void;
   onStatus: (status: "loading" | "ready" | "fallback") => void;
+  onLoadProgress: (progress: number) => void;
   paused: boolean;
 };
 
 const unit = (v: number) => Math.min(1, Math.max(0, v));
 
-export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
+export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, paused }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const frameCallback = useRef(onFrame);
   const statusCallback = useRef(onStatus);
+  const loadingCallback = useRef(onLoadProgress);
   const pause = useRef(paused);
   const wake = useRef<(() => void) | undefined>(undefined);
   frameCallback.current = onFrame;
   statusCallback.current = onStatus;
+  loadingCallback.current = onLoadProgress;
   pause.current = paused;
 
   useEffect(() => {
@@ -35,6 +38,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     const element = canvas.current!;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
     const compact = innerWidth < 700;
+    loadingCallback.current(12);
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
@@ -167,7 +171,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
     };
     const cancelPilot = () => { pilot = null; };
     const seek = (event: Event) => {
-      const to = Math.min(JOURNEY_LIMIT, unit(Number((event as CustomEvent<number>).detail)));
+      const to = clampJourneyProgress(Number((event as CustomEvent<number>).detail));
       const from = progress;
       exhibits.prepare(to, exhibitMounted);
       if (motion.matches || (from >= FINALE_FROM && to === 0) || Math.abs(to - from) < 0.000015) {
@@ -270,6 +274,7 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       renderer.render(scene, camera);
       if (!ready) {
         ready = true;
+        loadingCallback.current(100);
         statusCallback.current("ready");
       }
       if (lastFrameProgress !== progress) {
@@ -293,16 +298,32 @@ export default function JourneyCanvas({ onFrame, onStatus, paused }: Props) {
       cancelAnimationFrame(raf);
       statusCallback.current("fallback");
     };
-    void resources.prepare(scene).catch(error => {
+    loadingCallback.current(22);
+    const sceneReady = resources.prepare(scene, (completed, total) => {
+      if (alive) loadingCallback.current(22 + Math.round(completed / total * 58));
+    }).catch(error => {
       if (alive) console.warn("Could not prepare journey resources", error);
-    }).then(() => {
+    });
+    resize();
+    const initialExhibits = exhibits.prepare(target, exhibitMounted);
+    // Open only after the first room, both shader variants and fonts are ready.
+    // Further rooms stay lazy and prepare ahead of the camera.
+    void Promise.all([sceneReady, initialExhibits, document.fonts.ready]).then(async () => {
+      // The browser may restore a saved scroll position while fonts load.
+      // Finish preparing that destination before removing the entrance screen.
+      let preparedTarget: number;
+      do {
+        if (!alive) return;
+        preparedTarget = target;
+        await exhibits.prepare(preparedTarget, exhibitMounted);
+      } while (preparedTarget !== target);
       if (!alive) return;
+      loadingCallback.current(96);
+      progress = target;
       resourcesReady = true;
       last = performance.now();
       invalidate();
     });
-    resize();
-    exhibits.prepare(target, exhibitMounted);
     progress = target;
     rail.update(progress, pointer, motion.matches);
     architecture.update(progress, 0, entrancePose(progress, Infinity, motion.matches));

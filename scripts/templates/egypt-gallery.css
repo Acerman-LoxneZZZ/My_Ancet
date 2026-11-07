@@ -1,0 +1,13 @@
+/* A complete entrance inside both a gallery iframe and a phone viewport. */
+.gateway { height: 100svh; min-height: 100svh; max-height: none; }
+.gateway-preview { display: none !important; }
+@media (max-height: 480px) {
+  .gateway-header { top: 12px; }
+  .gateway-copy { top: 49%; transform: translate(-50%, -50%); }
+  .gateway-copy h1 { font-size: clamp(46px, 13svh, 74px); }
+  .gateway-copy p { font-size: clamp(17px, 4.7svh, 23px); margin-top: 6px; }
+  .enter-link { min-height: 38px; height: 38px; margin-top: 12px; font-size: 17px; }
+  .chapter-index { min-height: 42px; height: 42px; font-size: 13px; }
+  .chapter-index a { top: 5px; padding: 8px 0; }
+  .chapter-counter { font-size: 18px; }
+}

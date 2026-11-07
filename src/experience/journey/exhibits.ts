@@ -4,7 +4,8 @@ import {cloneModel, materialsOf, unit} from '../worlds/shared';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {createAtelierMaterials} from './materials';
 import {galleryStops, placeGalleryRoom} from './galleryRoute';
-import {exhibitChapters, galleryShutterStart, JOURNEY_LIMIT} from './chapters';
+import {clampJourneyProgress, exhibitChapters, galleryShutterStart, JOURNEY_LIMIT} from './chapters';
+import {createCastleArtifact, createEgyptArtifact} from './artifacts';
 import {getProject, timepieceHero} from '../../content/portfolio';
 
 type Room = {
@@ -29,12 +30,11 @@ const imagePaths = {
   watch: timepieceHero,
   faro: '/assets/images/faro-original.jpg',
   menu: '/assets/images/faro-menu.jpg',
-  gateway: '/assets/images/egypt-gateway-gallery.webp',
-  landscape: '/assets/images/egypt-landscape-gallery.webp',
-  egypt: '/assets/images/egypt-original.jpg',
+  egypt: getProject('egypt')!.screen,
   proyavleno: getProject('proyavleno')!.screen,
   dal: getProject('dal')!.screen,
   tutor: getProject('tutor')!.screen,
+  castle: getProject('castle')!.screen,
 } as const;
 
 const smooth = (start: number, end: number, progress: number): number => {
@@ -45,7 +45,7 @@ const smooth = (start: number, end: number, progress: number): number => {
 /** Mount exhibit assets as the camera approaches each room. */
 export function createExhibits(prepareObject: (object: THREE.Object3D) => Promise<void> = async () => {}, camera?: THREE.PerspectiveCamera): {
   group: THREE.Group;
-  prepare(progress: number, onMount: () => void): void;
+  prepare(progress: number, onMount: () => void): Promise<void>;
   update(progress: number): boolean;
   fit(aspect: number): void;
   dispose(): void;
@@ -58,7 +58,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
   const atelier = createAtelierMaterials();
   const images = {} as Record<keyof typeof imagePaths, THREE.Texture>;
   const leases: ReturnType<typeof modelAssets.acquire>[] = [];
-  const requested = new Set<number>();
+  const requested = new Map<number, Promise<void>>();
   const layouts: ((mix: (wide: number, narrow: number) => number, x: number, y: number, scale: number) => void)[] = [];
   const poses: ((progress: number) => boolean)[] = [];
   const loadModel = (path: string) => {
@@ -96,6 +96,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
   const dispose = () => {
     if (disposed) return;
     disposed = true;
+    group.traverse(child => { if (child instanceof THREE.InstancedMesh) child.dispose(); });
     group.removeFromParent();
     group.clear();
     // GLB geometry/maps belong to their leases, not to these material clones.
@@ -365,29 +366,17 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
     };
 
     const loadEgypt = async () => {
-      await loadImages(['egypt', 'landscape', 'gateway']);
+      await loadImages(['egypt']);
       if (disposed) return;
       const egyptRoom = room(2);
-      const portal = new THREE.Group();
-      portal.name = 'journey-original-egypt-portal';
-      const portalWidth = 7.2;
-      const portalHeight = portalWidth * 880 / 1788;
-      const panorama = mesh(new THREE.PlaneGeometry(6.75, 6.75 * 809 / 1942), ownMaterial(new THREE.MeshBasicMaterial({
-        name: 'Egypt / original panorama', map: images.landscape, toneMapped: false, fog: false,
-      })));
-      panorama.position.set(0, -0.12, -0.16);
-      const gateway = mesh(new THREE.PlaneGeometry(portalWidth, portalHeight), ownMaterial(new THREE.MeshBasicMaterial({
-        name: 'Egypt / original gateway', map: images.gateway, transparent: true,
-        alphaTest: 0.025, depthWrite: false, toneMapped: false, fog: false,
-      })));
-      gateway.position.z = 0.025;
-      portal.add(panorama, gateway);
-      const portalMount = mounted(egyptRoom, portal, portalHeight, 7.25);
+      const artifact = createEgyptArtifact(atelier, {geometry: ownGeometry, material: ownMaterial});
+      const artifactMount = mounted(egyptRoom, artifact, 3.72, 3.1);
       const egyptScreen = panel(egyptRoom, 'egypt-original-screen', images.egypt, 6.4, 3.6);
       layouts.push((mix, screenX, screenY, screenScale) => {
         egyptScreen.place(screenX, screenY, mix(0, 1.25), screenScale);
-        portalMount.place(mix(-4.3, 0), mix(2.45, 6.35), -0.10, mix(1, 0.84));
+        artifactMount.place(mix(-3.5, 0), mix(3.7, 6.25), 0.12, mix(1, 0.78));
       });
+      rotate(artifact, 2, -0.24, 0.37, 0.05);
     };
 
     const loadRibbon = async () => {
@@ -462,16 +451,33 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
       rotate(sculpture, index, -0.22, 0.37, 0.05);
     };
 
-    const loaders = [loadWatch, loadFaro, loadEgypt, loadRibbon,
-      () => loadNewExhibit(4, 'dal'), () => loadNewExhibit(5, 'tutor')];
-    const prepare = (progress: number, onMount: () => void) => {
+    const loadCastle = async () => {
+      await loadImages(['castle']);
       if (disposed) return;
+      const parent = room(6);
+      const screen = panel(parent, 'Замок', images.castle, 7, 4.375);
+      finalScreen = screen.group;
+      const sculpture = createCastleArtifact(atelier, {geometry: ownGeometry, material: ownMaterial});
+      const mount = mounted(parent, sculpture, 3.55, 3.8);
+      layouts.push((mix, screenX, screenY, scale) => {
+        screen.place(-screenX, screenY, mix(-0.4, 1.3), scale * 0.91);
+        mount.place(mix(3.5, 0), mix(3.7, 6.1), -0.5, mix(1, 0.78));
+      });
+      rotate(sculpture, 6, -0.26, 0.4, 0.05);
+    };
+
+    const loaders = [loadWatch, loadFaro, loadEgypt, loadRibbon,
+      () => loadNewExhibit(4, 'dal'), () => loadNewExhibit(5, 'tutor'), loadCastle];
+    const prepare = (progress: number, onMount: () => void): Promise<void> => {
+      if (disposed) return Promise.resolve();
+      const pending: Promise<void>[] = [];
       exhibitChapters.forEach((chapter, index) => {
         const pastRoom = progress > chapter.to + 0.055;
         const leavingFinalRoom = index === exhibitChapters.length - 1 && progress < JOURNEY_LIMIT;
-        if (requested.has(index) || (index > 0 && progress < chapter.from - 0.14) || (pastRoom && !leavingFinalRoom)) return;
-        requested.add(index);
-        void loaders[index]().then(async () => {
+        if ((index > 0 && progress < chapter.from - 0.14) || (pastRoom && !leavingFinalRoom)) return;
+        const existing = requested.get(index);
+        if (existing) { pending.push(existing); return; }
+        const task = loaders[index]().then(async () => {
           if (disposed) return;
           fit(lastAspect);
           try { await prepareObject(rooms[index].group); }
@@ -483,7 +489,10 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
         }).catch(error => {
           if (!disposed) console.warn('Could not load gallery exhibit', chapter.id, error);
         });
+        requested.set(index, task);
+        pending.push(task);
       });
+      return Promise.all(pending).then(() => {});
     };
 
     const updateVisibility = () => {
@@ -501,7 +510,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
 
     const update = (progress: number) => {
       if (disposed) return false;
-      lastProgress = unit(progress);
+      lastProgress = clampJourneyProgress(progress);
       let changed = updateVisibility();
       for (const pose of poses) changed = pose(lastProgress) || changed;
       return changed;

@@ -6,10 +6,11 @@
     <meta name="theme-color" content="#080b10" />
     <meta
       name="description"
-      content="LOXNE — дизайн и разработка сайтов. Шесть работ в интерактивной 3D-галерее."
+      content="LOXNE — дизайн и разработка сайтов. Семь работ в интерактивной 3D-галерее."
     />
     <title>Миры под поверхностью — LOXNE</title>
     <link rel="icon" type="image/svg+xml" href="/mark.svg" />
+    <link rel="stylesheet" href="/boot.css" />
     <link
       rel="preload"
       href="/assets/fonts/manrope-cyrillic.woff2"
@@ -20,10 +21,10 @@
   </head>
   <body>
     <div id="root">
-      <main class="boot">
-        <p>LOXNE · Дизайн и разработка сайтов</p>
-        <h1>Миры под поверхностью</h1>
-        <p>Шесть проектов, в которых интерфейс встречается с движением</p>
+      <main class="journey-loader" aria-label="Загрузка галереи">
+        <div class="loader-top"><span>КАРПОВ</span><span>Дизайн / Движение / Код</span></div>
+        <div class="loader-assembly" aria-hidden="true"><span class="loader-coordinate loader-coordinate-a">01 / МАТЕРИАЛ</span><svg class="loader-drawing" viewBox="0 0 320 320" fill="none"><path class="loader-grid" d="M0 80h320M0 160h320M0 240h320M80 0v320M160 0v320M240 0v320"/><circle class="loader-orbit" cx="160" cy="160" r="135" stroke-dasharray="1 12"/><g class="loader-cog"><circle cx="160" cy="160" r="57"/><circle cx="160" cy="160" r="45" stroke-dasharray="2 9"/><path d="M160 103v114M103 160h114M120 120l80 80M120 200l80-80"/><circle cx="160" cy="160" r="8"/></g><path class="loader-letter loader-letter-left" d="M67 56h28v208H67z"/><path class="loader-letter loader-letter-right" d="M225 56h28v208h-28z"/><path class="loader-letter loader-letter-diagonal" d="m95 214 130-158v50L95 264z"/><path class="loader-register" d="M5 25V5h20m270 0h20v20M5 295v20h20m270 0h20v-20"/></svg><span class="loader-coordinate loader-coordinate-b">02 / ПРОСТРАНСТВО</span></div>
+        <div class="loader-bottom"><div class="loader-caption"><span>Миры под поверхностью</span><small>Открываем галерею</small></div><div class="loader-percent"><span>00</span><small>%</small></div><div class="loader-track"><i></i></div></div>
       </main>
     </div>
     <noscript
@@ -34,10 +35,12 @@
         <a href="https://github.com/Acerman-LoxneZZZ/egi">Египет</a>,
         <a href="/demos/proyavleno/index.html">ПРОЯВЛЕНО</a>,
         <a href="/demos/dal/index.html">ДАЛЬ</a>,
-        <a href="/demos/tutor/index.html">3D-репетитор</a>.
+        <a href="/demos/tutor/index.html">3D-репетитор</a>,
+        <a href="/demos/castle/index.html">Замок</a>.
         <a href="https://github.com/Acerman-LoxneZZZ">GitHub автора</a>
       </p></noscript
     >
+    <noscript><style>.journey-loader{display:none}body{color:#e7e8df;padding:24px;font:16px/1.6 Arial,sans-serif}a{color:#c8b18a}</style></noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

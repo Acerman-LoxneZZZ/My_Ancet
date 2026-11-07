@@ -110,6 +110,11 @@ export function Credits() {
             .
           </p>
         </section>
+        <section className="credits-section" aria-labelledby="credits-castle">
+          <h2 id="credits-castle">Castle — Камень и время</h2>
+          <p>В витрине работает исходный сайт из <External href="https://github.com/Acerman-LoxneZZZ/castle/tree/fb79bf9ee0a3d002d13a52a6c61724fa0b450077">репозитория автора</External>. Фотографии сопровождаются исходными ссылками и лицензиями в галереях; полный <a href="/demos/castle/assets/sources.json">перечень источников</a> сохранён. Изображения подготовлены в WebP для загрузки в браузере.</p>
+          <p>Каменные ворота и латунный анкх в залах портфолио построены из объёмной геометрии для этой галереи.</p>
+        </section>
         <section className="credits-section" aria-labelledby="credits-fonts">
           <h2 id="credits-fonts">Шрифты и программные библиотеки</h2>
           <p>

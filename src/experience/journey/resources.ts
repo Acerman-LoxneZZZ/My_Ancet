@@ -30,7 +30,7 @@ export function createJourneyResources(renderer: PreparationRenderer, scene: THR
   };
 
   return {
-    prepare(object: THREE.Object3D): Promise<void> {
+    prepare(object: THREE.Object3D, onProgress?: (completed: number, total: number) => void): Promise<void> {
       if (disposed) return Promise.resolve();
       const task = pending.then(async () => {
         if (disposed) return;
@@ -44,20 +44,27 @@ export function createJourneyResources(renderer: PreparationRenderer, scene: THR
             }
           }
         });
+        const total = textures.size + 2;
+        let completed = 0;
+        onProgress?.(completed, total);
         for (const texture of textures) {
           await yieldWork();
           if (disposed) return;
           renderer.initTexture(texture);
           uploaded.add(texture);
+          onProgress?.(++completed, total);
         }
         await yieldWork();
         if (disposed) return;
         await compile(object, null);
+        if (disposed) return;
+        onProgress?.(++completed, total);
         await yieldWork();
         if (disposed) return;
         // The mirror uses linear output and different tone-mapping defines.
         // Preparing only the screen variant still stalls on the first reflection.
         await compile(object, reflectionTarget);
+        if (!disposed) onProgress?.(++completed, total);
       });
       pending = task.catch(() => {});
       return task;

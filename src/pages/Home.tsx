@@ -1,10 +1,11 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { LoadingScreen } from "../components/LoadingScreen";
 import { author, projectCount, projects, type Project } from "../content/portfolio";
 import { PortfolioLink } from "../navigation/NavigationProvider";
 import { Arrow, Mark } from "../components/Icon";
 import { ReactiveName } from "../components/ReactiveName";
 import { ProjectShowcase } from "../components/ProjectShowcase";
-import { FINALE_FROM, JOURNEY_LIMIT, JOURNEY_SCROLL_SVH, journeyChapters, chapterIndex, exhibitProgress, galleryShutterStart, seekJourney } from "../experience/journey/chapters";
+import { clampJourneyProgress, FINALE_FROM, JOURNEY_LIMIT, JOURNEY_SCROLL_SVH, journeyChapters, chapterIndex, exhibitProgress, galleryShutterStart, seekJourney } from "../experience/journey/chapters";
 import { openingCaptionEnd, shadowHold } from "../experience/journey/entrance";
 
 const JourneyCanvas = lazy(() => import("../components/JourneyCanvas"));
@@ -15,7 +16,7 @@ const smooth = (a: number, b: number, n: number) => {
   const t = Math.min(1, Math.max(0, (n - a) / (b - a)));
   return t * t * (3 - 2 * t);
 };
-const descriptions = ["Карманные часы с эмалевым циферблатом.", "Тесто, огонь и немного Италии.", "По ту сторону древнего портала.", "Светящаяся лента и четыре концепта сайтов.", "Пять направлений и история в фотографиях.", "Объёмный портрет и пошаговый разбор задач."];
+const descriptions = ["Карманные часы с эмалевым циферблатом.", "Тесто, огонь и немного Италии.", "По ту сторону древнего портала.", "Светящаяся лента и четыре концепта сайтов.", "Пять направлений и история в фотографиях.", "Объёмный портрет и пошаговый разбор задач.", "Каменные башни и истории замков Европы."];
 
 function ShowcaseChevron() {
   return (
@@ -38,6 +39,8 @@ export function Home() {
   } | null>(null);
   const [active, setActive] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
+  const [loadProgress, setLoadProgress] = useState(0);
+  const loadingProgress = useCallback((value: number) => setLoadProgress(previous => Math.max(previous, value)), []);
   const [indexOpen, setIndexOpen] = useState(false);
   const [showcase, setShowcase] = useState<Project | null>(null);
   useEffect(() => {
@@ -70,7 +73,7 @@ export function Home() {
         ? smooth(galleryShutterStart(chapter) + 0.008, center - 0.007, p)
         : smooth(center - 0.05, center - 0.024, p);
       const opacity = chapter.id === "intro" ? openingOpacity
-        : chapter.id === "finale" ? smooth(0.92, 0.985, p)
+        : chapter.id === "finale" ? smooth(FINALE_FROM + 0.062, JOURNEY_LIMIT - 0.015, p)
         : reveal
           * (i === projects.length ? 1 - smooth(FINALE_FROM, FINALE_FROM + 0.025, p)
             : 1 - smooth(center + 0.026, center + 0.054, p));
@@ -102,7 +105,7 @@ export function Home() {
   useEffect(() => {
     if (status !== "fallback") return;
     const read = () => frame(window.scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight) * JOURNEY_LIMIT);
-    const seek = (event: Event) => window.scrollTo({ top: Math.min(JOURNEY_LIMIT, Number((event as CustomEvent).detail)) / JOURNEY_LIMIT * (document.documentElement.scrollHeight - innerHeight), behavior: "smooth" });
+    const seek = (event: Event) => window.scrollTo({ top: clampJourneyProgress(Number((event as CustomEvent).detail)) / JOURNEY_LIMIT * (document.documentElement.scrollHeight - innerHeight), behavior: "smooth" });
     window.addEventListener("scroll", read, { passive: true });
     window.addEventListener("journey:seek", seek);
     read();
@@ -117,9 +120,11 @@ export function Home() {
   const next = journeyChapters[active + 1];
   const nextLabel = active === 1 ? "К FARO" : next?.id === "finale" ? "В финал" : next ? "Дальше" : "Сначала";
   return (
-    <main id="main" ref={root} className={`journey-page is-${status}`} style={{ height: `${JOURNEY_SCROLL_SVH + 100}svh` }}>
+    <>
+    <LoadingScreen progress={status === 'loading' ? loadProgress : 100} complete={status !== 'loading'} />
+    <main id="main" ref={root} inert={status === 'loading'} className={`journey-page is-${status}`} style={{ height: `${JOURNEY_SCROLL_SVH + 100}svh` }}>
       <div className="journey-stage">
-        <Suspense fallback={null}><JourneyCanvas onFrame={frame} onStatus={setStatus} paused={indexOpen || !!showcase || status === "fallback"} /></Suspense>
+        <Suspense fallback={null}><JourneyCanvas onFrame={frame} onStatus={setStatus} onLoadProgress={loadingProgress} paused={indexOpen || !!showcase || status === "fallback"} /></Suspense>
         <div className="journey-vignette" aria-hidden="true" />
         {status === "fallback" && <div className="journey-fallback" aria-hidden="true">
           {next ? <img src={projects[active - 1]?.screen ?? "/assets/images/monolith-fallback.svg"} alt="" /> : <span className="journey-fallback-letter">И</span>}
@@ -152,6 +157,7 @@ export function Home() {
           <button
             type="button"
             className="journey-showcase-trigger"
+            style={{ '--showcase-color': p.accent, '--showcase-ink': p.id === 'castle' || p.id === 'tutor' ? '#fdf1e1' : '#171d20' } as CSSProperties}
             aria-haspopup="dialog"
             onClick={event => {
               event.currentTarget.focus({ preventScroll: true });
@@ -195,5 +201,6 @@ export function Home() {
       </dialog>
       {showcase && <ProjectShowcase project={showcase} onClose={() => setShowcase(null)} />}
     </main>
+    </>
   );
 }

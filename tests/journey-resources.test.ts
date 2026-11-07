@@ -43,6 +43,17 @@ describe("journey GPU preparation", () => {
     f.resources.dispose();
   });
 
+  it("reports actual uploads and both completed shader variants", async () => {
+    const f = fixture();
+    const object = new Mesh(new BoxGeometry(), new MeshStandardMaterial({ map: new Texture() }));
+    const progress = vi.fn();
+    await f.resources.prepare(object, progress);
+    expect(progress.mock.calls).toEqual([[0, 3], [1, 3], [2, 3], [3, 3]]);
+    await f.resources.prepare(object, progress);
+    expect(progress.mock.calls.slice(4)).toEqual([[0, 2], [1, 2], [2, 2]]);
+    f.resources.dispose();
+  });
+
   it("restores the render target while asynchronous compilation is still pending", async () => {
     const f = fixture();
     let finish!: (scene: Scene) => void;

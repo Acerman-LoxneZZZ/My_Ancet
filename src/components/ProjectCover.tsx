@@ -43,7 +43,7 @@ export function ProjectCover({
             alt={`Настоящий экран ${p.title}`}
             loading="lazy"
             width={p.id === "proyavleno" ? 896 : 1280}
-            height={p.id === "proyavleno" ? 560 : p.id === "dal" || p.id === "tutor" ? 800 : 720}
+            height={p.id === "proyavleno" ? 560 : p.id === "dal" || p.id === "tutor" || p.id === "castle" || p.id === "egypt" ? 800 : 720}
           />
         </div>
       )}
@@ -84,7 +84,7 @@ export function ProjectCover({
             ? "Портал в семь историй"
             : p.id === "proyavleno"
               ? "Первый экран со светящейся лентой"
-              : p.id === "dal" || p.id === "tutor"
+              : p.id === "dal" || p.id === "tutor" || p.id === "castle"
                 ? "Первый экран проекта"
                 : "Экран + исходная модель"}
       </span>

@@ -271,8 +271,8 @@ export function createArchitecture() {
   finaleLight.position.set(finaleRoom.x + 1.1, 6.2, finaleRoom.z - 4.5);
   finalHall.add(finaleLight);
 
-  const roomColors = ["#6c3328", "#66523b", "#413652", "#2e4b47", "#345065"];
-  const lightColors = ["#ffd3a6", "#f9dfb9", "#dacbff", "#b7e1cb", "#b7d7ff"];
+  const roomColors = ["#6c3328", "#66523b", "#413652", "#2e4b47", "#345065", "#344d3f"];
+  const lightColors = ["#ffd3a6", "#f9dfb9", "#dacbff", "#b7e1cb", "#b7d7ff", "#f0dfbf"];
   const shutters: { leaves: THREE.Group[]; from: number; to: number }[] = [];
   const shutterWidth = 9.15;
   const shutterRest = shutterWidth / 2 + 0.012;

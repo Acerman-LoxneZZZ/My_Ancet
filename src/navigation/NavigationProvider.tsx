@@ -42,6 +42,7 @@ const names: Record<string, string> = {
   "/work/proyavleno": "ПРОЯВЛЕНО",
   "/work/dal": "ДАЛЬ",
   "/work/tutor": "3D-репетитор",
+  "/work/castle": "Замок",
   "/work/wordflow": "Wordflow",
   "/credits": "Источники",
 };

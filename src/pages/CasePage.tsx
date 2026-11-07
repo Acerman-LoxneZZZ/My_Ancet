@@ -257,6 +257,7 @@ function WordflowDemo() {
 }
 
 const sourceAlt: Record<Project["id"], [string, string]> = {
+  castle: ["Первый экран Castle с каменными башнями", "Галерея замков Европы в исходном сайте"],
   timepiece: [
     "Первый экран KARpOV с крупным планом карманных часов",
     "Часы в разобранном состоянии в исходном приложении",
@@ -299,11 +300,11 @@ export function CasePage() {
           : project.id === "proyavleno"
             ? { width: 896, height: 560 }
             : project.id === "egypt"
-              ? { width: 1272, height: 716 }
+              ? { width: 1280, height: 800 }
               : { width: 1280, height: 800 };
   const detailDimensions = project.id === "proyavleno"
     ? { width: 1280, height: 800 }
-    : dimensions;
+    : project.id === "egypt" ? { width: 1272, height: 716 } : dimensions;
 
   return (
     <main id="main" className={`case-page case-${project.id}`}>

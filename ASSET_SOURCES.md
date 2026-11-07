@@ -77,6 +77,11 @@ Telegram SDK, profile-client, серверные endpoints, D1 и service worker
 
 ## Воспроизводимость
 
+- «Замок». `public/demos/castle` подготовлен из [castle, fb79bf9](https://github.com/Acerman-LoxneZZZ/castle/tree/fb79bf9ee0a3d002d13a52a6c61724fa0b450077) командой `node scripts/prepare-castle-demo.mjs`. Оригинальный JS сохранён. Изображения оптимизированы в WebP, исходные фотокредиты и `assets/sources.json` сохранены; шрифт Ogg Medium загружается локально. Подробности: `public/demos/castle/SOURCE.json`.
+- `castle-original.webp` и `castle-detail.webp` — снимки работающего демо Castle в Chromium, 1280×800; `egypt-gallery-home.webp` — снимок первого экрана Египта после адаптации на полную высоту окна, 1280×800. Старые оригинальные экраны сохранены без изменений.
+- `scripts/templates/egypt-gallery.css` — адаптация высоты первого экрана Египта и удаление декоративного превью следующей главы. `prepare-gallery-demos.mjs` переносит её в демо после сборки.
+- Каменные ворота Castle и латунный анкх Египта — процедурная объёмная геометрия `src/experience/journey/artifacts.ts`, без растровых силуэтов. Материалы используют карты отделки галереи.
+
 - «ДАЛЬ». В `public/demos/dal` лежит статическая сборка `dist/` из [DalSait на коммите b19e02c](https://github.com/Acerman-LoxneZZZ/DalSait/tree/b19e02cea6e320c7016c9f7f42ecd33f3e8599ff). Источники фотографий сохранены в `assets/*.origin.txt`. Для локальных шрифтов применяются [Manrope OFL](public/assets/fonts/Manrope-LICENSE.txt) и [Cormorant Garamond OFL](public/assets/fonts/Cormorant-LICENSE.txt).
 - «3D-репетитор». В `public/demos/tutor` лежит статическая сборка из [3d-repetitor на коммите 90dbc07](https://github.com/Acerman-LoxneZZZ/3d-repetitor/tree/90dbc0764bb7a6bd8e9a5f03adf6da6a2b1f0fc3). Ссылки адаптированы для вложенного адреса. В демо используется нейтральный заголовок «Математика». Сохранены режим предпросмотра, учебные материалы и [лицензия Manrope](public/demos/tutor/assets/fonts/OFL.txt).
 - `dal-original.webp`, `dal-detail.webp`, `tutor-original.webp` и `tutor-detail.webp` сняты с этих сборок в Chrome.

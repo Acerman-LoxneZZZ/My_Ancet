@@ -98,6 +98,21 @@ export async function checkAssets({ root = repositoryRoot } = {}) {
     if (forbidden.test(local))
       throw new Error(`Forbidden private/source file in public: ${local}`);
   }
+  const castleRoot = resolve(root, 'public/demos/castle');
+  const castle = JSON.parse(await readFile(join(castleRoot, 'SOURCE.json'), 'utf8'));
+  if (castle.commit !== 'fb79bf9ee0a3d002d13a52a6c61724fa0b450077') throw new Error('Unexpected Castle source revision');
+  for (const file of await walk(castleRoot)) {
+    if (!/\.(?:html|css)$/.test(file)) continue;
+    const text = await readFile(file, 'utf8');
+    const refs = [...text.matchAll(/(?:src|href)=["']([^"']+)["']|url\(["']?([^"')]+)["']?\)/g)];
+    for (const match of refs) {
+      const ref = (match[1] ?? match[2]).split(/[?#]/)[0];
+      if (!ref || /^(?:https?:|data:|\/)/.test(ref)) continue;
+      const path = resolve(dirname(file), ref);
+      if (!path.startsWith(castleRoot + (process.platform === 'win32' ? '\\' : '/'))) throw new Error(`Castle asset escapes its demo: ${ref}`);
+      await readFile(path);
+    }
+  }
   const demoRoot = resolve(root, "public/demos/wordflow");
   const expectedDemo = [
     "demo-state.js",

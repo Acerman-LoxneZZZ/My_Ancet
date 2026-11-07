@@ -1,0 +1,132 @@
+{
+  "castle-hd.png": {
+    "origin": "User attachment codex-clipboard-1982cf93-7b16-4020-959d-d1f40496dd9a.png",
+    "role": "Unmodified original hero photograph"
+  },
+  "castle-cutout.png": {
+    "origin": "ImageGen edit of user attachment; full photographic castle alpha cutout",
+    "role": "Split foreground left/right layers"
+  },
+  "neuschwanstein.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:Castle_Neuschwanstein.jpg",
+    "author": "Softeis",
+    "license": "CC BY-SA 3.0",
+    "display": "CSS crop; no file edits"
+  },
+  "eilean-donan.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:Eilean_Donan_Castle_bridge_view.jpg",
+    "author": "Rodaxx",
+    "license": "CC BY-SA 4.0",
+    "display": "CSS crop; no file edits"
+  },
+  "chillon.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:001_Chateau_de_Chillon_and_Dents_du_Midi_Photo_by_Giles_Laurent.jpg",
+    "author": "Giles Laurent, gileslaurent.com",
+    "license": "CC BY-SA 4.0",
+    "display": "1280px source thumbnail and CSS crop; no file edits"
+  },
+  "castle-wide.png": {
+    "dimensions": "1983x793",
+    "origin": "ImageGen horizontal outpainting of user-supplied castle-hd.png",
+    "role": "Sharp full-width photographic hero; generated scenery on both sides"
+  },
+  "castle-wide-cutout.png": {
+    "dimensions": "1983x793",
+    "origin": "ImageGen alpha extraction of castle-wide.png",
+    "role": "Matching wide split tower layers"
+  },
+  "alpsee-background.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:Alpsee_Neuschwanstein.jpg",
+    "author": "Dmytro Balkhovitin",
+    "license": "CC BY-SA 4.0",
+    "role": "Full-screen gallery landscape background",
+    "display": "Unmodified original file; CSS crop and dark overlay"
+  },
+  "loch-duich-background.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:Loch_Duich_in_the_sunset.jpg",
+    "author": "Chen Zhao",
+    "license": "CC BY 2.0",
+    "role": "Full-screen gallery landscape background",
+    "display": "Unmodified original file; CSS crop and dark overlay"
+  },
+  "lake-geneva-background.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:Lake_Geneva_from_Chillon_Castle.jpg",
+    "author": "Dmitry A. Mottl",
+    "license": "CC BY-SA 4.0",
+    "role": "Full-screen gallery landscape background",
+    "display": "Unmodified original file; CSS crop and dark overlay"
+  },
+  "portal-arch.png": {
+    "origin": "Built-in ImageGen; fictional Gothic gateway inspired by supplied castle-hd.png",
+    "role": "Transparent photographic foreground for the scroll-through arch episode",
+    "dimensions": "1536x1024 RGBA",
+    "prompt": ".impeccable/asset-prompts/portal-arch.txt",
+    "display": "Native generated alpha; unmodified file; CSS scale"
+  },
+  "hohenzollern-foreground.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:Burg_Hohenzollern_cropped.jpg",
+    "originalURL": "https://upload.wikimedia.org/wikipedia/commons/d/dc/Burg_Hohenzollern_cropped.jpg",
+    "author": "Jörg Wendland; derivative crop/brightness/contrast by HeinrichStuerzl",
+    "license": "CC BY-SA 3.0",
+    "licenseURL": "https://creativecommons.org/licenses/by-sa/3.0",
+    "role": "Second gallery foreground",
+    "dimensions": "1600x958",
+    "display": "Resized JPEG for web delivery; CSS crop and background overlay",
+    "cssPosition": "47% 50%"
+  },
+  "hohenzollern-background.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:View_from_the_castle_Hohenzollern_HDR.jpg",
+    "originalURL": "https://upload.wikimedia.org/wikipedia/commons/c/c5/View_from_the_castle_Hohenzollern_HDR.jpg",
+    "author": "Ed Brambley",
+    "license": "CC BY-SA 2.0",
+    "licenseURL": "https://creativecommons.org/licenses/by-sa/2.0",
+    "role": "Second gallery background",
+    "dimensions": "2560x1707",
+    "display": "Resized JPEG for web delivery; CSS crop and background overlay",
+    "cssPosition": "50% 55%"
+  },
+  "mont-saint-michel-foreground.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:2017-04_Mont_Saint-Michel_sunset_05.jpg",
+    "originalURL": "https://upload.wikimedia.org/wikipedia/commons/7/72/2017-04_Mont_Saint-Michel_sunset_05.jpg",
+    "author": "Antoine Lamielle",
+    "license": "CC BY-SA 4.0",
+    "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+    "role": "Second gallery foreground",
+    "dimensions": "1600x1600",
+    "display": "Resized JPEG for web delivery; CSS crop and background overlay",
+    "cssPosition": "50% 50%"
+  },
+  "mont-saint-michel-background.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:Mont_Saint_Michel_panorama.jpg",
+    "originalURL": "https://upload.wikimedia.org/wikipedia/commons/4/48/Mont_Saint_Michel_panorama.jpg",
+    "author": "François de Dijon",
+    "license": "CC BY-SA 3.0",
+    "licenseURL": "https://creativecommons.org/licenses/by-sa/3.0",
+    "role": "Second gallery background",
+    "dimensions": "2560x714",
+    "display": "Resized JPEG for web delivery; CSS crop and background overlay",
+    "cssPosition": "20% 50%"
+  },
+  "segovia-foreground.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:Alc%C3%A1zar_de_Segovia,_Panorama.jpg",
+    "originalURL": "https://upload.wikimedia.org/wikipedia/commons/e/e6/Alc%C3%A1zar_de_Segovia%2C_Panorama.jpg",
+    "author": "D.Rovchak",
+    "license": "CC BY-SA 4.0",
+    "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+    "role": "Second gallery foreground",
+    "dimensions": "1600x1064",
+    "display": "Resized JPEG for web delivery; CSS crop and background overlay",
+    "cssPosition": "43% 50%"
+  },
+  "segovia-background.jpg": {
+    "origin": "https://commons.wikimedia.org/wiki/File:Panor%C3%A1mica_Oto%C3%B1o_Alc%C3%A1zar_de_Segovia.jpg",
+    "originalURL": "https://upload.wikimedia.org/wikipedia/commons/4/40/Panor%C3%A1mica_Oto%C3%B1o_Alc%C3%A1zar_de_Segovia.jpg",
+    "author": "Ángel Sanz de Andrés",
+    "license": "CC BY-SA 4.0",
+    "licenseURL": "https://creativecommons.org/licenses/by-sa/4.0",
+    "role": "Second gallery background",
+    "dimensions": "2560x1920",
+    "display": "Resized JPEG for web delivery; CSS crop and background overlay",
+    "cssPosition": "50% 0%"
+  }
+}

@@ -54,6 +54,10 @@ try {
       const manifest = await readFile(manifestPath, "utf8");
       await writeFile(manifestPath, manifest.replaceAll('"/assets/', `"${base}assets/`));
       rewrites.set('"/assets/manifest.json"', `"${base}assets/manifest.json"`);
+      await cp(join(root, 'scripts/templates/egypt-gallery.css'), join(build, 'gallery.css'));
+      const entryPath = join(build, 'index.html');
+      const entryHtml = await readFile(entryPath, 'utf8');
+      await writeFile(entryPath, entryHtml.replace('</head>', `<link rel="stylesheet" href="${base}gallery.css">\n</head>`));
     } else {
       const licenses = join(build, "licenses");
       await mkdir(licenses);

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createExhibits } from "../src/experience/journey/exhibits";
 import { modelAssets } from "../src/experience/worlds/modelAssets";
 import { createJourneyCamera } from "../src/experience/journey/camera";
+import { exhibitProgress, JOURNEY_LIMIT } from "../src/experience/journey/chapters";
 
 beforeEach(() => {
   vi.spyOn(TextureLoader.prototype, "loadAsync").mockImplementation(async () => new Texture());
@@ -24,13 +25,18 @@ describe("prepared gallery exhibits", () => {
     const prepare = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
     const exhibits = createExhibits(prepare);
     const mounted = vi.fn();
-    exhibits.prepare(0, mounted);
+    const preparation = exhibits.prepare(0, mounted);
+    let prepared = false;
+    void preparation.then(() => { prepared = true; });
     await vi.waitFor(() => expect(prepare).toHaveBeenCalledTimes(1));
     const room = exhibits.group.getObjectByName("journey-room-timepiece")!;
     expect(room.visible).toBe(false);
     exhibits.update(0.214);
     expect(room.visible).toBe(false);
+    expect(prepared).toBe(false);
     finish();
+    await preparation;
+    expect(prepared).toBe(true);
     await vi.waitFor(() => expect(mounted).toHaveBeenCalledTimes(1));
     expect(room.visible).toBe(true);
     exhibits.update(0);
@@ -71,41 +77,44 @@ describe("prepared gallery exhibits", () => {
     rail.fit(aspect);
     const exhibits = createExhibits(undefined, camera);
     try {
-      rail.update(0.826, [0, 0], false);
-      exhibits.update(0.826);
+      const start = exhibitProgress('castle');
+      rail.update(start, [0, 0], false);
+      exhibits.update(start);
       const mounted = vi.fn();
-      exhibits.prepare(0.826, mounted);
-      await vi.waitFor(() => expect(mounted).toHaveBeenCalledTimes(2));
+      exhibits.prepare(start, mounted);
+      await vi.waitFor(() => expect(mounted).toHaveBeenCalledTimes(1));
       exhibits.fit(aspect);
-      const tutor = exhibits.group.getObjectByName("journey-room-tutor")!;
-      const screen = tutor.children.find(child => child.name === "3D-репетитор")!;
-      tutor.updateWorldMatrix(true, true);
-      const bounds = new Box3().setFromObject(tutor);
+      const finalRoom = exhibits.group.getObjectByName("journey-room-castle")!;
+      const screen = finalRoom.children.find(child => child.name === "Замок")!;
+      finalRoom.updateWorldMatrix(true, true);
+      const bounds = new Box3().setFromObject(finalRoom);
+      const artifactBounds = new Box3().setFromObject(finalRoom.getObjectByName('Castle / miniature stone gateway')!).expandByScalar(camera.near * 2);
       const screenBounds = new Box3().setFromObject(screen).expandByScalar(camera.near * 2);
       const screenPlaneX = screen.matrixWorld.elements[12];
       const frustum = new Frustum(), projection = new Matrix4();
       let firstHidden = Infinity;
       for (let step = 0; step <= 240; step++) {
-        const progress = 0.826 + (1 - 0.826) * step / 240;
+        const progress = start + (JOURNEY_LIMIT - start) * step / 240;
         rail.update(progress, [0, 0], false);
         exhibits.update(progress);
         expect(screenBounds.containsPoint(camera.position), `camera clips display at ${progress}: ${camera.position.toArray()} in ${screenBounds.min.toArray()} to ${screenBounds.max.toArray()}`).toBe(false);
-        if (!tutor.visible) {
+        expect(artifactBounds.containsPoint(camera.position), `camera clips stone gate at ${progress}`).toBe(false);
+        if (!finalRoom.visible) {
           firstHidden = Math.min(firstHidden, progress);
           frustum.setFromProjectionMatrix(projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
           expect(camera.position.x, `progress ${progress}`).toBeGreaterThan(screenPlaneX + 0.25);
           expect(frustum.intersectsBox(bounds), `progress ${progress}`).toBe(false);
         }
       }
-      expect(firstHidden).toBeLessThan(0.995);
-      expect(tutor.visible).toBe(false);
+      expect(firstHidden).toBeLessThan(JOURNEY_LIMIT - 0.005);
+      expect(finalRoom.visible).toBe(false);
       // Backtracking restores the screen before it can re-enter the image.
       for (let step = 240; step >= 0; step--) {
-        const progress = 0.826 + (1 - 0.826) * step / 240;
+        const progress = start + (JOURNEY_LIMIT - start) * step / 240;
         rail.update(progress, [0, 0], false);
         exhibits.update(progress);
         frustum.setFromProjectionMatrix(projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
-        if (frustum.intersectsBox(bounds)) expect(tutor.visible).toBe(true);
+        if (frustum.intersectsBox(bounds)) expect(finalRoom.visible).toBe(true);
       }
     } finally { exhibits.dispose(); }
   });
@@ -114,12 +123,12 @@ describe("prepared gallery exhibits", () => {
     const camera = new PerspectiveCamera();
     const rail = createJourneyCamera(camera);
     rail.fit(1.6);
-    rail.update(1, [0, 0], false);
+    rail.update(JOURNEY_LIMIT, [0, 0], false);
     const exhibits = createExhibits(undefined, camera);
     try {
-      exhibits.update(1);
+      exhibits.update(JOURNEY_LIMIT);
       const mounted = vi.fn();
-      exhibits.prepare(1, mounted);
+      exhibits.prepare(JOURNEY_LIMIT, mounted);
       expect(TextureLoader.prototype.loadAsync).not.toHaveBeenCalled();
       expect(mounted).not.toHaveBeenCalled();
     } finally { exhibits.dispose(); }
