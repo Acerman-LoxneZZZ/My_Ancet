@@ -6,9 +6,10 @@ import {
   useState,
   type ReactNode,
   type AnchorHTMLAttributes,
+  type MouseEvent,
 } from "react";
 import { flushSync } from "react-dom";
-import { useHref, useLocation, useNavigate, type Location } from "react-router-dom";
+import { matchPath, useHref, useLocation, useNavigate, type Location } from "react-router-dom";
 import { gsap } from "gsap";
 import {
   createTransitionController,
@@ -22,11 +23,15 @@ import {
 import { currentSnapshot, chapterMetrics } from "../experience/domStory";
 import { resolveScrollDestination } from "./restoreDestination";
 import type { ProjectId } from "../experience/types";
+import { getProject } from "../content/portfolio";
+import { LoadingDial } from "../components/LoadingScreen";
 
 type Context = {
   display: Location;
   busy: boolean;
+  openingDemo: boolean;
   go: (path: string, project?: ProjectId) => void;
+  openDemo: (href: string, title: string) => Promise<void>;
 };
 const NavigationContext = createContext<Context | null>(null);
 const nextFrame = () =>
@@ -46,6 +51,8 @@ const names: Record<string, string> = {
   "/work/wordflow": "Wordflow",
   "/credits": "Источники",
 };
+const pageName = (pathname: string) =>
+  getProject(matchPath("/showcase/:id", pathname)?.params.id)?.title ?? names[pathname];
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const location = useLocation(),
     navigate = useNavigate();
@@ -53,6 +60,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   navigateRef.current = navigate;
   const [display, setDisplay] = useState(location),
     [busy, setBusy] = useState(false),
+    [openingDemo, setOpeningDemo] = useState(false),
     [label, setLabel] = useState("");
   const displayed = useRef(display);
   displayed.current = display;
@@ -62,6 +70,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const memory = useRef(new ScrollMemory());
   const gallery = useRef<ScrollSnapshot | undefined>(undefined);
   const internal = useRef<string | null>(null);
+  const leavingDocument = useRef(false);
   const controller = useRef<ReturnType<
     typeof createTransitionController
   > | null>(null);
@@ -75,6 +84,21 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         onInterrupt: resolve,
       });
     });
+  const coverPage = async (title: string) => {
+    setLabel(title);
+    setBusy(true);
+    gsap.set(curtain.current, { y: 0, yPercent: 112 });
+    await animate({
+      yPercent: 0,
+      duration: reducedMotion() ? 0.08 : 0.48,
+      ease: "power3.inOut",
+    });
+  };
+  const resetCurtain = () => {
+    gsap.set(curtain.current, { y: 0, yPercent: -112 });
+    setOpeningDemo(false);
+    setBusy(false);
+  };
   useEffect(() => {
     const oldRestoration = history.scrollRestoration;
     history.scrollRestoration = "manual";
@@ -85,14 +109,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         const snapshot = currentSnapshot();
         memory.current.save(displayed.current.key, snapshot);
         if (displayed.current.pathname === "/") gallery.current = snapshot;
-        setLabel(names[req.path.split("#")[0]] || "LOXNE");
-        setBusy(true);
-        if (reducedMotion()) {
-          await animate({ yPercent: 0, duration: 0.08 });
-          return;
-        }
-        gsap.set(curtain.current, { y: 0, yPercent: 112 });
-        await animate({ yPercent: 0, duration: 0.48, ease: "power3.inOut" });
+        await coverPage(pageName(new URL(req.path, window.location.origin).pathname) || "LOXNE");
       },
       swap: async (req) => {
         const url = new URL(req.path, window.location.origin);
@@ -150,7 +167,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
             focus.tabIndex = -1;
           focus.focus({ preventScroll: true });
         }
-        document.title = `${names[target.pathname] || "Страница не найдена"} — LOXNE`;
+        document.title = `${pageName(target.pathname) || "Страница не найдена"} — LOXNE`;
         window.dispatchEvent(new Event("portfolio:navigated"));
       },
       uncover: async () => {
@@ -163,11 +180,26 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       },
       onError: (error) => {
         console.error("Navigation recovered", error);
-        gsap.set(curtain.current, { y: 0, yPercent: -112 });
-        setBusy(false);
+        resetCurtain();
       },
     });
+    const restoreDemoReturn = () => {
+      const snapshot = history.state?.loxneDemoReturn as ScrollSnapshot | undefined;
+      if (displayed.current.pathname !== "/" || !snapshot) return;
+      const { top } = resolveScrollDestination("pop", snapshot, undefined, chapterMetrics());
+      window.scrollTo({ top, behavior: "instant" });
+      window.dispatchEvent(new Event("portfolio:navigated"));
+    };
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted || !leavingDocument.current) return;
+      leavingDocument.current = false;
+      resetCurtain();
+      restoreDemoReturn();
+    };
+    restoreDemoReturn();
+    window.addEventListener("pageshow", onPageShow);
     return () => {
+      window.removeEventListener("pageshow", onPageShow);
       controller.current?.dispose();
       gsap.killTweensOf(curtain.current);
       history.scrollRestoration = oldRestoration;
@@ -181,6 +213,11 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       return;
     }
     if (location.key !== displayed.current.key) {
+      if (leavingDocument.current) {
+        leavingDocument.current = false;
+        gsap.killTweensOf(curtain.current);
+        resetCurtain();
+      }
       controller.current?.request({
         key: location.key,
         path,
@@ -191,6 +228,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     }
   }, [location]);
   const go = (path: string, project?: ProjectId) => {
+    if (leavingDocument.current) return;
     const sameLocation =
       path ===
       actual.current.pathname + actual.current.search + actual.current.hash;
@@ -201,13 +239,27 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       scroll: project ? { project } : "top",
     });
   };
+  const openDemo = async (href: string, title: string) => {
+    if (leavingDocument.current || controller.current?.state !== "idle") return;
+    leavingDocument.current = true;
+    const snapshot = currentSnapshot();
+    setOpeningDemo(true);
+    await coverPage(title);
+    if (!leavingDocument.current) return;
+    try {
+      history.replaceState({ ...history.state, loxneDemoReturn: snapshot }, "");
+    } catch (error) {
+      console.warn("Could not save the gallery position", error);
+    }
+    window.location.assign(href);
+  };
   return (
-    <NavigationContext.Provider value={{ display, busy, go }}>
+    <NavigationContext.Provider value={{ display, busy, openingDemo, go, openDemo }}>
       {children}
-      <div className="transition-curtain" ref={curtain} aria-hidden="true">
-        <span className="curtain-mark" />
+      <div className="transition-curtain" data-opening-demo={openingDemo} ref={curtain} aria-hidden="true">
+        {openingDemo ? <LoadingDial /> : <span className="curtain-mark" />}
         <span>{label}</span>
-        <small>LOXNE / Избранное</small>
+        <small>{openingDemo ? "Открываем сайт" : "LOXNE / Избранное"}</small>
       </div>
     </NavigationContext.Provider>
   );
@@ -216,6 +268,11 @@ export function usePortfolioNavigation() {
   const context = useContext(NavigationContext);
   if (!context) throw Error("NavigationProvider is missing");
   return context;
+}
+function isSameTabClick(event: MouseEvent<HTMLAnchorElement>) {
+  const target = event.currentTarget.target;
+  return !event.defaultPrevented && event.button === 0 && !event.metaKey &&
+    !event.ctrlKey && !event.shiftKey && !event.altKey && (!target || target === "_self");
 }
 export function PortfolioLink({
   to,
@@ -235,21 +292,30 @@ export function PortfolioLink({
       href={href}
       onClick={(event) => {
         onClick?.(event);
-        if (
-          event.defaultPrevented ||
-          event.button !== 0 ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.altKey ||
-          props.target === "_blank"
-        )
-          return;
+        if (!isSameTabClick(event)) return;
         event.preventDefault();
         go(to, project);
       }}
     >
       {children}
     </a>
+  );
+}
+export function DemoLink({
+  projectTitle,
+  onClick,
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & { href: string; projectTitle: string }) {
+  const { openDemo } = usePortfolioNavigation();
+  return (
+    <a
+      {...props}
+      onClick={(event) => {
+        onClick?.(event);
+        if (!isSameTabClick(event)) return;
+        event.preventDefault();
+        void openDemo(event.currentTarget.href, projectTitle);
+      }}
+    />
   );
 }

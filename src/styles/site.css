@@ -361,6 +361,13 @@ h2:focus {
   letter-spacing: 0;
   color: #4c545e;
 }
+.transition-curtain[data-opening-demo="true"] {
+  background: #080e13;
+  color: #e7e8df;
+  text-align: center;
+}
+.transition-curtain[data-opening-demo="true"] small { color: #a3b3bc; }
+.transition-curtain[data-opening-demo="true"] .loader-dial { width: 64px; }
 .curtain-mark {
   width: 28px;
   height: 40px;

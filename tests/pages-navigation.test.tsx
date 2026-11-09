@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
 import { NavigationProvider, PortfolioLink } from "../src/navigation/NavigationProvider";
+import { App } from "../src/app/App";
+import { projects } from "../src/content/portfolio";
 import { publicUrl } from "../src/lib/publicUrl";
 
 afterEach(() => vi.unstubAllEnvs());
@@ -30,5 +32,19 @@ describe("deployment under a repository path", () => {
     );
     expect(html).toContain('href="/My_Ancet/work/castle?view=gallery#main"');
     expect(html).toContain('href="/My_Ancet/"');
+  });
+
+  it("links gallery projects directly to their demo pages", () => {
+    const html = renderToStaticMarkup(
+      <MemoryRouter basename="/My_Ancet/" initialEntries={["/My_Ancet/"]}>
+        <NavigationProvider><App /></NavigationProvider>
+      </MemoryRouter>,
+    );
+    const links = html.match(/<a\b[^>]*>/g) ?? [];
+    for (const project of projects) {
+      const link = links.find((tag) => tag.includes(`id="showcase-${project.id}"`));
+      expect(link).toContain(`href="${project.showcase.src}"`);
+    }
+    expect(html).not.toContain("<iframe");
   });
 });

@@ -1,11 +1,10 @@
 import { publicUrl } from "../lib/publicUrl";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { LoadingScreen } from "../components/LoadingScreen";
-import { author, projectCount, projects, type Project } from "../content/portfolio";
-import { PortfolioLink } from "../navigation/NavigationProvider";
+import { author, projectCount, projects } from "../content/portfolio";
+import { DemoLink, PortfolioLink, usePortfolioNavigation } from "../navigation/NavigationProvider";
 import { Arrow, Mark } from "../components/Icon";
 import { ReactiveName } from "../components/ReactiveName";
-import { ProjectShowcase } from "../components/ProjectShowcase";
 import { clampJourneyProgress, FINALE_FROM, JOURNEY_LIMIT, JOURNEY_SCROLL_SVH, journeyChapters, chapterIndex, exhibitProgress, galleryShutterStart, seekJourney } from "../experience/journey/chapters";
 import { openingCaptionEnd, shadowHold } from "../experience/journey/entrance";
 
@@ -28,6 +27,7 @@ function ShowcaseChevron() {
 }
 
 export function Home() {
+  const { openingDemo } = usePortfolioNavigation();
   const root = useRef<HTMLElement>(null);
   const indexDialog = useRef<HTMLDialogElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -43,7 +43,6 @@ export function Home() {
   const [loadProgress, setLoadProgress] = useState(0);
   const loadingProgress = useCallback((value: number) => setLoadProgress(previous => Math.max(previous, value)), []);
   const [indexOpen, setIndexOpen] = useState(false);
-  const [showcase, setShowcase] = useState<Project | null>(null);
   useEffect(() => {
     document.documentElement.classList.add("in-journey");
     return () => document.documentElement.classList.remove("in-journey");
@@ -123,9 +122,9 @@ export function Home() {
   return (
     <>
     <LoadingScreen progress={status === 'loading' ? loadProgress : 100} complete={status !== 'loading'} />
-    <main id="main" ref={root} inert={status === 'loading'} className={`journey-page is-${status}`} style={{ height: `${JOURNEY_SCROLL_SVH + 100}svh` }}>
+    <main id="main" ref={root} inert={status === 'loading' || openingDemo} className={`journey-page is-${status}`} style={{ height: `${JOURNEY_SCROLL_SVH + 100}svh` }}>
       <div className="journey-stage">
-        <Suspense fallback={null}><JourneyCanvas onFrame={frame} onStatus={setStatus} onLoadProgress={loadingProgress} paused={indexOpen || !!showcase || status === "fallback"} /></Suspense>
+        <Suspense fallback={null}><JourneyCanvas onFrame={frame} onStatus={setStatus} onLoadProgress={loadingProgress} paused={indexOpen || openingDemo || status === "fallback"} /></Suspense>
         <div className="journey-vignette" aria-hidden="true" />
         {status === "fallback" && <div className="journey-fallback" aria-hidden="true">
           {next ? <img src={projects[active - 1]?.screen ?? publicUrl("/assets/images/monolith-fallback.svg")} alt="" /> : <span className="journey-fallback-letter">И</span>}
@@ -155,15 +154,12 @@ export function Home() {
             <h2 id={`world-${p.id}-title`} tabIndex={-1}>{p.title}</h2>
             <p className="journey-project-description">{descriptions[i]}</p>
           </div>
-          <button
-            type="button"
+          <DemoLink
+            href={p.showcase.src}
+            projectTitle={p.title}
+            id={`showcase-${p.id}`}
             className="journey-showcase-trigger"
             style={{ '--showcase-color': p.accent, '--showcase-ink': p.id === 'castle' || p.id === 'tutor' ? '#fdf1e1' : '#171d20' } as CSSProperties}
-            aria-haspopup="dialog"
-            onClick={event => {
-              event.currentTarget.focus({ preventScroll: true });
-              setShowcase(p);
-            }}
           >
             <span className="journey-showcase-label">Попробовать</span>
             <span className="journey-showcase-tile" aria-hidden="true">
@@ -174,7 +170,7 @@ export function Home() {
                 ))}
               </span>
             </span>
-          </button>
+          </DemoLink>
         </section>)}
         <section className="journey-panel journey-finale" data-journey-panel="finale" style={{ opacity: 0, pointerEvents: "none" }} aria-hidden="true" inert>
           <ReactiveName name={finaleChapter.title} as="h2" />
@@ -200,7 +196,6 @@ export function Home() {
         <div className="journey-index-list">{projects.map((p, i) => <PortfolioLink key={p.id} className="journey-index-row" to={`/work/${p.id}`} onClick={closeIndex}><span className="journey-index-no">{p.number}</span><img src={p.screen} alt="" width="192" height="108" loading="lazy" /><span className="journey-index-name">{p.title}<small>{p.kicker}</small></span><Arrow /></PortfolioLink>)}</div>
         <div className="journey-index-bottom"><button onClick={() => travel(firstExhibit)}>Внутрь механизма <Arrow /></button><a href={author.github} target="_blank" rel="noreferrer">Мой GitHub <Arrow /></a><PortfolioLink to="/credits" onClick={closeIndex}>Источники</PortfolioLink></div>
       </dialog>
-      {showcase && <ProjectShowcase project={showcase} onClose={() => setShowcase(null)} />}
     </main>
     </>
   );
