@@ -176,8 +176,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D, priority?
       placeGalleryRoom(roomGroup, galleryStops[index]);
       group.add(roomGroup);
       // Closed shutters already hide the exhibits from the camera.
-      const visibleFrom = index === 0 ? chapter.from - 0.075 : galleryShutterStart(chapter);
-      rooms[index] = {group: roomGroup, ready: false, visibleFrom, end: chapter.to};
+      rooms[index] = {group: roomGroup, ready: false, visibleFrom: galleryShutterStart(chapter), end: chapter.to};
       return roomGroup;
     }
 

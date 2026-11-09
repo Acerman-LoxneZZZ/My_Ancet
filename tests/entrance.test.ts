@@ -1,8 +1,10 @@
-import { Box3, PerspectiveCamera } from "three";
+import { Box3, Group, PerspectiveCamera, Ray, Vector3 } from "three";
 import { describe, expect, it } from "vitest";
 import { createArchitecture } from "../src/experience/journey/architecture";
 import { createJourneyCamera } from "../src/experience/journey/camera";
+import { exhibitChapters, galleryShutterStart } from "../src/experience/journey/chapters";
 import { entrancePose, limitEntranceStep, shadowHold } from "../src/experience/journey/entrance";
+import { galleryStops } from "../src/experience/journey/galleryRoute";
 
 describe("the entrance choreography", () => {
   it("leaves the assembled K on the floor before opening the glass", () => {
@@ -53,6 +55,35 @@ describe("the entrance choreography", () => {
             }
           }
         }
+      }
+    } finally {
+      architecture.dispose();
+    }
+  });
+
+  it.each([390 / 844, 1.6])("reveals the watch behind its shutters at aspect %s", aspect => {
+    const architecture = createArchitecture();
+    const gate = architecture.group.getObjectByName("Gallery / sliding shutters / timepiece")!;
+    const leaves = gate.children.filter(child => child instanceof Group);
+    const camera = new PerspectiveCamera();
+    const rig = createJourneyCamera(camera);
+    rig.fit(aspect);
+    const [watch, next] = exhibitChapters;
+    const watchCenter = new Vector3(aspect < 1 ? 0 : -2.25, aspect < 1 ? 6.1 : 3.48, 0.35 - galleryStops[0]);
+    const update = (progress: number) => {
+      architecture.update(progress, 0, entrancePose(progress, Infinity, false));
+      rig.update(progress, [0, 0], false);
+      gate.updateWorldMatrix(true, true);
+      return leaves.map(leaf => new Box3().setFromObject(leaf));
+    };
+    const sightline = () => new Ray(camera.position, watchCenter.clone().sub(camera.position).normalize());
+    try {
+      const closed = update(galleryShutterStart(watch) - 0.003);
+      expect(closed.some(bounds => sightline().intersectsBox(bounds))).toBe(true);
+      const open = update(watch.at);
+      expect(open.some(bounds => sightline().intersectsBox(bounds))).toBe(false);
+      for (let progress = galleryShutterStart(watch); progress <= next.from; progress += 0.001) {
+        expect(update(progress).some(bounds => bounds.expandByScalar(camera.near).containsPoint(camera.position))).toBe(false);
       }
     } finally {
       architecture.dispose();

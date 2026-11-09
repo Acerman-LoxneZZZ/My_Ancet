@@ -69,12 +69,9 @@ export function Home() {
       const panel = state.element;
       const chapter = journeyChapters[i];
       const center = chapter.at;
-      const reveal = i > 1
-        ? smooth(galleryShutterStart(chapter) + 0.008, center - 0.007, p)
-        : smooth(center - 0.05, center - 0.024, p);
       const opacity = chapter.id === "intro" ? openingOpacity
         : chapter.id === "finale" ? smooth(FINALE_FROM + 0.062, JOURNEY_LIMIT - 0.015, p)
-        : reveal
+        : smooth(galleryShutterStart(chapter) + 0.008, center - 0.007, p)
           * (i === projects.length ? 1 - smooth(FINALE_FROM, FINALE_FROM + 0.025, p)
             : 1 - smooth(center + 0.026, center + 0.054, p));
       if (state.opacity !== opacity) {
