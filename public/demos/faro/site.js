@@ -18,12 +18,24 @@
   $('meta[name="description"]').content = config.brand.description;
   $('meta[name="theme-color"]').content = config.colors.ink;
   for (const [key,value] of Object.entries(config.colors)) document.documentElement.style.setProperty('--'+key,value);
-  document.querySelectorAll('.wordmark').forEach(mark => {mark.firstChild.textContent=config.brand.name; mark.querySelector('span').textContent=config.brand.tagline;});
+  document.querySelectorAll('.wordmark').forEach(mark => {mark.querySelector('[data-wordmark]').textContent=config.brand.name; mark.querySelector('.wordmark-tagline').textContent=config.brand.tagline;});
   $('.loader-wordmark').textContent=config.brand.name;
   document.querySelectorAll('[data-brand]').forEach(node=>node.textContent=config.brand.name);
   $('.site-header .wordmark').setAttribute('aria-label',config.brand.name+' — в начало');
   $('.site-header a[href="#about"]').textContent='О '+config.brand.name;
   $('.scene-caption').textContent=config.menu[0].name+' · '+config.brand.name;
+  if(config.story){
+    const setLines=(selector,lines)=>document.querySelectorAll(selector).forEach((node,i)=>{if(lines[i])node.textContent=lines[i];});
+    setLines('.intro h1 .text-line>span',config.story.introLines);
+    // Retain the authored emphasis when applying configurable copy.
+    const last=$('.intro h1 .text-line:last-child>span');last.replaceChildren(Object.assign(document.createElement('em'),{textContent:config.story.introLines.at(-1)}));
+    $('.intro>p').textContent=config.story.introText;
+    setLines('.menu-handoff .text-line>span',config.story.handoffLines);
+    const handoff=$('.menu-handoff .text-line:last-child>span');handoff.replaceChildren(Object.assign(document.createElement('em'),{textContent:config.story.handoffLines.at(-1)}));
+    $('.handoff-note').textContent=config.story.handoffNote;
+    setLines('#closing-title>span,#closing-title>em',config.story.closingLines);
+    config.story.preparation.forEach(item=>{const node=document.querySelector('[data-prep-text="'+item.id+'"]');if(!node)return;node.querySelector('h3').replaceChildren(document.createTextNode(item.lines[0]),document.createElement('br'),Object.assign(document.createElement('em'),{textContent:item.lines[1]}));node.querySelector('p').textContent=item.text;});
+  }
   function announce(text) { $('#cart-status').textContent=text; }
   function persist() { try {localStorage.setItem(storageKey,JSON.stringify([...cart]));}catch {} }
   try {
@@ -137,8 +149,11 @@
   const preparation=$('.preparation'),steps=[...document.querySelectorAll('[data-prep]')],panels=[...document.querySelectorAll('[data-prep-panel]')],prepToggle=$('#prep-toggle');
   const prepMotion=matchMedia('(prefers-reduced-motion: reduce)');
   let prepIndex=0,prepPaused=false,prepVisible=false,prepTimer,prepVersion=0;
+  const prepTexts=[...document.querySelectorAll('[data-prep-text]')];
   function syncPrep(){
     clearTimeout(prepTimer);prepToggle.disabled=prepMotion.matches;
+    preparation.classList.remove('is-cycling');
+    if(prepVisible&&!prepPaused&&!prepMotion.matches&&!document.hidden){ void preparation.offsetWidth;preparation.classList.add('is-cycling'); }
     prepToggle.setAttribute('aria-pressed',String(prepPaused));
     prepToggle.setAttribute('aria-label',prepPaused?'Продолжить автоматическую смену фотографий':'Остановить автоматическую смену фотографий');
     prepToggle.querySelector('span').textContent=prepMotion.matches?'Без автосмены':prepPaused?'Продолжить':'Пауза';
@@ -149,20 +164,20 @@
     const token=++prepVersion,next=panels[index],old=panels[prepIndex],image=next.querySelector('img');image.loading='eager';
     try{await image.decode();}catch{}
     if(token!==prepVersion)return;
-    prepIndex=index;steps.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
+    prepIndex=index;prepTexts.forEach((node,i)=>node.hidden=i!==index);preparation.dataset.step=panels[index].dataset.prepPanel;steps.forEach((b,i)=>b.setAttribute('aria-pressed',String(i===index)));
     if(window.gsap)gsap.killTweensOf(panels);
     panels.forEach(p=>{if(p!==next&&p!==old){p.hidden=true;p.setAttribute('aria-hidden','true');}});
     next.hidden=false;next.removeAttribute('aria-hidden');old.setAttribute('aria-hidden',String(old!==next));
     if(window.gsap&&!prepMotion.matches&&old!==next){
-      gsap.set(next,{autoAlpha:0,zIndex:2});gsap.set(old,{autoAlpha:1,zIndex:1});
-      gsap.to(next,{autoAlpha:1,duration:.8,ease:'power2.inOut',clearProps:'opacity,visibility,zIndex'});
-      gsap.to(old,{autoAlpha:0,duration:.8,ease:'power2.inOut',onComplete:()=>{if(old!==panels[prepIndex])old.hidden=true;gsap.set(old,{clearProps:'opacity,visibility,zIndex'});}});
-    }else {panels.forEach(p=>p.hidden=p!==next);if(window.gsap)gsap.set(panels,{clearProps:'opacity,visibility,zIndex'});}
+      gsap.set(next,{autoAlpha:1,zIndex:2,clipPath:'inset(0 100% 0 0)'});gsap.set(old,{autoAlpha:1,zIndex:1});
+      gsap.to(next,{clipPath:'inset(0 0% 0 0)',duration:.9,ease:'expo.inOut',clearProps:'opacity,visibility,zIndex,clipPath',onComplete:()=>{if(old!==panels[prepIndex])old.hidden=true;gsap.set(old,{clearProps:'opacity,visibility,zIndex,clipPath'});}});
+    }else {panels.forEach(p=>p.hidden=p!==next);if(window.gsap)gsap.set(panels,{clearProps:'opacity,visibility,zIndex,clipPath'});}
     syncPrep();
   }
   steps.forEach((button,index)=>button.addEventListener('click',()=>{prepPaused=true;clearTimeout(prepTimer);selectPrep(index);syncPrep();}));
   prepToggle.addEventListener('click',()=>{prepPaused=!prepPaused;syncPrep();});
   new IntersectionObserver(entries=>{prepVisible=entries[0].isIntersecting;if(prepVisible)panels.forEach(p=>p.querySelector('img').loading='eager');syncPrep();},{threshold:.35}).observe($('.prep-images'));
+  preparation.addEventListener('focusin',()=>{prepPaused=true;syncPrep();});
   document.addEventListener('visibilitychange',syncPrep);prepMotion.addEventListener('change',syncPrep);syncPrep();
   window.addEventListener('pagehide',()=>{clearTimeout(prepTimer);if(window.gsap)gsap.killTweensOf(panels);});
   const header=$('.site-header');new IntersectionObserver(entries=>header.classList.toggle('solid',!entries[0].isIntersecting),{rootMargin:'-100px 0px 0px 0px'}).observe($('#journey'));
@@ -170,7 +185,8 @@
     gsap.registerPlugin(ScrollTrigger);const media=gsap.matchMedia();
     media.add('(prefers-reduced-motion: no-preference)',()=>{
       gsap.from('#menu-title .text-line>span',{yPercent:105,duration:.85,stagger:.1,ease:'power4.out',scrollTrigger:{trigger:'#menu',start:'top 76%',once:true}});
-      gsap.from('.about-copy h2',{y:30,opacity:.6,duration:.9,ease:'power4.out',scrollTrigger:{trigger:'.about-copy',start:'top 82%',once:true}});
+      gsap.from('.about-heading h2',{y:36,duration:1,ease:'expo.out',scrollTrigger:{trigger:'#about',start:'top 82%',once:true}});
+      gsap.from('.closing-mark .faro-mark path',{strokeDashoffset:170,duration:1.6,ease:'expo.out',scrollTrigger:{trigger:'.closing',start:'top 75%',once:true}});
       gsap.from('.closing-link',{x:-20,opacity:.6,duration:.7,ease:'power4.out',scrollTrigger:{trigger:'.closing',start:'top 75%',once:true}});
     });document.fonts.ready.then(()=>ScrollTrigger.refresh());
   }

@@ -6,14 +6,15 @@
   <meta name="theme-color" content="#191b16">
   <meta name="description" content="FARO — пицца, которую хочется разделить. Рассмотрите её со всех сторон и выберите свою из меню.">
   <title>FARO — пицца и планы на вечер</title>
+  <link rel="icon" href="faro-mark.svg" type="image/svg+xml">
   <link rel="preload" href="fonts/GolosText%5Bwght%5D.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="fonts/Literata%5Bopsz,wght%5D.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="style.css">
-  <script defer src="site-config.js"></script>
+  <link rel="stylesheet" href="style.css?v=fire-20261007-2">
+  <script defer src="site-config.js?v=fire-20261007-2"></script>
   <script defer src="vendor/gsap.min.js"></script>
   <script defer src="vendor/ScrollTrigger.min.js"></script>
-  <script defer src="site.js"></script>
-  <script type="module" src="pizza-scene.js"></script>
+  <script defer src="site.js?v=fire-20261007-2"></script>
+  <script type="module" src="pizza-scene.js?v=fire-20261007-2"></script>
   <style>
     body:not(.scene-unavailable) .scene-poster { display: none; }
     #pizza-canvas, #loader { transition: none; }
@@ -23,7 +24,7 @@
 <body id="top">
   <a class="skip" href="#menu">Перейти к меню</a>
   <header class="site-header">
-    <a class="wordmark" href="#top" aria-label="FARO — в начало">FARO<span>CUCINA DI FUOCO</span></a>
+    <a class="wordmark" href="#top" aria-label="FARO — в начало"><svg class="faro-mark" viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40V24a19 19 0 0 1 38 0v16M13 40V24a11 11 0 0 1 22 0v16M21 40V25a3 3 0 0 1 6 0v15M5 40h38"/></svg><span class="wordmark-type"><span class="wordmark-name" data-wordmark>FARO</span><span class="wordmark-tagline">CUCINA DI FUOCO</span></span></a>
     <nav aria-label="Главная навигация"><a href="#top" class="desktop-link">Пицца</a><a href="#menu">Меню</a><a href="#about" class="desktop-link">О FARO</a></nav>
     <button class="cart-open" type="button" aria-haspopup="dialog" aria-controls="cart-dialog">Ваш заказ <span id="cart-count">0</span></button>
   </header>
@@ -34,8 +35,8 @@
         <canvas id="pizza-canvas" role="img" aria-label="Пицца с прошутто и рукколой. Камера приближается и облетает её при прокрутке."></canvas>
         <div class="vignette" aria-hidden="true"></div>
         <div class="scene-copy intro">
-          <h1><span class="text-line"><span>Пицца.</span></span><span class="text-line"><span>И планы</span></span><span class="text-line"><span><em>на вечер.</em></span></span></h1>
-          <p>Горячая пицца в центре стола.<br>Остальное сложится само.</p>
+          <h1><span class="text-line"><span>Из огня.</span></span><span class="text-line"><span>К вашему</span></span><span class="text-line"><span><em>столу.</em></span></span></h1>
+          <p>Пицца, вокруг которой<br>вечер складывается сам.</p>
           <a class="text-link" href="#menu">Открыть меню <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M13 5l7 7-7 7"/></svg></a>
         </div>
         <div class="scene-copy story-copy" id="crust-copy">
@@ -54,8 +55,9 @@
         </div>
         <div class="stage-bottom">
           <button id="play-tour" class="play-tour" type="button" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 10 7-10 7Z"/></svg><span>Смотреть историю</span></button>
-          <span class="scroll-hint">Листайте, чтобы рассмотреть</span><span class="scene-caption">Прошутто · FARO</span>
+          <nav class="story-chapters" aria-label="Главы истории"><button type="button" data-story="3.65">Бортик</button><button type="button" data-story="7.8">Начинка</button><button type="button" data-story="11.8">К столу</button></nav><span class="scene-caption">Прошутто · FARO</span>
         </div>
+        <div class="menu-handoff" aria-hidden="true"><svg class="faro-mark" viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40V24a19 19 0 0 1 38 0v16M13 40V24a11 11 0 0 1 22 0v16M21 40V25a3 3 0 0 1 6 0v15M5 40h38"/></svg><p><span class="text-line"><span>Только осталось</span></span><span class="text-line"><span><em>выбрать.</em></span></span></p><span class="handoff-note">У каждого вечера — своя пицца.</span></div>
         <div class="progress" aria-hidden="true"><span></span></div>
         <div id="loader" role="status"><span class="loader-wordmark">FARO</span><span>Разогреваем печь</span><div class="loading-line"><i></i></div></div>
         <p id="error" role="status" hidden>Показали фотографию: 3D-сцена недоступна в этом браузере.</p>
@@ -80,19 +82,26 @@
       </div>
     </section>
     <section id="about" class="about-section" aria-labelledby="about-title">
+      <div class="about-heading"><h2 id="about-title"><span>Из огня —</span><em>к общему столу.</em></h2><p>Самая хорошая часть пиццы —<br>разделить её с кем-то.</p></div>
       <div class="preparation">
         <div class="prep-images">
           <figure data-prep-panel="dough"><img src="media/prep-dough.webp" alt="Руки формуют тесто на деревянной поверхности" width="1400" height="1400" loading="lazy"><figcaption>Мука на столе. Вечер начинается.</figcaption></figure>
           <figure data-prep-panel="oven" hidden><img src="media/prep-oven.webp" alt="Повар у горячей печи" width="1400" height="1400" loading="lazy"><figcaption>Ещё немного — и к столу.</figcaption></figure>
-          <figure data-prep-panel="table" hidden><img src="media/menu-prosciutto.webp" alt="Готовая пицца с прошутто и рукколой" width="1400" height="1400" loading="lazy"><figcaption>Самая хорошая часть — разделить.</figcaption></figure>
+          <figure data-prep-panel="table" hidden><img src="media/shared-table.webp" alt="Иллюстрация вечера: две руки и пицца с прошутто на общем столе" width="1672" height="941" loading="lazy"><figcaption>Самая хорошая часть — разделить.</figcaption></figure>
         </div>
-        <div class="prep-controls"><div class="prep-steps" role="group" aria-label="История приготовления"><button type="button" data-prep="dough" aria-pressed="true">Тесто</button><button type="button" data-prep="oven" aria-pressed="false">Печь</button><button type="button" data-prep="table" aria-pressed="false">Общий стол</button></div><button id="prep-toggle" type="button" aria-label="Остановить автоматическую смену фотографий" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>Пауза</span></button></div>
+        <div class="prep-editorial">
+          <div class="prep-text" data-prep-text="dough"><h3>Сначала —<br><em>руками.</em></h3><p>Мука на столе. Мягкое тесто, которое становится тонкой серединой и неровным, живым бортиком.</p></div>
+          <div class="prep-text" data-prep-text="oven" hidden><h3>Потом —<br><em>огонь.</em></h3><p>Жар печи. Поджаристый край, тёмные пузырьки и моцарелла, которая ещё блестит.</p></div>
+          <div class="prep-text" data-prep-text="table" hidden><h3>И наконец —<br><em>вместе.</em></h3><p>Пицца посередине. Возьмите разные, попробуйте друг у друга. Разговор может подождать ещё один кусочек.</p></div>
+          <div class="prep-controls"><div class="prep-steps" role="group" aria-label="История приготовления"><button type="button" data-prep="dough" aria-pressed="true">Тесто</button><button type="button" data-prep="oven" aria-pressed="false">Печь</button><button type="button" data-prep="table" aria-pressed="false">Стол</button></div><button id="prep-toggle" type="button" aria-label="Остановить автоматическую смену фотографий" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg><span>Пауза</span></button></div>
+          <div class="prep-duration" aria-hidden="true"><span></span></div>
+          <a class="text-link" href="#menu">Выбрать для компании <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M13 5l7 7-7 7"/></svg></a>
+        </div>
       </div>
-      <div class="about-copy"><h2 id="about-title">Пицца посередине.<br><em>Разговор —<br>без конца.</em></h2><p>Сначала — мука на столе и мягкое тесто. Потом — жар печи, поджаристый край и сыр, который ещё блестит.</p><p>А дальше всё просто. Возьмите две разные пиццы, попробуйте по кусочку друг у друга. Ради таких вечеров и есть <span data-brand>FARO</span>.</p><a class="text-link" href="#menu">Найти пиццу для компании <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M13 5l7 7-7 7"/></svg></a></div>
     </section>
-    <section class="closing" aria-labelledby="closing-title"><h2 id="closing-title">Ещё по <em>кусочку?</em></h2><a class="closing-link" href="#menu">Выбрать пиццу <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 20 4M4 4h16v16"/></svg></a><button id="replay" class="replay" type="button">Посмотреть историю ещё раз</button></section>
+    <section class="closing" aria-labelledby="closing-title"><div class="closing-mark" aria-hidden="true"><svg class="faro-mark" viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40V24a19 19 0 0 1 38 0v16M13 40V24a11 11 0 0 1 22 0v16M21 40V25a3 3 0 0 1 6 0v15M5 40h38"/></svg></div><h2 id="closing-title"><span>Хороший вечер</span><em>начинается здесь.</em></h2><div class="closing-actions"><a class="closing-link" href="#menu">Найти свою пиццу <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 20 4M4 4h16v16"/></svg></a><button id="replay" class="replay" type="button">Пройти историю ещё раз</button></div><p class="closing-signature" aria-hidden="true" data-brand>FARO</p></section>
   </main>
-  <footer><a class="wordmark footer-logo" href="#top">FARO<span>CUCINA DI FUOCO</span></a><div class="footer-concept"><p>Пицца и планы на вечер.</p><small><span data-brand>FARO</span> — вымышленная пиццерия.<br>Презентационная версия сайта.</small></div><div class="footer-credit"><small>3D-модель <a href="https://sketchfab.com/3d-models/pizza-40d50989fec1460f8838b608d999ccd0">Pizza</a> — <a href="https://sketchfab.com/rigsters">Rigsters</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.<br>Модель и текстура изменены.<br><a href="credits.html">Изображения и авторы</a></small></div></footer>
+  <footer><a class="wordmark footer-logo" href="#top"><svg class="faro-mark" viewBox="0 0 48 48" aria-hidden="true"><path d="M5 40V24a19 19 0 0 1 38 0v16M13 40V24a11 11 0 0 1 22 0v16M21 40V25a3 3 0 0 1 6 0v15M5 40h38"/></svg><span class="wordmark-type"><span class="wordmark-name" data-wordmark>FARO</span><span class="wordmark-tagline">CUCINA DI FUOCO</span></span></a><div class="footer-concept"><p>Пицца и планы на вечер.</p><small><span data-brand>FARO</span> — вымышленная пиццерия.<br>Презентационная версия сайта.</small></div><div class="footer-credit"><small>3D-модель <a href="https://sketchfab.com/3d-models/pizza-40d50989fec1460f8838b608d999ccd0">Pizza</a> — <a href="https://sketchfab.com/rigsters">Rigsters</a>, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.<br>Модель и текстура изменены.<br><a href="credits.html">Изображения и авторы</a></small></div></footer>
   <dialog id="cart-dialog" aria-labelledby="cart-title"><div class="cart-head"><h2 id="cart-title">Ваш заказ</h2><button class="icon-button cart-close" type="button" aria-label="Закрыть заказ"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 5 14 14M19 5 5 19"/></svg></button></div><div class="cart-body"><div id="cart-empty"><p>Пока пусто.<br><em>Начнём с пиццы?</em></p><a href="#menu" class="text-link" id="cart-to-menu">Открыть меню <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16M13 5l7 7-7 7"/></svg></a></div><ul id="cart-items" aria-label="Выбранные пиццы"></ul></div><div class="cart-summary" hidden><div class="cart-total"><span>Итого</span><strong id="cart-total">0 ₽</strong></div><button id="save-order" type="button">Сохранить мой выбор <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></svg></button><p id="order-feedback" role="status">Демозаказ: без оплаты и отправки в пиццерию.</p></div></dialog>
   <dialog id="dish-dialog" aria-labelledby="dish-detail-title">
     <button id="dish-close" class="icon-button" type="button" aria-label="Закрыть описание пиццы"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 5 14 14M19 5 5 19"/></svg></button>

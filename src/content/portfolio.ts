@@ -97,8 +97,8 @@ export const projects: Project[] = [
     role: "Сайт, свет и камера, подготовка 3D-ресурсов для браузера, меню и корзина",
     status: "Вымышленная пиццерия, без оплаты и отправки заказов",
     accent: "#e66744",
-    screen: publicUrl("/assets/images/faro-original.jpg"),
-    detail: publicUrl("/assets/images/faro-menu.jpg"),
+    screen: publicUrl("/assets/images/faro-current.jpg"),
+    detail: publicUrl("/assets/images/faro-current-menu.jpg"),
     detailLabel: "Меню исходного сайта",
     repository: "https://github.com/Acerman-LoxneZZZ/pizza",
     demo: {

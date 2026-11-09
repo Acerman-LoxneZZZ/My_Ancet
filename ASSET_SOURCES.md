@@ -15,6 +15,8 @@
 
 Исходные checkout используются только для чтения. Полные репозитории, серверная конфигурация, рабочие базы и резервные копии не включаются в `public/` или продуктовую сборку. Наличие публичного репозитория не заменяет отдельные notices его сторонних материалов.
 
+Живое демо FARO в `public/demos/faro/` подготовлено скриптом `scripts/prepare-faro-demo.mjs` из [коммита `6c90392`](https://github.com/Acerman-LoxneZZZ/pizza/commit/6c9039229381773a3114fbed0d2aa6c697fe7b9c). Проверка копий исходной модели по-прежнему привязана к коммиту из таблицы.
+
 Подробные исследования: [часы и FARO](docs/research/timepiece-faro.md), [Египет и Wordflow](docs/research/egypt-wordflow.md), [карта переноса](docs/research/asset-transfer-map.md). Точные пути, размеры и SHA256 27 копий записаны в [assets/source/provenance.json](assets/source/provenance.json).
 
 ## Модели и редактируемые исходники
@@ -43,10 +45,13 @@ BLEND остаются вне публичной папки. Настройки 
 
 Первый экран ПРОЯВЛЕНО и галерея концептов сняты в Chromium с локальной сборки DemoLan и сохранены как WebP. В живой витрине используется статическая сборка того же коммита со встроенными лицензиями шрифтов и формой в деморежиме.
 
+Первый экран и меню FARO для галереи и кейса сняты в Chrome со сборки демо `6c90392`.
+
 | Файл в `public/assets/images/` | Размер |
 | --- | --- |
 | `timepiece-original.jpg`, `timepiece-exploded.jpg` | 1265×712 |
 | `faro-original.jpg`, `faro-menu.jpg` | 1270×714 |
+| `faro-current.jpg`, `faro-current-menu.jpg` | 1270×714 |
 | `egypt-original.jpg`, `egypt-chapter.jpg` | 1272×716 |
 | `wordflow-original.jpg`, `wordflow-dictionary.jpg` | 390×844 |
 | `egypt-gateway.png` | 1788×880; точная исходная художественная AI-реконструкция |

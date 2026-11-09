@@ -13,7 +13,7 @@ async function copy(from, path) {
   await cp(join(from, path), destination);
 }
 
-const pages = ["style.css", "site.js", "site-config.js", "credits.html", "ATTRIBUTION.md",
+const pages = ["style.css", "site.js", "site-config.js", "credits.html", "faro-mark.svg", "ATTRIBUTION.md",
   "model-info.json", "photo-info.json", "THREE-LICENSE.txt", "MESHOPTIMIZER-LICENSE.txt"];
 const assets = [];
 for (const directory of ["fonts", "media", "media/menu-session"]) {

@@ -29,8 +29,8 @@ type MountedObject = {
 
 const imagePaths = {
   watch: timepieceHero,
-  faro: publicUrl('/assets/images/faro-original.jpg'),
-  menu: publicUrl('/assets/images/faro-menu.jpg'),
+  faro: publicUrl('/assets/images/faro-current.jpg'),
+  menu: publicUrl('/assets/images/faro-current-menu.jpg'),
   egypt: getProject('egypt')!.screen,
   proyavleno: getProject('proyavleno')!.screen,
   dal: getProject('dal')!.screen,

@@ -60,6 +60,15 @@
     "active": true
   },
   {
+    "name": "shared-table",
+    "active": true,
+    "kind": "generated-editorial",
+    "source": "media/shared-table.prompt.json",
+    "author": "Built-in OpenAI image generator",
+    "changes": "Original generated PNG preserved; WebP derivative at native dimensions, quality 94. Fictional restaurant illustration.",
+    "prompt": "Use case: photorealistic-natural. Asset type: cinematic editorial photograph for the fictional FARO pizzeria presentation website, final chapter 'at the shared table'. Create one horizontal 16:9 photograph, maximum quality. A warmly lit evening table in a quiet contemporary Italian neighborhood pizzeria, shot at 45 degrees above the table, tight editorial composition. One authentic freshly baked thin-base pizza with blistered golden irregular crust, melted mozzarella, prosciutto and fresh arugula sits on a simple dark serving plate in the middle of a dark worn wooden table. Two adults are sharing the meal: show only two naturally posed hands entering from opposite sides of the frame, one reaching for a pizza slice, one resting near a folded linen napkin; anatomically natural fingers, no faces or people in background. The pizza is sliced, most slices remain in the circular arrangement, no stretched cheese, no levitation. One plain water glass in soft background at upper right and another cropped at upper left, subtle scattered flour or crumbs, linen napkins. Soft broad light from upper left, warm practical light in a very dark softly blurred restaurant background, subdued charcoal and warm paper tones with appetizing natural red and green food accents. Photographic surface texture, balanced restrained colors, gentle realistic specular highlights, full pizza sharply resolved, optical background falloff, no artificial plastic CGI appearance, no lettering, logos, watermark, collage, no candles. The picture should feel quietly human and believable, not a generic luxurious advertising set. This is illustrative generated imagery for a fictional restaurant, not a documentary photo of a real business."
+  },
+  {
     "name": "menu-session/pepperoni",
     "active": true,
     "kind": "generated-menu",

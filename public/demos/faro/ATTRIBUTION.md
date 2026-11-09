@@ -40,3 +40,7 @@ The current menu uses six matching AI-generated illustrations in `media/menu-ses
 Current preparation photographs use the free Unsplash License: Cohen Berg (dough) and Adhitya Sibikumar (oven). Exact URLs, authors, license links and modifications are recorded in `photo-info.json` and visitor-facing `credits.html`.
 
 Retired mixed menu source notices remain in `photo-info.json` with `active:false`: Ivan Torres (margherita), ABHISHEK HAJARE (mushroom), Shoeib Abolhassani (sausage), under the Unsplash License; www.snack-nieuws.nl (four cheeses), CC BY 2.0 via Wikimedia Commons. Unused converted derivatives have been removed; cached stock originals and the owner's selected original remain intact. All active images and runtime assets are self-hosted during use.
+
+## Shared-table editorial photograph
+
+`media/shared-table.webp` is an AI-generated illustration made with the built-in image generator for this fictional FARO demo. The native PNG, exact prompt in `media/shared-table.prompt.json`, and provenance sidecar are preserved. It depicts an illustrative shared meal rather than a real venue or customer.
