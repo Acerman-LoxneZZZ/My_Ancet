@@ -71,7 +71,7 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
     scene.add(reflection.floor);
     const rail = createJourneyCamera(camera);
     const resources = createJourneyResources(renderer, scene, camera, reflection.floor.getRenderTarget());
-    const exhibits = createExhibits(resources.prepare, camera);
+    const exhibits = createExhibits((object, priority) => resources.prepare(object, undefined, priority), camera);
     scene.add(exhibits.group);
     let alive = true;
     let resourcesReady = false;

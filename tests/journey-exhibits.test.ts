@@ -20,6 +20,27 @@ beforeEach(() => {
 });
 
 describe("prepared gallery exhibits", () => {
+  it("shares readiness across animation frames without loading a room twice", async () => {
+    let finish!: () => void;
+    const prepare = vi.fn(async () => {}).mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
+    const exhibits = createExhibits(prepare);
+    const mounted = vi.fn();
+    try {
+      const initial = exhibits.prepare(0, mounted);
+      for (let frame = 0; frame < 240; frame++) expect(exhibits.prepare(frame / 240 * 0.1, mounted)).toBe(initial);
+      await vi.waitFor(() => expect(prepare).toHaveBeenCalledTimes(1));
+      finish();
+      await initial;
+      expect(exhibits.prepare(0, mounted)).toBe(initial);
+      expect(modelAssets.acquire).toHaveBeenCalledTimes(1);
+      const next = exhibits.prepare(0.337, mounted);
+      expect(next).not.toBe(initial);
+      await next;
+      await vi.waitFor(() => expect(prepare).toHaveBeenCalledTimes(3));
+      expect(mounted).toHaveBeenCalledTimes(3);
+    } finally { exhibits.dispose(); finish?.(); }
+  });
+
   it("prepares the watch in advance, keeping it hidden until its original load boundary", async () => {
     let finish!: () => void;
     const prepare = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));

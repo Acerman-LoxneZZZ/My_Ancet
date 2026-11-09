@@ -3,6 +3,8 @@ import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "
 import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
+import { build as viteBuild } from "vite";
+import { timepiecePerformancePlugin } from "./timepiece-performance.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const publicRoot = join(root, "public");
@@ -34,7 +36,11 @@ try {
     const original = join(root, ".research", source);
     const build = join(staging, id);
     const base = `/demos/${id}/`;
-    execFileSync(process.execPath, [
+    if (id === 'timepiece') await viteBuild({
+      root: original, base, plugins: [timepiecePerformancePlugin()],
+      build: { outDir: build },
+    });
+    else execFileSync(process.execPath, [
       join(original, "node_modules", "vite", "bin", "vite.js"),
       "build", "--base", base, "--outDir", build,
     ], { cwd: original, stdio: "inherit" });
@@ -67,6 +73,15 @@ try {
       ]) {
         await cp(join(original, "node_modules", dependency, "LICENSE"), join(licenses, file));
       }
+      const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: original, encoding: 'utf8' }).trim();
+      await writeFile(join(build, 'SOURCE.json'), JSON.stringify({
+        repository: 'https://github.com/Acerman-LoxneZZZ/chasi', commit,
+        adaptations: [
+          'scripts/timepiece-performance.mjs',
+          'scripts/templates/timepiece-frame-scheduler.ts',
+        ],
+        changes: 'Use the scroll ticker for watch frames, prewarm lower-scene shaders behind the initial loader, and tolerate rounded ticker times at 60 Hz. Original model, textures, CSS, lighting, materials, camera path and motion mapping retained.',
+      }, null, 2) + '\n');
     }
 
     for (const entry of await readdir(build, { withFileTypes: true, recursive: true })) {

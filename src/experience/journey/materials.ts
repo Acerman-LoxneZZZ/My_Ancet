@@ -34,14 +34,9 @@ export function createClearGlass(name: string, sweep?: { height: { value: number
   return material;
 }
 
-/** Small deterministic material maps, not raster scene backdrops. */
-export function createAtelierMaterials() {
+/** Identical surface maps are generated and uploaded once per active gallery. */
+function createAtelierMaps() {
   const textures = new Set<THREE.Texture>();
-  const materials = new Set<THREE.Material>();
-  const own = <T extends THREE.Material>(value: T): T => {
-    materials.add(value);
-    return value;
-  };
   const size = 256;
   const hash = (x: number, y: number) => {
     const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
@@ -87,6 +82,25 @@ export function createAtelierMaterials() {
   stone.name = "Honed obsidian / micro surface";
   const stoneRoughness = map((x, y) =>
     0.64 + noise(x * 0.035, y * 0.04) * 0.18 + hash(x, y) * 0.04);
+  return {
+    brushing, machining, stone, stoneRoughness,
+    dispose() { textures.forEach(texture => texture.dispose()); textures.clear(); },
+  };
+}
+
+let sharedMaps: { maps: ReturnType<typeof createAtelierMaps>; owners: number } | undefined;
+
+/** Materials stay independent; only the unchanged surface maps share ownership. */
+export function createAtelierMaterials() {
+  const library = sharedMaps ??= { maps: createAtelierMaps(), owners: 0 };
+  library.owners++;
+  const { brushing, machining, stone, stoneRoughness } = library.maps;
+  const materials = new Set<THREE.Material>();
+  let disposed = false;
+  const own = <T extends THREE.Material>(value: T): T => {
+    materials.add(value);
+    return value;
+  };
   const silver = own(new THREE.MeshPhysicalMaterial({
     name: "Machined titanium / directional grain",
     color: "#a6b0b6", metalness: 1, roughness: 0.30,
@@ -137,10 +151,14 @@ export function createAtelierMaterials() {
     trim, brushing, machining, stoneMap: stone, mechanismFinishes,
     own,
     dispose() {
+      if (disposed) return;
+      disposed = true;
       materials.forEach(value => value.dispose());
-      textures.forEach(value => value.dispose());
       materials.clear();
-      textures.clear();
+      if (--library.owners === 0) {
+        if (sharedMaps === library) sharedMaps = undefined;
+        library.maps.dispose();
+      }
     },
   };
 }

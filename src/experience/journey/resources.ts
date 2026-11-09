@@ -12,7 +12,11 @@ const yieldForIdle = () => new Promise<void>(resolve => {
 export function createJourneyResources(renderer: PreparationRenderer, scene: THREE.Scene,
   camera: THREE.Camera, reflectionTarget: THREE.WebGLRenderTarget, yieldWork = yieldForIdle) {
   const uploaded = new Set<THREE.Texture>();
-  let pending = Promise.resolve();
+  type Job = { object: THREE.Object3D; onProgress?: (completed: number, total: number) => void;
+    priority: () => number; resolve: () => void; reject: (reason: unknown) => void };
+  const queue: Job[] = [];
+  const settled = Promise.resolve();
+  let running = false;
   let disposed = false;
 
   const compile = async (object: THREE.Object3D, target: THREE.WebGLRenderTarget | null) => {
@@ -29,46 +33,72 @@ export function createJourneyResources(renderer: PreparationRenderer, scene: THR
     await compilation;
   };
 
-  return {
-    prepare(object: THREE.Object3D, onProgress?: (completed: number, total: number) => void): Promise<void> {
-      if (disposed) return Promise.resolve();
-      const task = pending.then(async () => {
-        if (disposed) return;
-        const textures = new Set<THREE.Texture>();
-        object.traverse(child => {
-          const material = (child as THREE.Mesh).material;
-          if (!material) return;
-          for (const entry of Array.isArray(material) ? material : [material]) {
-            for (const value of Object.values(entry)) {
-              if (value instanceof THREE.Texture && !value.isRenderTargetTexture && !uploaded.has(value)) textures.add(value);
-            }
-          }
-        });
-        const total = textures.size + 2;
-        let completed = 0;
-        onProgress?.(completed, total);
-        for (const texture of textures) {
-          await yieldWork();
-          if (disposed) return;
-          renderer.initTexture(texture);
-          uploaded.add(texture);
-          onProgress?.(++completed, total);
+  const prepare = async ({ object, onProgress }: Job) => {
+    const textures = new Set<THREE.Texture>();
+    const materials = new Set<THREE.Material>();
+    object.traverse(child => {
+      const material = (child as THREE.Mesh).material;
+      if (!material) return;
+      for (const entry of Array.isArray(material) ? material : [material]) {
+        if (materials.has(entry)) continue;
+        materials.add(entry);
+        for (const value of Object.values(entry)) {
+          if (value instanceof THREE.Texture && !value.isRenderTargetTexture && !uploaded.has(value)) textures.add(value);
         }
-        await yieldWork();
-        if (disposed) return;
-        await compile(object, null);
-        if (disposed) return;
-        onProgress?.(++completed, total);
-        await yieldWork();
-        if (disposed) return;
-        // The mirror uses linear output and different tone-mapping defines.
-        // Preparing only the screen variant still stalls on the first reflection.
-        await compile(object, reflectionTarget);
-        if (!disposed) onProgress?.(++completed, total);
+      }
+    });
+    const total = textures.size + 2;
+    let completed = 0;
+    onProgress?.(completed, total);
+    for (const texture of textures) {
+      await yieldWork();
+      if (disposed) return;
+      renderer.initTexture(texture);
+      uploaded.add(texture);
+      onProgress?.(++completed, total);
+    }
+    await yieldWork();
+    if (disposed) return;
+    await compile(object, null);
+    if (disposed) return;
+    onProgress?.(++completed, total);
+    await yieldWork();
+    if (disposed) return;
+    // Keep both variants serial: Three.js polls each material's current program.
+    await compile(object, reflectionTarget);
+    if (!disposed) onProgress?.(++completed, total);
+  };
+
+  const drain = async () => {
+    while (queue.length && !disposed) {
+      // Re-evaluate distances after each job, including jumps/backtracking.
+      let next = 0;
+      let priority = queue[0].priority();
+      for (let index = 1; index < queue.length; index++) {
+        const candidate = queue[index].priority();
+        if (candidate < priority) { priority = candidate; next = index; }
+      }
+      const job = queue.splice(next, 1)[0];
+      try { await prepare(job); job.resolve(); }
+      catch (error) { job.reject(error); }
+    }
+    running = false;
+  };
+
+  return {
+    prepare(object: THREE.Object3D, onProgress?: (completed: number, total: number) => void,
+      priority: () => number = () => 0): Promise<void> {
+      if (disposed) return settled;
+      const task = new Promise<void>((resolve, reject) => {
+        queue.push({ object, onProgress, priority, resolve, reject });
       });
-      pending = task.catch(() => {});
+      if (!running) { running = true; queueMicrotask(() => { void drain(); }); }
       return task;
     },
-    dispose() { disposed = true; uploaded.clear(); },
+    dispose() {
+      disposed = true;
+      uploaded.clear();
+      for (const job of queue.splice(0)) job.resolve();
+    },
   };
 }

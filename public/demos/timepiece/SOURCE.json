@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/Acerman-LoxneZZZ/chasi",
+  "commit": "ab278ec1e4be465d1026cef6e0c4dbcdf74a914b",
+  "adaptations": [
+    "scripts/timepiece-performance.mjs",
+    "scripts/templates/timepiece-frame-scheduler.ts"
+  ],
+  "changes": "Use the scroll ticker for watch frames, prewarm lower-scene shaders behind the initial loader, and tolerate rounded ticker times at 60 Hz. Original model, textures, CSS, lighting, materials, camera path and motion mapping retained."
+}

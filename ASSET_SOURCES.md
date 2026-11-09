@@ -91,6 +91,8 @@ Telegram SDK, profile-client, серверные endpoints, D1 и service worker
 
 `node scripts/prepare-gallery-demos.mjs` пересобирает витрины из checkout `.research/chasi-current` и `.research/egi` с установленными зависимостями. Аргумент `timepiece` обновляет только KARpOV. Сборки находятся в `public/demos/timepiece` и `public/demos/egypt`. Идентичные ресурсы переиспользуются. Модель KARpOV из нового коммита загружается при открытии витрины.
 
+Адаптация производительности KARpOV от 8 ноября 2026 выполняется Vite-плагином `scripts/timepiece-performance.mjs`, без изменения исходного checkout. Кадры WatchScene планируются на общем ticker Lenis/GSAP; второй рендерер и его процедурные шейдеры готовятся под начальным экраном загрузки. Нижняя GLB-модель по-прежнему загружается при приближении. Геометрия, материалы, изображения, CSS, свет, разрешение и сценарий движения сохранены. Исходный commit и адаптации записываются в `public/demos/timepiece/SOURCE.json`; измерения — в `docs/qa/timepiece-performance-2026-11-08.json`.
+
 `public/assets/images/timepiece-karpov-hero.jpg` — первый экран KARpOV из `docs/screenshots/finale-story/1440-0.png` на коммите `ab278ec`, сохранённый в JPEG для экрана в галерее.
 
 `node scripts/prepare-assets.mjs` копирует только перечисленные файлы и записывает provenance; `node scripts/check-assets.mjs` сравнивает точные SHA256, проверяет 47 уникальных деталей, состав демо и запрещённые публичные пути. Для повторного чтения исходников нужны checkout из первой таблицы на указанных commits. Проверка не устанавливает общую лицензию на авторские репозитории и не заменяет необходимые notices.

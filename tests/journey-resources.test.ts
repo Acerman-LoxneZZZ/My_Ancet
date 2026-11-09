@@ -20,6 +20,25 @@ function fixture() {
 }
 
 describe("journey GPU preparation", () => {
+  it("prepares the destination before queued neighbours and rechecks priority after a jump", async () => {
+    const f = fixture();
+    const gate = { resolve: () => {} };
+    f.renderer.compileAsync.mockImplementationOnce(() => new Promise<Scene>(resolve => { gate.resolve = () => resolve(f.scene); }));
+    const active = new Group(), neighbour = new Group(), destination = new Group();
+    const initial = f.resources.prepare(active);
+    await vi.waitFor(() => expect(f.renderer.compileAsync).toHaveBeenCalledTimes(1));
+    let distance = 10;
+    const nearer = f.resources.prepare(neighbour, undefined, () => 1);
+    const further = f.resources.prepare(destination, undefined, () => distance);
+    distance = 0;
+    gate.resolve();
+    await Promise.all([initial, further, nearer]);
+    expect(f.renderer.compileAsync.mock.calls.map(call => call[0])).toEqual([
+      active, active, destination, destination, neighbour, neighbour,
+    ]);
+    f.resources.dispose();
+  });
+
   it("uploads shared maps once and prepares both screen and mirror shader variants", async () => {
     const f = fixture();
     const texture = new Texture();

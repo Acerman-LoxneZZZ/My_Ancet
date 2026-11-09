@@ -1,0 +1,254 @@
+{
+  "date": "2026-11-08",
+  "source": {
+    "repository": "https://github.com/Acerman-LoxneZZZ/chasi",
+    "commit": "ab278ec1e4be465d1026cef6e0c4dbcdf74a914b",
+    "adaptations": [
+      "scripts/timepiece-performance.mjs",
+      "scripts/templates/timepiece-frame-scheduler.ts"
+    ],
+    "changes": "Use the scroll ticker for watch frames, prewarm lower-scene shaders behind the initial loader, and tolerate rounded ticker times at 60 Hz. Original model, textures, CSS, lighting, materials, camera path and motion mapping retained."
+  },
+  "diagnosis": [
+    "WatchScene scheduled a separate requestAnimationFrame after the Lenis/GSAP scroll tick; measured painted frames arrived approximately every 33.4 ms despite 1-2 ms render submissions.",
+    "Lower scene cadence compared millisecond-rounded GSAP times to an exact 1/60 threshold, dropping available frames.",
+    "First-use preparation of the second renderer and lower-scene shaders caused 676 ms and 288 ms long tasks during the initial lower-section visit."
+  ],
+  "fixes": [
+    "Schedule invalidated watch frames on the existing GSAP ticker, coalescing calls and removing settled/cancelled callbacks.",
+    "Prepare the second context and procedural shaders behind the initial loader; lazily compile the lower watch model before exposing its canvas.",
+    "Allow 1 ms timestamp rounding tolerance for lower-scene cadence."
+  ],
+  "conditions": {
+    "browser": "Chromium in-app browser on this machine",
+    "viewport": [
+      1280,
+      800
+    ],
+    "devicePixelRatio": 1,
+    "watchBuffer": [
+      1265,
+      720
+    ],
+    "mainComparison": "Same active tab, initial automatic story playback, 8.5-second collection window. Preparation and parsing have separate startup phases. Rendering submission duration is CPU time, not GPU time.",
+    "limitations": "One local before/after pass; browser and driver caches were not isolated. Physical mobile devices and Safari were not tested. Intervals across reading holds are omitted. Lower scenes rotate with elapsed time, so screenshots have different animation phases."
+  },
+  "mainBefore": {
+    "name": "Смотреть историю",
+    "main": {
+      "samples": 236,
+      "mean": 1.487288133572724,
+      "p95": 1.9000000953674316,
+      "max": 10.799999952316284
+    },
+    "detail": {
+      "samples": 0,
+      "mean": 0,
+      "p95": 0,
+      "max": 0
+    },
+    "intervals": {
+      "samples": 235,
+      "mean": 33.40468085106384,
+      "p95": 33.400000000001455,
+      "max": 48.69999999999891
+    },
+    "callback": {
+      "samples": 1216,
+      "mean": 0.5134868388505358,
+      "p95": 1.5999999046325684,
+      "max": 10.799999952316284
+    }
+  },
+  "mainAfter": {
+    "name": "Смотреть историю",
+    "main": {
+      "samples": 479,
+      "mean": 1.7212943577816193,
+      "p95": 2.299999952316284,
+      "max": 3.200000047683716
+    },
+    "detail": {
+      "samples": 0,
+      "mean": 0,
+      "p95": 0,
+      "max": 0
+    },
+    "intervals": {
+      "samples": 478,
+      "mean": 16.66694560669456,
+      "p95": 16.700000000000728,
+      "max": 16.80000000000109
+    },
+    "callback": {
+      "samples": 1045,
+      "mean": 0.7999999970340272,
+      "p95": 2,
+      "max": 3.200000047683716
+    }
+  },
+  "lowerBefore": {
+    "name": "Коллекция",
+    "main": {
+      "samples": 0,
+      "mean": 0,
+      "p95": 0,
+      "max": 0
+    },
+    "detail": {
+      "samples": 158,
+      "mean": 1.1253164508674718,
+      "p95": 1.7999999523162842,
+      "max": 2.5999999046325684
+    },
+    "intervals": {
+      "samples": 157,
+      "mean": 25.05350318471343,
+      "p95": 33.40000000000873,
+      "max": 33.5
+    },
+    "callback": {
+      "samples": 492,
+      "mean": 0.37845528222681063,
+      "p95": 1.5999999046325684,
+      "max": 2.5999999046325684
+    }
+  },
+  "lowerAfter": [
+    {
+      "name": "Коллекция",
+      "main": {
+        "samples": 1,
+        "mean": 1.1999998092651367,
+        "p95": 1.1999998092651367,
+        "max": 1.1999998092651367
+      },
+      "detail": {
+        "samples": 281,
+        "mean": 0.7142348747660681,
+        "p95": 1,
+        "max": 7.400000095367432
+      },
+      "intervals": {
+        "samples": 280,
+        "mean": 16.90499999999999,
+        "p95": 16.799999999999272,
+        "max": 33.400000000001455
+      },
+      "callback": {
+        "samples": 591,
+        "mean": 0.3470389173317278,
+        "p95": 0.8000001907348633,
+        "max": 7.400000095367432
+      }
+    },
+    {
+      "name": "Механика",
+      "main": {
+        "samples": 0,
+        "mean": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "detail": {
+        "samples": 165,
+        "mean": 0.7303030288580692,
+        "p95": 1,
+        "max": 2.3999998569488525
+      },
+      "intervals": {
+        "samples": 164,
+        "mean": 16.76829268292685,
+        "p95": 16.80000000000291,
+        "max": 33.29999999999927
+      },
+      "callback": {
+        "samples": 343,
+        "mean": 0.354518947378887,
+        "p95": 0.9000000953674316,
+        "max": 2.3999998569488525
+      }
+    }
+  ],
+  "longTasksBefore": [
+    {
+      "start": 111.79999995231628,
+      "duration": 117,
+      "phase": "startup"
+    },
+    {
+      "start": 237,
+      "duration": 116,
+      "phase": "startup"
+    },
+    {
+      "start": 464.10000014305115,
+      "duration": 74,
+      "phase": "startup"
+    },
+    {
+      "start": 45570.10000014305,
+      "duration": 676,
+      "phase": "Смотреть историю"
+    },
+    {
+      "start": 56869.799999952316,
+      "duration": 288,
+      "phase": "Смотреть историю"
+    }
+  ],
+  "longTasksAfter": [
+    {
+      "start": 191.5,
+      "duration": 113,
+      "phase": "startup"
+    },
+    {
+      "start": 346.39999985694885,
+      "duration": 130,
+      "phase": "startup"
+    },
+    {
+      "start": 477.2999999523163,
+      "duration": 208,
+      "phase": "startup"
+    }
+  ],
+  "quality": {
+    "modelBytes": 5324520,
+    "modelSha256": "dc9ecfc7240aba0ebcd3c8dd3930113e9ca5ff3b072485525eb52eb49cfa3d35",
+    "modelEqualsPinnedOriginal": true,
+    "mainModelTriangles": 187898,
+    "mainDrawCalls": 136,
+    "engravedWatchTriangles": 187900,
+    "engravedWatchDrawCalls": 137,
+    "settings": "Unchanged geometry, model/images/fonts/CSS, finishes, lighting, antialiasing, DPR caps, existing software-quality fallback, 47 parts/rest transforms, camera path and story/reading-hold mapping. Two renderer systems retained; engraving/finale GLB remains proximity-loaded."
+  },
+  "validation": {
+    "testsPassed": 206,
+    "testFilesPassed": 20,
+    "adaptedSourceTypecheck": "passed",
+    "rootTypecheckAndBuild": "passed",
+    "assetVerification": "passed",
+    "manualInspectionCameraPreserved": true,
+    "mouseRotation": "passed",
+    "returnToStory": "passed",
+    "engravingPreviewAndClear": "passed",
+    "browserWarningsAndErrors": [],
+    "productionMobile390x844": {
+      "playback": "passed",
+      "horizontalOverflow": false,
+      "mainModelTriangles": 187898,
+      "mainDrawCalls": 136,
+      "probePresent": false
+    },
+    "galleryIframe": {
+      "cleanBuild": "passed",
+      "automaticStoryCompleted": "passed",
+      "mainModelTriangles": 187898,
+      "mainDrawCalls": 136,
+      "browserWarningsAndErrors": []
+    },
+    "temporaryProbeRemoved": true
+  }
+}

@@ -1,0 +1,568 @@
+{
+  "date": "2026-11-08",
+  "baselineRevision": "ab878f05b43db2c06b5b3abf3b0d1811679bd5e7",
+  "backupBranch": "origin/codex/backup-before-optimization-2026-11-08",
+  "changes": [
+    "Share identical procedural maps with reference-counted GPU ownership while keeping materials independent.",
+    "Reuse exhibit readiness while the requested room set stays unchanged.",
+    "Load nearest candidates first, re-evaluate queued GPU preparation priorities after each room, and scan shared materials once."
+  ],
+  "conditions": {
+    "browser": "Chromium in-app browser",
+    "viewport": [
+      1280,
+      800
+    ],
+    "devicePixelRatio": 1,
+    "drawingBuffer": [
+      1280,
+      800
+    ],
+    "server": "Vite development server, localhost",
+    "method": "Same tab, viewport and button sequence: surface, timepiece, FARO, Egypt, Proyavleno, Dal, tutor, Castle, finale. Temporary opt-in instrumentation measured actual render callbacks and consecutive moving-frame intervals; pointer parallax was fixed for both passes. Instrumentation removed before the final build.",
+    "limitations": "One before/after pass on this machine, without isolating browser or driver shader caches. Loading is measured from navigation to first ready frame; this is not a cold-network benchmark. Physical phones and Safari were not tested. CPU submission times do not measure GPU execution time."
+  },
+  "firstReadyMs": {
+    "before": 4583.699999809265,
+    "after": 4119.899999856949,
+    "observedReductionPercent": 10.12
+  },
+  "gpuTextureCount": {
+    "entranceBefore": 17,
+    "entranceAfter": 13,
+    "fullJourneyBefore": 27,
+    "fullJourneyAfter": 23,
+    "duplicateBaseLevelBytesRemoved": 1048576
+  },
+  "before": [
+    {
+      "target": 0,
+      "cpu": {
+        "samples": 494,
+        "mean": 5.061943312405575,
+        "p95": 10.599999904632568,
+        "max": 78,
+        "over50ms": 1
+      },
+      "intervals": {
+        "samples": 0,
+        "mean": 0,
+        "p95": 0,
+        "max": 0,
+        "over50ms": 0
+      },
+      "textures": 17,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.214,
+      "cpu": {
+        "samples": 192,
+        "mean": 5.024479161947966,
+        "p95": 7.200000047683716,
+        "max": 27.59999990463257,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 186,
+        "mean": 16.666666666666668,
+        "p95": 16.799999999999272,
+        "max": 16.899999999997817,
+        "over50ms": 0
+      },
+      "textures": 22,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.337,
+      "cpu": {
+        "samples": 174,
+        "mean": 4.213793100981877,
+        "p95": 5.3999998569488525,
+        "max": 23.299999952316284,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 168,
+        "mean": 16.666476190476175,
+        "p95": 16.799999999999272,
+        "max": 16.900000000001455,
+        "over50ms": 0
+      },
+      "textures": 23,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.459,
+      "cpu": {
+        "samples": 174,
+        "mean": 5.0362068894265715,
+        "p95": 6.799999952316284,
+        "max": 9,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 167,
+        "mean": 16.66706586826346,
+        "p95": 16.799999999999272,
+        "max": 16.80000000000291,
+        "over50ms": 0
+      },
+      "textures": 24,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.582,
+      "cpu": {
+        "samples": 171,
+        "mean": 4.197076029247707,
+        "p95": 5.300000190734863,
+        "max": 25.59999990463257,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 166,
+        "mean": 16.768072289156628,
+        "p95": 16.80000000000291,
+        "max": 32.69999999999709,
+        "over50ms": 0
+      },
+      "textures": 25,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.704,
+      "cpu": {
+        "samples": 174,
+        "mean": 4.064367813625555,
+        "p95": 6.400000095367432,
+        "max": 10.5,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 168,
+        "mean": 16.666273809523815,
+        "p95": 16.80000000000291,
+        "max": 16.80000000000291,
+        "over50ms": 0
+      },
+      "textures": 26,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.826,
+      "cpu": {
+        "samples": 173,
+        "mean": 4.58034683789821,
+        "p95": 13.099999904632568,
+        "max": 20.699999809265137,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 167,
+        "mean": 16.7662754491018,
+        "p95": 16.80000000000291,
+        "max": 33.19999999999709,
+        "over50ms": 0
+      },
+      "textures": 27,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.948,
+      "cpu": {
+        "samples": 173,
+        "mean": 4.7358381486352465,
+        "p95": 8.899999856948853,
+        "max": 24.90000009536743,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 167,
+        "mean": 16.766467065868262,
+        "p95": 16.80000000000291,
+        "max": 33.30000000000291,
+        "over50ms": 0
+      },
+      "textures": 27,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 1.122,
+      "cpu": {
+        "samples": 224,
+        "mean": 4.853571426655565,
+        "p95": 7.3999998569488525,
+        "max": 20.90000009536743,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 217,
+        "mean": 16.820276497695854,
+        "p95": 16.80000000000291,
+        "max": 50,
+        "over50ms": 0
+      },
+      "textures": 27,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    }
+  ],
+  "after": [
+    {
+      "target": 0,
+      "cpu": {
+        "samples": 325,
+        "mean": 5.349538456843449,
+        "p95": 9.5,
+        "max": 91.10000014305115,
+        "over50ms": 1
+      },
+      "intervals": {
+        "samples": 0,
+        "mean": 0,
+        "p95": 0,
+        "max": 0,
+        "over50ms": 0
+      },
+      "textures": 13,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.214,
+      "cpu": {
+        "samples": 193,
+        "mean": 4.978756467295434,
+        "p95": 7,
+        "max": 23.299999952316284,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 186,
+        "mean": 16.667204301075262,
+        "p95": 16.799999999999272,
+        "max": 17.700000000000728,
+        "over50ms": 0
+      },
+      "textures": 18,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.337,
+      "cpu": {
+        "samples": 173,
+        "mean": 4.3930635700336085,
+        "p95": 5.8999998569488525,
+        "max": 22.100000143051147,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 167,
+        "mean": 16.7662754491018,
+        "p95": 16.799999999999272,
+        "max": 33.099999999998545,
+        "over50ms": 0
+      },
+      "textures": 19,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.459,
+      "cpu": {
+        "samples": 172,
+        "mean": 5.236046506914982,
+        "p95": 7.599999904632568,
+        "max": 27.700000047683716,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 166,
+        "mean": 16.867879518072286,
+        "p95": 16.80000000000291,
+        "max": 33.29999999999927,
+        "over50ms": 0
+      },
+      "textures": 20,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.582,
+      "cpu": {
+        "samples": 174,
+        "mean": 4.332758619867522,
+        "p95": 6,
+        "max": 7.900000095367432,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 167,
+        "mean": 16.66706586826348,
+        "p95": 16.799999999995634,
+        "max": 16.80000000000291,
+        "over50ms": 0
+      },
+      "textures": 21,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.704,
+      "cpu": {
+        "samples": 174,
+        "mean": 4.549425278586903,
+        "p95": 8.099999904632568,
+        "max": 12.799999952316284,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 168,
+        "mean": 16.666476190476196,
+        "p95": 16.80000000000291,
+        "max": 17,
+        "over50ms": 0
+      },
+      "textures": 22,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.826,
+      "cpu": {
+        "samples": 174,
+        "mean": 4.625862066773163,
+        "p95": 9.300000190734863,
+        "max": 22,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 168,
+        "mean": 16.666869047619045,
+        "p95": 16.80000000000291,
+        "max": 17.19999999999709,
+        "over50ms": 0
+      },
+      "textures": 23,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 0.948,
+      "cpu": {
+        "samples": 172,
+        "mean": 4.318023235298867,
+        "p95": 7.200000047683716,
+        "max": 20.59999990463257,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 166,
+        "mean": 16.76746987951808,
+        "p95": 16.80000000000291,
+        "max": 33,
+        "over50ms": 0
+      },
+      "textures": 23,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    },
+    {
+      "target": 1.122,
+      "cpu": {
+        "samples": 224,
+        "mean": 4.54419642580407,
+        "p95": 6.599999904632568,
+        "max": 26.899999856948853,
+        "over50ms": 0
+      },
+      "intervals": {
+        "samples": 217,
+        "mean": 16.81951152073734,
+        "p95": 16.80000000000291,
+        "max": 33.400000000001455,
+        "over50ms": 0
+      },
+      "textures": 23,
+      "quality": 0,
+      "buffer": [
+        1280,
+        800
+      ]
+    }
+  ],
+  "quality": {
+    "settings": "Unchanged models, source images, material values, lights, shadows, antialiasing, pixel-ratio caps, adaptive-quality thresholds, reflection dimensions/cadence, camera path and easing.",
+    "surfaceMaps": "Four SHA-256 pixel hashes, original 256x256 resolution, filters and mipmaps pinned by regression tests.",
+    "imageComparison": [
+      {
+        "scene": "3D-репетитор",
+        "size": [
+          1265,
+          791
+        ],
+        "meanAbsoluteDifference": 0.07651594269524242,
+        "percentOfFullScale": 0.030006252037349967
+      },
+      {
+        "scene": "entrance",
+        "size": [
+          1265,
+          791
+        ],
+        "meanAbsoluteDifference": 0.09990755685253568,
+        "percentOfFullScale": 0.039179434059817914
+      },
+      {
+        "scene": "FARO",
+        "size": [
+          1265,
+          791
+        ],
+        "meanAbsoluteDifference": 0.0,
+        "percentOfFullScale": 0.0
+      },
+      {
+        "scene": "ДАЛЬ",
+        "size": [
+          1265,
+          791
+        ],
+        "meanAbsoluteDifference": 0.021740296384390265,
+        "percentOfFullScale": 0.008525606425251084
+      },
+      {
+        "scene": "Египет",
+        "size": [
+          1265,
+          791
+        ],
+        "meanAbsoluteDifference": 0.05596957870909391,
+        "percentOfFullScale": 0.0219488543957231
+      },
+      {
+        "scene": "Замок",
+        "size": [
+          1265,
+          791
+        ],
+        "meanAbsoluteDifference": 0.034258930757584086,
+        "percentOfFullScale": 0.013434874806895722
+      },
+      {
+        "scene": "Игорь",
+        "size": [
+          1265,
+          791
+        ],
+        "meanAbsoluteDifference": 0.004037183798630509,
+        "percentOfFullScale": 0.0015832093327962779
+      },
+      {
+        "scene": "ПРОЯВЛЕНО",
+        "size": [
+          1265,
+          791
+        ],
+        "meanAbsoluteDifference": 0.022776992149827854,
+        "percentOfFullScale": 0.008932153784246217
+      },
+      {
+        "scene": "Ход времени",
+        "size": [
+          1265,
+          791
+        ],
+        "meanAbsoluteDifference": 0.04519720371971237,
+        "percentOfFullScale": 0.01772439361557348
+      }
+    ],
+    "imageComparisonLimit": "JPEG screenshots at the same stops; mechanism phases and final subpixel camera settling are not synchronized. Pixel-exact FARO comparison; remaining mean differences below 0.04% of full scale do not alone establish pixel identity."
+  },
+  "functionalChecks": [
+    "Fresh load and all seven rooms plus finale",
+    "Rapid direct jumps Castle -> Egypt -> FARO on a fresh page",
+    "Native scroll forward and backward",
+    "390x844 mobile-sized viewport: Egypt, no horizontal overflow, open/close embedded demo",
+    "Resize to 844x390 preserves Egypt progress within 0.00002; Castle and back to timepiece",
+    "No warnings/errors observed during exercised gallery and Egypt demo",
+    "Final production build: gallery -> credits -> gallery becomes ready again with one canvas and no errors"
+  ],
+  "validation": {
+    "testsPassed": 202,
+    "testFilesPassed": 19,
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "assetVerification": "passed",
+    "instrumentationRemoved": true,
+    "productionSmoke": {
+      "firstLoad": "passed",
+      "FaroTravel": "passed",
+      "creditsAndReturn": "passed",
+      "singleCanvasAfterReturn": true,
+      "probePresent": false,
+      "browserWarningsAndErrors": []
+    }
+  }
+}

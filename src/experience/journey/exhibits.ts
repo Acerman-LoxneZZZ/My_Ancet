@@ -44,7 +44,7 @@ const smooth = (start: number, end: number, progress: number): number => {
 };
 
 /** Mount exhibit assets as the camera approaches each room. */
-export function createExhibits(prepareObject: (object: THREE.Object3D) => Promise<void> = async () => {}, camera?: THREE.PerspectiveCamera): {
+export function createExhibits(prepareObject: (object: THREE.Object3D, priority?: () => number) => Promise<void> = async () => {}, camera?: THREE.PerspectiveCamera): {
   group: THREE.Group;
   prepare(progress: number, onMount: () => void): Promise<void>;
   update(progress: number): boolean;
@@ -60,6 +60,10 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
   const images = {} as Record<keyof typeof imagePaths, THREE.Texture>;
   const leases: ReturnType<typeof modelAssets.acquire>[] = [];
   const requested = new Map<number, Promise<void>>();
+  const settled = Promise.resolve();
+  let preparation = settled;
+  let preparationMask = -1;
+  let preparationProgress = 0;
   const layouts: ((mix: (wide: number, narrow: number) => number, x: number, y: number, scale: number) => void)[] = [];
   const poses: ((progress: number) => boolean)[] = [];
   const loadModel = (path: string) => {
@@ -470,18 +474,30 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
     const loaders = [loadWatch, loadFaro, loadEgypt, loadRibbon,
       () => loadNewExhibit(4, 'dal'), () => loadNewExhibit(5, 'tutor'), loadCastle];
     const prepare = (progress: number, onMount: () => void): Promise<void> => {
-      if (disposed) return Promise.resolve();
-      const pending: Promise<void>[] = [];
-      exhibitChapters.forEach((chapter, index) => {
+      if (disposed) return settled;
+      preparationProgress = progress;
+      let mask = 0;
+      for (let index = 0; index < exhibitChapters.length; index++) {
+        const chapter = exhibitChapters[index];
         const pastRoom = progress > chapter.to + 0.055;
         const leavingFinalRoom = index === exhibitChapters.length - 1 && progress < JOURNEY_LIMIT;
-        if ((index > 0 && progress < chapter.from - 0.14) || (pastRoom && !leavingFinalRoom)) return;
+        if ((index > 0 && progress < chapter.from - 0.14) || (pastRoom && !leavingFinalRoom)) continue;
+        mask |= 1 << index;
+      }
+      // Scroll and animation frames usually need exactly the same readiness.
+      if (mask === preparationMask) return preparation;
+      preparationMask = mask;
+      const candidates = exhibitChapters.map((_, index) => index).filter(index => mask & (1 << index));
+      candidates.sort((a, b) => Math.abs(exhibitChapters[a].at - progress) - Math.abs(exhibitChapters[b].at - progress));
+      const pending: Promise<void>[] = [];
+      for (const index of candidates) {
+        const chapter = exhibitChapters[index];
         const existing = requested.get(index);
-        if (existing) { pending.push(existing); return; }
+        if (existing) { pending.push(existing); continue; }
         const task = loaders[index]().then(async () => {
           if (disposed) return;
           fit(lastAspect);
-          try { await prepareObject(rooms[index].group); }
+          try { await prepareObject(rooms[index].group, () => Math.abs(chapter.at - preparationProgress)); }
           catch (error) { if (!disposed) console.warn('Could not prepare gallery resources', chapter.id, error); }
           if (disposed) return;
           rooms[index].ready = true;
@@ -492,8 +508,9 @@ export function createExhibits(prepareObject: (object: THREE.Object3D) => Promis
         });
         requested.set(index, task);
         pending.push(task);
-      });
-      return Promise.all(pending).then(() => {});
+      }
+      preparation = pending.length ? Promise.all(pending).then(() => {}) : settled;
+      return preparation;
     };
 
     const updateVisibility = () => {
