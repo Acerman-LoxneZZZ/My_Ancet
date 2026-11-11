@@ -40,10 +40,9 @@ export function Header() {
         </PortfolioLink>
         <nav className="desktop-nav" aria-label="Основная навигация">
           <PortfolioLink to="/#works">
-            Работы <span className="meta">4</span>
+            Работы <span className="meta">{projects.length}</span>
           </PortfolioLink>
-          <PortfolioLink to="/#about">Подход</PortfolioLink>
-          <PortfolioLink to="/#contact">Контакт</PortfolioLink>
+          <PortfolioLink to="/credits">Источники</PortfolioLink>
         </nav>
         <a
           className="header-github"
@@ -84,12 +83,10 @@ export function Header() {
             </PortfolioLink>
           ))}
           <div className="menu-bottom">
-            <PortfolioLink to="/#about" onClick={() => setOpen(false)}>
-              Подход
+            <PortfolioLink to="/credits" onClick={() => setOpen(false)}>
+              Источники
             </PortfolioLink>
-            <PortfolioLink to="/#contact" onClick={() => setOpen(false)}>
-              Контакт
-            </PortfolioLink>
+            <a href={author.github} target="_blank" rel="noreferrer">GitHub <Arrow /></a>
           </div>
         </div>
       </nav>

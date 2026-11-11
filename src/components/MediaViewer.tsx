@@ -29,7 +29,7 @@ export function MediaViewer({
         <button className="dialog-close" onClick={() => ref.current?.close()}>
           Закрыть <span aria-hidden="true">×</span>
         </button>
-        <img src={src} alt={alt} />
+        <img src={src} alt={alt} loading="lazy" />
         <p>{alt}</p>
       </dialog>
     </>

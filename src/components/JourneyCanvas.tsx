@@ -37,7 +37,7 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
   useEffect(() => {
     const element = canvas.current!;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    const compact = innerWidth < 700;
+    const compact = innerWidth < 700 || matchMedia("(pointer: coarse)").matches;
     loadingCallback.current(12);
     let renderer: THREE.WebGLRenderer;
     try {
@@ -94,7 +94,8 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
     let lastShadow = -Infinity;
     let lastFrameProgress = NaN;
     let viewportWidth = 0, viewportHeight = 0, viewportDpr = 0;
-    let quality = compact ? 1 : 0;
+    const highestQuality = compact ? 1 : 0;
+    let quality = highestQuality;
     let frameAverage = 16.7;
     let slowTime = 0, fastTime = 0;
     let budgetChanged = performance.now();
@@ -132,8 +133,9 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
       const preserveScroll = viewportWidth > 0 && (w !== viewportWidth || h !== viewportHeight);
       maxY = Math.max(1, document.documentElement.scrollHeight - h);
       // Cap the actual pixel buffer, not the CSS viewport.
-      const limit = w < 700 ? 1200 : 1900;
-      const dpr = Math.min(devicePixelRatio, w < 700 ? 1.25 : 1.5, limit / Math.max(w, h));
+      const compactBuffer = compact || w < 700;
+      const limit = compactBuffer ? 1200 : 1900;
+      const dpr = Math.min(devicePixelRatio, compactBuffer ? 1.25 : 1.5, limit / Math.max(w, h));
       if (w !== viewportWidth || h !== viewportHeight || dpr !== viewportDpr) {
         viewportWidth = w; viewportHeight = h; viewportDpr = dpr;
         applyRenderQuality();
@@ -251,7 +253,7 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
         frameAverage += (Math.min(renderInterval, 100) - frameAverage) * 0.08;
         slowTime = frameAverage > 24 ? slowTime + renderInterval : 0;
         fastTime = frameAverage < 18.5 ? fastTime + renderInterval : 0;
-        if ((slowTime > 1200 && quality < 2) || (fastTime > 7000 && quality > 0)) {
+        if ((slowTime > 1200 && quality < 2) || (fastTime > 7000 && quality > highestQuality)) {
           quality += slowTime > 1200 ? 1 : -1;
           applyRenderQuality();
           slowTime = fastTime = 0;

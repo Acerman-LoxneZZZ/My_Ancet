@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from "react";
-import { matchPath, Routes, Route } from "react-router-dom";
+import { matchPath, matchRoutes, Routes, Route } from "react-router-dom";
 import {
   usePortfolioNavigation,
   PortfolioLink,
@@ -13,9 +13,13 @@ import { ShowcasePage } from "../pages/ShowcasePage";
 import { author } from "../content/portfolio";
 import { Arrow } from "../components/Icon";
 const SceneHost = lazy(() => import("./SceneHost"));
+const caseRoute = { path: "/work/:id" };
+
 export function App() {
   const { display, busy } = usePortfolioNavigation();
   const showChrome = display.pathname !== "/" && !matchPath("/showcase/:id", display.pathname);
+  const caseId = matchRoutes([caseRoute], display)?.[0]?.params.id;
+  const hasCaseScene = caseId === "timepiece" || caseId === "faro";
   useEffect(() => {
     document.documentElement.dataset.motion = matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -29,13 +33,13 @@ export function App() {
       <div className="page-shell" aria-busy={busy}>
         <Routes location={display}>
           <Route path="/" element={<Home />} />
-          <Route path="/work/:id" element={<CasePage />} />
+          <Route path={caseRoute.path} element={<CasePage />} />
           <Route path="/showcase/:id" element={<ShowcasePage />} />
           <Route path="/credits" element={<Credits />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
-      {showChrome && <Suspense fallback={null}>
+      {hasCaseScene && <Suspense fallback={null}>
         <SceneHost />
       </Suspense>}
       {showChrome && <footer className="site-footer">

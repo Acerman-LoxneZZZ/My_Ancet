@@ -102,7 +102,10 @@ export function Home() {
   useEffect(() => {
     if (status !== "fallback") return;
     const read = () => frame(window.scrollY / Math.max(1, document.documentElement.scrollHeight - innerHeight) * JOURNEY_LIMIT);
-    const seek = (event: Event) => window.scrollTo({ top: clampJourneyProgress(Number((event as CustomEvent).detail)) / JOURNEY_LIMIT * (document.documentElement.scrollHeight - innerHeight), behavior: "smooth" });
+    const seek = (event: Event) => window.scrollTo({
+      top: clampJourneyProgress(Number((event as CustomEvent).detail)) / JOURNEY_LIMIT * (document.documentElement.scrollHeight - innerHeight),
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    });
     window.addEventListener("scroll", read, { passive: true });
     window.addEventListener("journey:seek", seek);
     read();
@@ -122,17 +125,17 @@ export function Home() {
     <main id="main" ref={root} inert={status === 'loading' || openingDemo} className={`journey-page is-${status}`} style={{ height: `${JOURNEY_SCROLL_SVH + 100}svh` }}>
       <div className="journey-stage">
         <Suspense fallback={null}><JourneyCanvas onFrame={frame} onStatus={setStatus} onLoadProgress={loadingProgress} paused={indexOpen || openingDemo || status === "fallback"} /></Suspense>
-        <div className="journey-vignette" aria-hidden="true" />
         {status === "fallback" && <div className="journey-fallback" aria-hidden="true">
           {next ? <img src={projects[active - 1]?.screen ?? publicUrl("/assets/images/monolith-fallback.svg")} alt="" /> : <span className="journey-fallback-letter">И</span>}
         </div>}
+        <div className="journey-vignette" aria-hidden="true" />
       </div>
       <header className="journey-header">
         <button className="journey-wordmark" onClick={() => go(0)} aria-label={`${surname} — к началу путешествия`}><Mark /><span>{surname}</span></button>
         <span className="journey-edition">Дизайн / Движение / Код</span>
         <div className="journey-header-actions">
           <a className="journey-contact-link" href={author.github} target="_blank" rel="noreferrer">Мой GitHub <Arrow /></a>
-          <button ref={menuButton} className="journey-index-button" onClick={openIndex} aria-haspopup="dialog" aria-expanded={indexOpen}>Проекты <span className="journey-index-symbol" aria-hidden="true"><i /><i /></span></button>
+          <button ref={menuButton} className="journey-index-button" onClick={openIndex} aria-haspopup="dialog" aria-expanded={indexOpen} aria-controls="journey-index">Проекты <span className="journey-index-symbol" aria-hidden="true"><i /><i /></span></button>
         </div>
       </header>
       <div className="journey-captions">
@@ -142,7 +145,7 @@ export function Home() {
           <p className="journey-opening-line">Миры под поверхностью.</p>
           <div className="journey-opening-actions">
             <button className="journey-enter" onClick={() => go(firstExhibit)}>Войти внутрь <span><Arrow direction="down" /></span></button>
-            <button className="journey-touch" onClick={() => window.dispatchEvent(new Event("journey:touch"))}>Коснуться поверхности</button>
+            {status !== "fallback" && <button className="journey-touch" onClick={() => window.dispatchEvent(new Event("journey:touch"))}>Коснуться поверхности</button>}
           </div>
         </section>
         {projects.map((p, i) => <section key={p.id} data-journey-panel={p.id} className={`journey-panel journey-project-caption journey-caption-${p.id}`} style={{ opacity: 0, pointerEvents: "none" }} aria-hidden="true" inert>
@@ -188,9 +191,9 @@ export function Home() {
         </div>)}
         <span id="works" style={{ top: `${firstExhibit / JOURNEY_LIMIT * JOURNEY_SCROLL_SVH}svh` }} />
       </div>
-      <dialog ref={indexDialog} className="journey-index" aria-labelledby="journey-index-title" onCancel={() => setIndexOpen(false)} onClose={() => setIndexOpen(false)}>
+      <dialog ref={indexDialog} className="journey-index" id="journey-index" aria-labelledby="journey-index-title" onCancel={() => setIndexOpen(false)} onClose={() => setIndexOpen(false)}>
         <div className="journey-index-top"><h2 id="journey-index-title">Залы галереи</h2><button onClick={closeIndex}>Закрыть <span aria-hidden="true">×</span></button></div>
-        <div className="journey-index-list">{projects.map((p, i) => <PortfolioLink key={p.id} className="journey-index-row" to={`/work/${p.id}`} onClick={closeIndex}><span className="journey-index-no">{p.number}</span><img src={p.screen} alt="" width="192" height="108" loading="lazy" /><span className="journey-index-name">{p.title}<small>{p.kicker}</small></span><Arrow /></PortfolioLink>)}</div>
+        <div className="journey-index-list">{projects.map(p => <PortfolioLink key={p.id} className="journey-index-row" to={`/work/${p.id}`} onClick={closeIndex}><span className="journey-index-no">{p.number}</span><img src={p.screen} alt="" width="192" height="108" loading="lazy" /><span className="journey-index-name">{p.title}<small>{p.kicker}</small></span><Arrow /></PortfolioLink>)}</div>
         <div className="journey-index-bottom"><button onClick={() => travel(firstExhibit)}>Внутрь механизма <Arrow /></button><a href={author.github} target="_blank" rel="noreferrer">Мой GitHub <Arrow /></a><PortfolioLink to="/credits" onClick={closeIndex}>Источники</PortfolioLink></div>
       </dialog>
     </main>
