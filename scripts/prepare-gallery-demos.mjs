@@ -4,7 +4,7 @@ import { dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { build as viteBuild } from "vite";
-import { timepiecePerformancePlugin } from "./timepiece-performance.mjs";
+import { addTimepieceLoadingScreen, timepiecePerformancePlugin } from "./timepiece-performance.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const publicRoot = join(root, "public");
@@ -65,6 +65,13 @@ try {
       const entryHtml = await readFile(entryPath, 'utf8');
       await writeFile(entryPath, entryHtml.replace('</head>', `<link rel="stylesheet" href="${base}gallery.css">\n</head>`));
     } else {
+      const entryPath = join(build, 'index.html');
+      const [entry, portfolioEntry, bootStyles] = await Promise.all([
+        readFile(entryPath, 'utf8'),
+        readFile(join(root, 'index.html'), 'utf8'),
+        readFile(join(root, 'src/styles/boot.css'), 'utf8'),
+      ]);
+      await writeFile(entryPath, addTimepieceLoadingScreen(entry, portfolioEntry, bootStyles));
       const licenses = join(build, "licenses");
       await mkdir(licenses);
       for (const [dependency, file] of [
@@ -80,7 +87,7 @@ try {
           'scripts/timepiece-performance.mjs',
           'scripts/templates/timepiece-frame-scheduler.ts',
         ],
-        changes: 'Use the scroll ticker for watch frames, prewarm lower-scene shaders behind the initial loader, and tolerate rounded ticker times at 60 Hz. Original model, textures, CSS, lighting, materials, camera path and motion mapping retained.',
+        changes: 'Reuse the portfolio loading screen through watch scene readiness and hide the first station caption. Use the scroll ticker for watch frames, prewarm lower-scene shaders behind the initial loader, and tolerate rounded ticker times at 60 Hz.',
       }, null, 2) + '\n');
     }
 

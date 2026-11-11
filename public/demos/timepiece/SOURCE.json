@@ -5,5 +5,5 @@
     "scripts/timepiece-performance.mjs",
     "scripts/templates/timepiece-frame-scheduler.ts"
   ],
-  "changes": "Use the scroll ticker for watch frames, prewarm lower-scene shaders behind the initial loader, and tolerate rounded ticker times at 60 Hz. Original model, textures, CSS, lighting, materials, camera path and motion mapping retained."
+  "changes": "Reuse the portfolio loading screen through watch scene readiness and hide the first station caption. Use the scroll ticker for watch frames, prewarm lower-scene shaders behind the initial loader, and tolerate rounded ticker times at 60 Hz."
 }

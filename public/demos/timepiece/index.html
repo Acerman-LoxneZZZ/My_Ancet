@@ -11,13 +11,92 @@
     <meta property="og:locale" content="ru_RU" />
     <link rel="icon" type="image/svg+xml" href="/demos/timepiece/favicon.svg" />
     <title>KARpOV — карманные часы №01</title>
-    <script type="module" crossorigin src="/demos/timepiece/assets/index-BQnHMRcd.js"></script>
+    <script type="module" crossorigin src="/demos/timepiece/assets/index-Bo9jlSUH.js"></script>
     <link rel="modulepreload" crossorigin href="/demos/timepiece/assets/three-core-DFdhNdHR.js">
     <link rel="modulepreload" crossorigin href="/demos/timepiece/assets/three-renderer-BEbu2Yiv.js">
     <link rel="stylesheet" crossorigin href="/demos/timepiece/assets/index-B98ZRprF.css">
+  <style>
+html,body{margin:0;background:#060a0d}
+.journey-loader{--load:0;position:fixed;z-index:1000;inset:0;box-sizing:border-box;display:grid;grid-template-rows:auto 1fr auto;gap:24px;padding:clamp(24px,4vw,64px);background:#080e13;color:#e7e8df;font-family:Manrope,Arial,sans-serif;overflow:hidden}
+.loader-top{display:flex;justify-content:space-between;align-items:center;gap:24px;font-size:11px;letter-spacing:.02em;color:#8fa0a9}
+.loader-top>span:first-child{font-size:17px;letter-spacing:.12em;color:#e7e8df}
+.loader-assembly{position:relative;align-self:center;justify-self:center;width:min(42svh,340px,65vw);aspect-ratio:1}
+.loader-dial {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 1px solid #354650;
+  border-radius: 50%;
+  background: radial-gradient(circle, #d2ad72 1.4%, transparent 1.8%),
+    linear-gradient(90deg, transparent calc(50% - .5px), #27353d 50%, transparent calc(50% + .5px)),
+    linear-gradient(transparent calc(50% - .5px), #27353d 50%, transparent calc(50% + .5px));
+}
+.loader-dial::before, .loader-dial::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+}
+.loader-dial::before {
+  inset: 4%;
+  background: repeating-conic-gradient(#8fa0a9 0 1deg, transparent 1deg 6deg);
+  mask-image: radial-gradient(closest-side, transparent 91%, #000 92%);
+}
+.loader-dial::after { inset: 36%; border: 1px solid #43545e; }
+.loader-sweep, .loader-rotor { position: absolute; box-sizing: border-box; border-radius: 50%; }
+.loader-sweep {
+  inset: 14%;
+  border: 2px solid #354650;
+  border-top-color: #e7c58d;
+  border-right-color: #9e7950;
+  animation: loader-turn 2.8s linear infinite;
+}
+.loader-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 5%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -55%);
+  border-radius: 50%;
+  background: #f4dcb3;
+}
+.loader-rotor {
+  inset: 25%;
+  border: 1px dashed #677b86;
+  border-bottom: 2px solid #b99561;
+  animation: loader-turn 6s linear infinite reverse;
+}
+@keyframes loader-turn { to { transform: rotate(1turn); } }
+.loader-coordinate{position:absolute;color:#6c818e;font:9px Consolas,monospace;letter-spacing:.05em;white-space:nowrap}
+.loader-coordinate-a{left:0;top:-22px}.loader-coordinate-b{right:0;bottom:-22px}
+.loader-bottom{display:grid;grid-template-columns:1fr auto;align-items:end;gap:24px 32px}
+.loader-caption>span{display:block;font-size:clamp(18px,2.8vw,34px);letter-spacing:-.035em}
+.loader-caption>small{display:block;margin-top:9px;font-size:11px;color:#8fa0a9}
+.loader-percent{display:flex;align-items:baseline;gap:5px;font:clamp(40px,6vw,76px)/.9 Consolas,monospace;letter-spacing:-.07em;font-variant-numeric:tabular-nums}
+.loader-percent>small{font:12px Arial,sans-serif;letter-spacing:0;color:#a3b3bc}
+.loader-track{grid-column:1/-1;height:1px;background:#27353d}.loader-track>i{display:block;width:100%;height:100%;background:#c8b18a;transform:scaleX(var(--load));transform-origin:left;transition:transform .3s}
+.journey-loader.is-complete{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .22s ease,visibility 0s .22s}
+.journey-loader.is-complete :is(.loader-sweep,.loader-rotor){animation-play-state:paused}
+@media(max-width:500px){.loader-top>span:last-child{max-width:100px;line-height:1.6;text-align:right}.loader-bottom{gap:24px 16px}.loader-caption>span{max-width:210px}.loader-caption>small{font-size:10px}.loader-percent{font-size:48px}}
+@media(prefers-reduced-motion:reduce){.journey-loader *{transition:none!important}.loader-sweep,.loader-rotor{animation:none}}
+html:has(#timepiece-loader:not(.is-complete)){overflow:hidden}
+#timepiece-loader{font-family:"Manrope Variable",Manrope,Arial,sans-serif}
+    </style>
+    <noscript><style>#timepiece-loader{display:none}html{overflow:auto!important}</style></noscript>
   </head>
   <body>
-    <div id="root"></div>
-    <noscript><main style="padding:8vw;max-width:1000px;margin:auto;color:#f1eee7;background:#0e1620;font-family:Georgia,serif"><h1>KARpOV — карманные часы №01</h1><p>Светлая эмаль, синёные стрелки и ручной завод. Три исполнения корпуса: латунь, сталь и графит.</p><img src="/demos/timepiece/images/karpov-product.webp" width="420" style="max-width:100%;height:auto" alt="Карманные часы KARpOV"/><p>Включите JavaScript, чтобы посмотреть часы в 3D и выбрать исполнение.</p></main></noscript>
+    <div id="timepiece-loader" class="journey-loader">
+        <div class="loader-top"><span>КАРПОВ</span><span>Дизайн / Движение / Код</span></div>
+        <div class="loader-assembly" aria-hidden="true">
+          <span class="loader-coordinate loader-coordinate-a">01 / МАТЕРИАЛ</span>
+          <div class="loader-dial"><span class="loader-sweep"></span><span class="loader-rotor"></span></div>
+          <span class="loader-coordinate loader-coordinate-b">02 / ПРОСТРАНСТВО</span>
+        </div>
+        <div class="loader-bottom"><div class="loader-caption"><span>Карманные часы №01</span><small>Загружаем модель</small></div><div class="loader-percent" role="progressbar" aria-label="Загрузка часов" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span>00</span><small>%</small></div><div class="loader-track"><i></i></div></div>
+      </div>
+    <div id="root" inert></div>
+    <noscript><main style="padding:8vw;max-width:1000px;margin:auto;color:#f1eee7;background:#0e1620;font-family:Georgia,serif"><h1>KARpOV — карманные часы №01</h1><p>Светлая эмаль, синёные стрелки и ручной завод. Три исполнения корпуса: латунь, сталь и графит.</p><img src="/demos/timepiece/images/karpov-product.webp" width="420" style="max-width:100%;height:auto" alt="Карманные часы KARpOV"/><p>Включите JavaScript, чтобы посмотреть часы в 3D и выбрать исполнение.</p></main></noscript>
   </body>
 </html>

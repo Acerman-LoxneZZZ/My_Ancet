@@ -42,11 +42,17 @@ const smooth = (start: number, end: number, progress: number): number => {
   const t = unit((progress - start) / (end - start));
   return t * t * (3 - 2 * t);
 };
+const visibilityTail = 0.055;
+const roomStart = exhibitChapters.map(galleryShutterStart);
+const roomEnd = exhibitChapters.map((chapter, index) =>
+  index === exhibitChapters.length - 1 ? JOURNEY_LIMIT - 0.005 : chapter.to + visibilityTail);
 
 /** Mount exhibit assets as the camera approaches each room. */
 export function createExhibits(prepareObject: (object: THREE.Object3D, priority?: () => number) => Promise<void> = async () => {}, camera?: THREE.PerspectiveCamera): {
   group: THREE.Group;
-  prepare(progress: number, onMount: () => void): Promise<void>;
+  prepare(progress: number, onSettled: () => void): Promise<void>;
+  isReadyAt(progress: number): boolean;
+  limitTravel(from: number, to: number, jump: boolean): number;
   update(progress: number): boolean;
   fit(aspect: number): void;
   dispose(): void;
@@ -60,6 +66,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D, priority?
   const images = {} as Record<keyof typeof imagePaths, THREE.Texture>;
   const leases: ReturnType<typeof modelAssets.acquire>[] = [];
   const requested = new Map<number, Promise<void>>();
+  const settledRooms = new Set<number>();
   const settled = Promise.resolve();
   let preparation = settled;
   let preparationMask = -1;
@@ -176,7 +183,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D, priority?
       placeGalleryRoom(roomGroup, galleryStops[index]);
       group.add(roomGroup);
       // Closed shutters already hide the exhibits from the camera.
-      rooms[index] = {group: roomGroup, ready: false, visibleFrom: galleryShutterStart(chapter), end: chapter.to};
+      rooms[index] = {group: roomGroup, ready: false, visibleFrom: roomStart[index], end: chapter.to};
       return roomGroup;
     }
 
@@ -472,13 +479,29 @@ export function createExhibits(prepareObject: (object: THREE.Object3D, priority?
 
     const loaders = [loadWatch, loadFaro, loadEgypt, loadRibbon,
       () => loadNewExhibit(4, 'dal'), () => loadNewExhibit(5, 'tutor'), loadCastle];
-    const prepare = (progress: number, onMount: () => void): Promise<void> => {
+    const isReadyAt = (progress: number) => roomStart.every((start, index) =>
+      progress <= start || progress > roomEnd[index] || settledRooms.has(index));
+
+    const limitTravel = (from: number, to: number, jump: boolean) => {
+      if (jump) return isReadyAt(to) ? to : from;
+      const forward = to > from;
+      let limit = to;
+      for (let index = 0; index < exhibitChapters.length; index++) {
+        if (settledRooms.has(index)) continue;
+        const boundary = forward ? roomStart[index] : roomEnd[index];
+        if (forward && from <= boundary && limit > boundary) limit = boundary;
+        if (!forward && from >= boundary && limit < boundary) limit = boundary;
+      }
+      return limit;
+    };
+
+    const prepare = (progress: number, onSettled: () => void): Promise<void> => {
       if (disposed) return settled;
       preparationProgress = progress;
       let mask = 0;
       for (let index = 0; index < exhibitChapters.length; index++) {
         const chapter = exhibitChapters[index];
-        const pastRoom = progress > chapter.to + 0.055;
+        const pastRoom = progress > chapter.to + visibilityTail;
         const leavingFinalRoom = index === exhibitChapters.length - 1 && progress < JOURNEY_LIMIT;
         if ((index > 0 && progress < chapter.from - 0.14) || (pastRoom && !leavingFinalRoom)) continue;
         mask |= 1 << index;
@@ -501,9 +524,12 @@ export function createExhibits(prepareObject: (object: THREE.Object3D, priority?
           if (disposed) return;
           rooms[index].ready = true;
           update(lastProgress);
-          onMount();
         }).catch(error => {
           if (!disposed) console.warn('Could not load gallery exhibit', chapter.id, error);
+        }).finally(() => {
+          if (disposed) return;
+          settledRooms.add(index);
+          onSettled();
         });
         requested.set(index, task);
         pending.push(task);
@@ -518,7 +544,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D, priority?
         if (!entry) continue;
         const leavingFinalRoom = entry === rooms[exhibitChapters.length - 1] && !finalRoomPassed();
         const visible = entry.ready && lastProgress >= entry.visibleFrom
-          && (lastProgress <= entry.end + 0.055 || leavingFinalRoom);
+          && (lastProgress <= entry.end + visibilityTail || leavingFinalRoom);
         changed ||= entry.group.visible !== visible;
         entry.group.visible = visible;
       }
@@ -556,7 +582,7 @@ export function createExhibits(prepareObject: (object: THREE.Object3D, priority?
 
     fit(16 / 9);
     update(0);
-    return {group, prepare, update, fit, dispose};
+    return {group, prepare, isReadyAt, limitTravel, update, fit, dispose};
   } catch (error) {
     dispose();
     throw error;

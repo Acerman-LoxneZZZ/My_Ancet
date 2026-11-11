@@ -18,6 +18,22 @@
       type="font/woff2"
       crossorigin
     />
+    <script>
+      if (location.pathname === "%BASE_URL%") {
+        for (const [kind, path] of [
+          ["fetch", "assets/models/gallery-watch.glb"],
+          ["image", "assets/images/timepiece-karpov-hero.jpg"],
+        ]) {
+          const preload = document.createElement("link");
+          preload.rel = "preload";
+          preload.as = kind;
+          preload.href = "%BASE_URL%" + path;
+          preload.crossOrigin = "anonymous";
+          preload.fetchPriority = "low";
+          document.head.append(preload);
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root">

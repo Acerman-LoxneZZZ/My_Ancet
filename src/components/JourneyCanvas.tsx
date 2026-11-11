@@ -81,6 +81,7 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
     let maxY = 1;
     let target = 0;
     let progress = 0;
+    let instantSeek = false;
     let last = performance.now();
     let lastRender = 0;
     let elapsed = 0;
@@ -108,7 +109,7 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
       dirty = true;
       schedule();
     };
-    const exhibitMounted = () => {
+    const exhibitSettled = () => {
       shadowDirty = true;
       invalidate();
     };
@@ -123,7 +124,7 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
       const next = unit(window.scrollY / maxY) * JOURNEY_LIMIT;
       if (next === target) return;
       target = next;
-      exhibits.prepare(target, exhibitMounted);
+      exhibits.prepare(target, exhibitSettled);
       invalidate();
     };
     const resize = () => {
@@ -173,14 +174,15 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
     const seek = (event: Event) => {
       const to = clampJourneyProgress(Number((event as CustomEvent<number>).detail));
       const from = progress;
-      exhibits.prepare(to, exhibitMounted);
+      exhibits.prepare(to, exhibitSettled);
       if (motion.matches || (from >= FINALE_FROM && to === 0) || Math.abs(to - from) < 0.000015) {
         pilot = null;
         window.scrollTo({ top: to / JOURNEY_LIMIT * maxY, behavior: "instant" });
         target = to;
-        progress = target;
+        instantSeek = true;
         invalidate();
       } else {
+        instantSeek = false;
         pilot = {
           start: performance.now(), from, to,
           duration: to === JOURNEY_LIMIT ? 2700 : 1500 + Math.abs(to - from) * 1600,
@@ -200,7 +202,7 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
     };
     const navigated = () => {
       readScroll();
-      progress = target;
+      instantSeek = true;
       pilot = null;
       invalidate();
     };
@@ -217,15 +219,17 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
         if (t === 1) pilot = null;
       }
       const alpha = 1 - Math.exp(-dt / 0.19);
-      const nextProgress = target;
-      const scrollMoving = !motion.matches && Math.abs(progress - nextProgress) > 0.000015;
+      const jump = instantSeek || motion.matches;
+      const easing = !jump && Math.abs(progress - target) > 0.000015;
+      const nextProgress = easing ? limitEntranceStep(progress, progress + (target - progress) * alpha, dt) : target;
+      const safeProgress = exhibits.limitTravel(progress, nextProgress, jump);
+      const scrollMoving = easing && safeProgress !== progress;
       const pointerMoving = !motion.matches && Math.abs(px - pointerX) + Math.abs(py - pointerY) > 0.001;
       const contact = (now - contactStart) / 1000;
       const fullCadence = scrollMoving || !!pilot || pointerMoving || (!motion.matches && contact < 1.28);
-      progress = scrollMoving
-        ? limitEntranceStep(progress, progress + (nextProgress - progress) * alpha, dt)
-        : nextProgress;
-      exhibits.prepare(progress, exhibitMounted);
+      progress = safeProgress;
+      exhibits.prepare(jump ? target : progress, exhibitSettled);
+      if (progress === target) instantSeek = false;
       const pointerAlpha = 1 - Math.exp(-dt / 0.28);
       px = pointerMoving ? px + (pointerX - px) * pointerAlpha : pointerX;
       py = pointerMoving ? py + (pointerY - py) * pointerAlpha : pointerY;
@@ -305,17 +309,16 @@ export default function JourneyCanvas({ onFrame, onStatus, onLoadProgress, pause
       if (alive) console.warn("Could not prepare journey resources", error);
     });
     resize();
-    const initialExhibits = exhibits.prepare(target, exhibitMounted);
-    // Open only after the first room, both shader variants and fonts are ready.
-    // Further rooms stay lazy and prepare ahead of the camera.
-    void Promise.all([sceneReady, initialExhibits, document.fonts.ready]).then(async () => {
+    void exhibits.prepare(target, exhibitSettled);
+    // The opening shot can render while the watch room prepares behind its shutter.
+    void Promise.all([sceneReady, document.fonts.ready]).then(async () => {
       // The browser may restore a saved scroll position while fonts load.
       // Finish preparing that destination before removing the entrance screen.
       let preparedTarget: number;
       do {
         if (!alive) return;
         preparedTarget = target;
-        await exhibits.prepare(preparedTarget, exhibitMounted);
+        if (!exhibits.isReadyAt(preparedTarget)) await exhibits.prepare(preparedTarget, exhibitSettled);
       } while (preparedTarget !== target);
       if (!alive) return;
       loadingCallback.current(96);

@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createExhibits } from "../src/experience/journey/exhibits";
 import { modelAssets } from "../src/experience/worlds/modelAssets";
 import { createJourneyCamera } from "../src/experience/journey/camera";
-import { exhibitProgress, JOURNEY_LIMIT } from "../src/experience/journey/chapters";
+import { exhibitChapters, exhibitProgress, galleryShutterStart, JOURNEY_LIMIT } from "../src/experience/journey/chapters";
 
 beforeEach(() => {
   vi.spyOn(TextureLoader.prototype, "loadAsync").mockImplementation(async () => new Texture());
@@ -41,23 +41,36 @@ describe("prepared gallery exhibits", () => {
     } finally { exhibits.dispose(); finish?.(); }
   });
 
-  it("prepares the watch in advance, keeping it hidden until its original load boundary", async () => {
+  it("lets the entrance render while keeping the camera outside the watch room until its assets are ready", async () => {
     let finish!: () => void;
     const prepare = vi.fn(() => new Promise<void>(resolve => { finish = resolve; }));
     const exhibits = createExhibits(prepare);
     const mounted = vi.fn();
     const preparation = exhibits.prepare(0, mounted);
+    const watch = exhibitChapters[0];
+    const shutter = galleryShutterStart(watch);
+    const backBoundary = watch.to + 0.055;
     let prepared = false;
     void preparation.then(() => { prepared = true; });
     await vi.waitFor(() => expect(prepare).toHaveBeenCalledTimes(1));
     const room = exhibits.group.getObjectByName("journey-room-timepiece")!;
     expect(room.visible).toBe(false);
+    expect(exhibits.isReadyAt(0)).toBe(true);
+    expect(exhibits.isReadyAt(watch.at)).toBe(false);
+    expect(exhibits.limitTravel(0, watch.at, false)).toBe(shutter);
+    expect(exhibits.limitTravel(shutter, watch.at, false)).toBe(shutter);
+    expect(exhibits.limitTravel(0, watch.at, true)).toBe(0);
+    expect(exhibits.limitTravel(backBoundary, watch.at, false)).toBe(backBoundary);
     exhibits.update(0.214);
     expect(room.visible).toBe(false);
     expect(prepared).toBe(false);
     finish();
     await preparation;
     expect(prepared).toBe(true);
+    expect(exhibits.isReadyAt(watch.at)).toBe(true);
+    expect(exhibits.limitTravel(shutter, watch.at, false)).toBe(watch.at);
+    expect(exhibits.limitTravel(0, watch.at, true)).toBe(watch.at);
+    expect(exhibits.limitTravel(backBoundary, watch.at, false)).toBe(watch.at);
     await vi.waitFor(() => expect(mounted).toHaveBeenCalledTimes(1));
     expect(room.visible).toBe(true);
     exhibits.update(0);
